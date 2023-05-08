@@ -1,0 +1,26 @@
+﻿<Window x:Class="StarmaidIntegrationComputer.IntegrationComputerMainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:StarmaidIntegrationComputer"
+        mc:Ignorable="d"
+        Title="Starmaid Integration Computer" Height="450" Width="800" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" >
+    <!--<StackPanel HorizontalAlignment="Left" Margin="2,5,2,2" AutomationProperties.Name="VerticalOuterStackPanel" CanVerticallyScroll="True" ScrollViewer.CanContentScroll="True" ClipToBounds="True">-->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="64" />
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <StackPanel Height="66" Orientation="Horizontal" HorizontalAlignment="Center" AutomationProperties.Name="HorizontalButtonsStackPanel">
+            <Button x:Name="ToggleRunningButton" Click="ToggleRunningButton_Click" Content="Stop Running" Width="200" Height="40"/>
+            <Button x:Name="ToggleShowThalassaButton" Click="Thalassa_Click" Content="Thalassa" Width="200" Height="40"/>
+
+            <Button x:Name="ClearOutputButton" Click="ClearOutputButton_Click" Content="Clear" Height="40" Width="60" Margin="10,0,0,0" />
+        </StackPanel>
+        <ScrollViewer CanContentScroll="True" Grid.Row="1" Grid.Column="1" >
+            <RichTextBox Name="OutputRichTextBox" IsEnabled="false" Background="Black" Foreground="White" VerticalScrollBarVisibility="Visible"></RichTextBox>
+        </ScrollViewer>
+    </Grid>
+    <!--</StackPanel>-->
+</Window>
