@@ -38,12 +38,18 @@ namespace StarmaidIntegrationComputer
         {
             services.AddLogging(loggingBuilder =>
             {
-                loggingBuilder.AddSerilog();
+                LoggerConfiguration fileLoggerConfiguration = new LoggerConfiguration();
+                fileLoggerConfiguration.WriteTo.File($"Log\\StarmaidComputer-{DateTime.Now.ToString("yyyy-MM-dd_HH_mm_ss")}.log");
+                Serilog.Core.Logger? fileLogger = fileLoggerConfiguration.CreateLogger();
+                loggingBuilder.AddSerilog(fileLogger);
+
+                services.AddSingleton(fileLoggerConfiguration);
+
             });
 
             //TODO: Pretty sure awake brain knows a better way to load settings than what's in this method.  Sleepy brain does not.
             var settings = LoadSettings();
-            var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions, AuthScopes.Chat_Read, AuthScopes.Chat_Edit};
+            var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions, AuthScopes.Chat_Read, AuthScopes.Chat_Edit };
             services.AddSingleton<IntegrationComputerMainWindow>();
             services.AddSingleton(settings);
             services.AddSingleton<TwitchAuthResponseWebserver>();

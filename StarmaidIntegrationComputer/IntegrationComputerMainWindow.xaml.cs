@@ -6,11 +6,6 @@ using Microsoft.Extensions.Logging;
 
 using Serilog;
 
-using StarmaidIntegrationComputer.StarmaidSettings;
-
-using TwitchLib.Client;
-using TwitchLib.PubSub;
-
 
 namespace StarmaidIntegrationComputer
 {
@@ -19,24 +14,22 @@ namespace StarmaidIntegrationComputer
     /// </summary>
     public partial class IntegrationComputerMainWindow : Window
     {
-        private Settings settings;
         private readonly IntegrationComputerCore core;
         private readonly ILoggerFactory loggerFactory;
 
-
-        LoggerConfiguration defaultLoggerConfiguration;
+        LoggerConfiguration loggerConfiguration;
 
         #region Not API related
         ThalassaWindow thalassaForm;
 
         #endregion Not API related
 
-        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, Settings settings, IntegrationComputerCore core, ThalassaWindow thalassaForm)
+        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, ThalassaWindow thalassaForm, LoggerConfiguration loggerConfiguration)
         {
             this.loggerFactory = loggerFactory;
-            this.settings = settings;
             this.core = core;
             this.thalassaForm = thalassaForm;
+            this.loggerConfiguration = loggerConfiguration;
 
             this.core.Output = AppendOutput;
             this.core.UpdateIsRunningVisuals = SetToggleButtonContent;
@@ -53,17 +46,15 @@ namespace StarmaidIntegrationComputer
 
         private void InitializeLogging()
         {
-            defaultLoggerConfiguration = new LoggerConfiguration();
-            defaultLoggerConfiguration.WriteTo.RichTextBox(OutputRichTextBox);
-            Serilog.Core.Logger? serilogLogger = defaultLoggerConfiguration.CreateLogger();
-            defaultLoggerConfiguration.MinimumLevel.Verbose();
+            loggerConfiguration.WriteTo.RichTextBox(OutputRichTextBox);
 
+
+            LoggerConfiguration textBoxLoggerConfiguration = new LoggerConfiguration();
+            textBoxLoggerConfiguration.WriteTo.RichTextBox(OutputRichTextBox);
+
+            Serilog.Core.Logger? serilogLogger = textBoxLoggerConfiguration.CreateLogger();
 
             loggerFactory.AddSerilog(serilogLogger, true);
-
-            loggerFactory.CreateLogger<IntegrationComputerMainWindow>();
-            loggerFactory.CreateLogger<TwitchPubSub>();
-            loggerFactory.CreateLogger<TwitchClient>();
         }
 
         private void InitializeThalassaForm()

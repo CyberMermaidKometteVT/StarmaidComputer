@@ -15,7 +15,8 @@ using TwitchLib.Client.Models;
 using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.StarmaidSettings;
 #warning Urgent TODO: Test Use refresh token if we're timing out!
-#warning FUCKING SOURCE CONTROL
+#warning There is currently a hardcoded file path used by the logger.  Put that in a config file, along with loglevels and things.
+#warning Make the font size in the form bigger so stream can see it better!
 #warning Remember, Thalassa currently can't voice back at me!  Find decent integration for that.
 #warning Don't forget Discord integration soon!
 #warning When Thalassa speaks, figure out how to make a png glow with her words.
@@ -319,6 +320,7 @@ namespace StarmaidIntegrationComputer
                 else //!isRunning
                 {
                     pubSub?.Disconnect();
+                    chatbot.Disconnect();
                 }
 
                 if (UpdateIsRunningVisuals != null) UpdateIsRunningVisuals();
