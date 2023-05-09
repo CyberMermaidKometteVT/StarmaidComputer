@@ -13,13 +13,13 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         <StackPanel Height="66" Orientation="Horizontal" HorizontalAlignment="Center" AutomationProperties.Name="HorizontalButtonsStackPanel">
-            <Button x:Name="ToggleRunningButton" Click="ToggleRunningButton_Click" Content="Stop Running" Width="200" Height="40"/>
-            <Button x:Name="ToggleShowThalassaButton" Click="Thalassa_Click" Content="Thalassa" Width="200" Height="40"/>
+            <Button x:Name="ToggleRunningButton" Click="ToggleRunningButton_Click" Content="Stop Running" Width="200" Height="40" FontSize="16"/>
+            <Button x:Name="ToggleShowThalassaButton" Click="Thalassa_Click" Content="Thalassa" Width="200" Height="40" FontSize="16"/>
 
-            <Button x:Name="ClearOutputButton" Click="ClearOutputButton_Click" Content="Clear" Height="40" Width="60" Margin="10,0,0,0" />
+            <Button x:Name="ClearOutputButton" Click="ClearOutputButton_Click" Content="Clear" Height="40" Width="60" Margin="10,0,0,0" FontSize="16" />
         </StackPanel>
         <ScrollViewer CanContentScroll="True" Grid.Row="1" Grid.Column="1" >
-            <RichTextBox Name="OutputRichTextBox" IsEnabled="false" Background="Black" Foreground="White" VerticalScrollBarVisibility="Visible"></RichTextBox>
+            <RichTextBox Name="OutputRichTextBox" IsEnabled="false" Background="Black" Foreground="White" VerticalScrollBarVisibility="Visible" FontSize="16"></RichTextBox>
         </ScrollViewer>
     </Grid>
     <!--</StackPanel>-->
