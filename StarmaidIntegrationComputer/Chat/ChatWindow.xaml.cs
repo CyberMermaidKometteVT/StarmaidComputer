@@ -28,6 +28,8 @@ namespace StarmaidIntegrationComputer.Chat
             this.jailbreakMessage = jailbreakMessage;
             InitializeComponent();
             CreateNewChatComputer();
+
+            ChatbotResponsesRichTextBox.Document.LineHeight = 1;
         }
 
         private void CreateNewChatComputer()
@@ -51,7 +53,7 @@ namespace StarmaidIntegrationComputer.Chat
         {
             //Ignoring the await warning because we don't actually care to wait for the responses here - these messages are just getting sent!
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            if (chatComputer != null)
+            if (chatComputer == null)
             {
                 CreateNewChatComputer();
             }
@@ -89,7 +91,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private Task OnMessageReceived(string receivedMessage)
         {
-            receivedMessage += Environment.NewLine;
+            receivedMessage = $"Thalassa:{receivedMessage}{Environment.NewLine}";
             if (Dispatcher.Thread == Thread.CurrentThread)
             {
                 ChatbotResponsesRichTextBox.AppendText(receivedMessage);

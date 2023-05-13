@@ -22,6 +22,7 @@ using StarmaidIntegrationComputer.StarmaidSettings;
 #warning Don't forget Discord integration soon!
 #warning When Thalassa speaks, figure out how to make a png glow with her words.  (Check out https://eruben.itch.io/vts-pog ?  Or maybe VNyan, if I can find a way to have some other app talk to it to tell it to modify a blendshape or something that is tied to brightness of a light? )  
 #warning OBS plugin?
+#warning Considerations when TTSing 
 #warning Replace all the logic in KruizControl with StarmidIntegrationComputer logic!
 #warning Also I'm seeing a shocking number of OperationCanceledExceptions thrown in "OnError in PubSub Websocket connection" when changing network adapters so maybe I should do something about that?
 #warning Also I get more errors if I mash the start/stop button really fast
