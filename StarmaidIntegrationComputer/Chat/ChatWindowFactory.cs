@@ -1,4 +1,6 @@
-﻿using OpenAI_API;
+﻿using Microsoft.Extensions.Logging;
+
+using OpenAI_API;
 
 namespace StarmaidIntegrationComputer.Chat
 {
@@ -6,15 +8,18 @@ namespace StarmaidIntegrationComputer.Chat
     {
         private readonly OpenAIAPI api;
         private readonly string jailbreakMessage;
-        public ChatWindowFactory(OpenAIAPI api, JailbreakMessage jailbreakMessage)
+        private readonly ILogger<ChatComputer> logger;
+
+        public ChatWindowFactory(OpenAIAPI api, ILogger<ChatComputer> logger, JailbreakMessage jailbreakMessage)
         {
             this.api = api;
+            this.logger = logger;
             this.jailbreakMessage = jailbreakMessage.Value;
         }
 
         public ChatWindow CreateNew()
         {
-            return new ChatWindow(api, jailbreakMessage);
+            return new ChatWindow(api, logger, jailbreakMessage);
 
         }
     }

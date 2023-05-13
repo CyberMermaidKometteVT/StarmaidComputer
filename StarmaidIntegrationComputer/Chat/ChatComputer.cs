@@ -2,6 +2,8 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
+
 using OpenAI_API;
 using OpenAI_API.Chat;
 using OpenAI_API.Models;
@@ -10,9 +12,10 @@ using StarmaidIntegrationComputer.Common;
 
 namespace StarmaidIntegrationComputer.Chat
 {
-    internal class ChatComputer
+    public class ChatComputer
     {
         private OpenAIAPI api;
+        private readonly ILogger<ChatComputer> logger;
         private readonly string jailbreakMessage;
         private Conversation? conversation;
         public AsyncStringMethodList OutputUserMessageHandlers { get; private set; } = new AsyncStringMethodList();
@@ -21,9 +24,10 @@ namespace StarmaidIntegrationComputer.Chat
 
         //TODO: Consider making this a setting!
         const bool useJailBreaking = true;
-        public ChatComputer(OpenAIAPI api, string jailbreakMessage)
+        public ChatComputer(OpenAIAPI api, string jailbreakMessage, ILogger<ChatComputer> logger)
         {
             this.api = api;
+            this.logger = logger;
             this.jailbreakMessage = jailbreakMessage;
         }
 
@@ -43,22 +47,24 @@ namespace StarmaidIntegrationComputer.Chat
 
             conversation.AppendUserInputWithName(userName, userMessage);
 
-            OutputUserMessage($"{userName}: {userMessage}{Environment.NewLine}");
+            OutputUserMessage($"{userName}: {userMessage}");
             var response = await conversation.GetResponseFromChatbotAsync();
-            OutputChatbotResponse($"{response}{Environment.NewLine}");
+            OutputChatbotResponse(response);
         }
 
         private void EnsureConversationInitialized()
         {
             if (conversation == null)
             {
+                logger.LogInformation("Starting a new conversation.");
+
                 conversation = api.Chat.CreateConversation(new ChatRequest { MaxTokens = 3000, TopP = 0.02, NumChoicesPerMessage = 1, Model = Model.ChatGPTTurbo });
 
 #pragma warning disable CS0162 // Unreachable code detected - skipping because of consts in logic, to be set by hand.
                 if (useJailBreaking)
                 {
                     conversation.AppendSystemMessage(jailbreakMessage);
-                    conversation.AppendSystemMessage("Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should always be warm and supportive. Thalassa should also always be calm and collected. Thalassa's pronouns are she/her. Komette's pronouns are also she/her.");
+                    conversation.AppendSystemMessage("Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should always be warm and supportive. Thalassa should4 also always be calm and collected. Thalassa will only greet people on their first message or when they have just greeted Thalassa. Thalassa's pronouns are she/her. Komette's pronouns are also she/her.");
                 }
                 else
                 {
@@ -70,6 +76,8 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void OutputChatbotResponse(string chatbotResponseMessage)
         {
+            logger.LogInformation($"CHATBOT MESSAGE RECEIVED, VERBOSE VERSION: {chatbotResponseMessage}{Environment.NewLine}");
+
             if (useJailBreaking)
             {
                 try
@@ -80,6 +88,7 @@ namespace StarmaidIntegrationComputer.Chat
                 //TODO: log this later!
                 catch
                 {
+                    logger.LogError($"Failed to interpret the jailbroken response to {chatbotResponseMessage}!");
                 }
             }
 
@@ -88,6 +97,8 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void OutputUserMessage(string userMessage)
         {
+            logger.LogInformation($"USER MESSAGE SENT - {userMessage}{Environment.NewLine}");
+
             OutputUserMessageHandlers.Execute(userMessage);
         }
     }

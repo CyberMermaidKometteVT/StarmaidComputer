@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
+using Microsoft.Extensions.Logging;
+
 using OpenAI_API;
 
 namespace StarmaidIntegrationComputer.Chat
@@ -15,12 +17,14 @@ namespace StarmaidIntegrationComputer.Chat
     public partial class ChatWindow : Window
     {
         private readonly OpenAIAPI api;
+        private readonly ILogger<ChatComputer> logger;
         private ChatComputer? chatComputer;
         private readonly string jailbreakMessage;
 
-        public ChatWindow(OpenAIAPI api, string jailbreakMessage)
+        public ChatWindow(OpenAIAPI api, ILogger<ChatComputer> logger, string jailbreakMessage)
         {
             this.api = api;
+            this.logger = logger;
             this.jailbreakMessage = jailbreakMessage;
             InitializeComponent();
             CreateNewChatComputer();
@@ -28,7 +32,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void CreateNewChatComputer()
         {
-            chatComputer = new ChatComputer(api, jailbreakMessage);
+            chatComputer = new ChatComputer(api, jailbreakMessage, logger);
             chatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             chatComputer.OutputChatbotResponseHandlers.Add(OnMessageReceived);
         }
@@ -66,6 +70,7 @@ namespace StarmaidIntegrationComputer.Chat
         //I'm worried it's a bad idea to make this async, since it involves thread I/O
         private Task OnMessageSent(string sentMessage)
         {
+            sentMessage += Environment.NewLine;
             if (Dispatcher.Thread == Thread.CurrentThread)
             {
                 ChatbotResponsesRichTextBox.AppendText(sentMessage);
@@ -84,6 +89,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private Task OnMessageReceived(string receivedMessage)
         {
+            receivedMessage += Environment.NewLine;
             if (Dispatcher.Thread == Thread.CurrentThread)
             {
                 ChatbotResponsesRichTextBox.AppendText(receivedMessage);

@@ -14,7 +14,9 @@ using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.StarmaidSettings;
+#warning CRITICAL TODO: THE APP IN RELEASE MODE MIGHT NOT BE CLOSING WHEN THE WINDOW IS CLOSED!
 #warning Urgent TODO: Test Use refresh token if we're timing out!
+#warning Get some issue tracking for viewers to follow along better!
 #warning There is currently a hardcoded file path used by the logger.  Put that in a config file, along with loglevels and things.
 #warning Remember, Thalassa currently can't voice back at me!  Find decent integration for that.
 #warning Don't forget Discord integration soon!
