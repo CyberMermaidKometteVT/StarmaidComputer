@@ -1,0 +1,34 @@
+﻿<Window x:Class="StarmaidIntegrationComputer.Chat.ChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:StarmaidIntegrationComputer.Chat"
+        mc:Ignorable="d"
+        Title="ChatWindow" Height="450" Width="800">
+    <Grid Margin="5px">
+        <Grid.RowDefinitions>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition Height="30"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <ScrollViewer CanContentScroll="True" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="3">
+            <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" />
+        </ScrollViewer>
+        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4">
+            <Button Name="ResetConversation" Click="ResetConversation_Click">RESET</Button>
+            <Label>Name</Label>
+            <TextBox Name="UserNameTextBox" Width="100" Text="Komette" />
+            <Label>Message</Label>
+            <TextBox Name="UserMessageTextBox" Width="500" TextChanged="UserMessageTextBox_TextChanged" KeyUp="UserMessageTextBox_KeyUp"/>
+            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click">Send</Button>
+        </StackPanel>
+    </Grid>
+</Window>

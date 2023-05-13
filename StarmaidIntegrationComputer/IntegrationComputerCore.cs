@@ -18,10 +18,9 @@ using StarmaidIntegrationComputer.StarmaidSettings;
 #warning There is currently a hardcoded file path used by the logger.  Put that in a config file, along with loglevels and things.
 #warning Remember, Thalassa currently can't voice back at me!  Find decent integration for that.
 #warning Don't forget Discord integration soon!
-#warning When Thalassa speaks, figure out how to make a png glow with her words.
+#warning When Thalassa speaks, figure out how to make a png glow with her words.  (Check out https://eruben.itch.io/vts-pog ?  Or maybe VNyan, if I can find a way to have some other app talk to it to tell it to modify a blendshape or something that is tied to brightness of a light? )  
 #warning OBS plugin?
 #warning Replace all the logic in KruizControl with StarmidIntegrationComputer logic!
-#warning ChatGPT integration hasn't actually been added, though I've got the calls figured out and ready in Postman!
 #warning Also I'm seeing a shocking number of OperationCanceledExceptions thrown in "OnError in PubSub Websocket connection" when changing network adapters so maybe I should do something about that?
 #warning Also I get more errors if I mash the start/stop button really fast
 #warning also stop doesn't really work
@@ -319,7 +318,10 @@ namespace StarmaidIntegrationComputer
                 else //!isRunning
                 {
                     pubSub?.Disconnect();
-                    chatbot.Disconnect();
+                    if (chatbot.IsConnected)
+                    {
+                        chatbot.Disconnect();
+                    }
                 }
 
                 if (UpdateIsRunningVisuals != null) UpdateIsRunningVisuals();

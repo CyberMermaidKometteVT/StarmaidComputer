@@ -6,8 +6,11 @@ using System.Windows;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using OpenAI_API;
+
 using Serilog;
 
+using StarmaidIntegrationComputer.Chat;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Twitch;
 using StarmaidIntegrationComputer.Twitch.Authorization;
@@ -29,6 +32,8 @@ namespace StarmaidIntegrationComputer
 
         public App()
         {
+            //TODO: Link to better builder inc. settings: https://thecodeblogger.com/2021/05/04/how-to-use-appsettings-json-config-file-with-net-console-applications/ 
+
             ServiceCollection services = new ServiceCollection();
             ConfigureServices(services);
             serviceProvider = services.BuildServiceProvider();
@@ -61,6 +66,10 @@ namespace StarmaidIntegrationComputer
             services.AddScoped<ThalassaWindow>();
 
             services.AddScoped(_ => scopes);
+            services.AddScoped(_ => new OpenAIAPI(settings.OpenAIBearerToken));
+            services.AddScoped<ChatComputer>();
+            services.AddScoped<ChatWindowFactory>();
+            services.AddSingleton(new JailbreakMessage(settings.JailbreakMessage));
 
             serviceProvider = services.BuildServiceProvider();
         }
@@ -99,7 +108,9 @@ namespace StarmaidIntegrationComputer
                 TwitchClientSecret = parsedSettings.TwitchClientSecret,
                 TwitchApiUsername = parsedSettings.TwitchApiUsername,
                 TwitchChatbotChannelName = parsedSettings.TwitchChatbotChannelName,
-                TwitchChatbotUsername = parsedSettings.TwitchChatbotUsername
+                TwitchChatbotUsername = parsedSettings.TwitchChatbotUsername,
+                OpenAIBearerToken = parsedSettings.OpenAIBearerToken,
+                JailbreakMessage = parsedSettings.JailbreakMessage
             };
 
 

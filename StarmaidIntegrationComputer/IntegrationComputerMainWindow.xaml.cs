@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 using Serilog;
 
+using StarmaidIntegrationComputer.Chat;
 
 namespace StarmaidIntegrationComputer
 {
@@ -16,6 +17,7 @@ namespace StarmaidIntegrationComputer
     {
         private readonly IntegrationComputerCore core;
         private readonly ILoggerFactory loggerFactory;
+        private readonly ChatWindowFactory chatWindowFactory;
 
         LoggerConfiguration loggerConfiguration;
 
@@ -24,12 +26,13 @@ namespace StarmaidIntegrationComputer
 
         #endregion Not API related
 
-        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, ThalassaWindow thalassaForm, LoggerConfiguration loggerConfiguration)
+        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, ThalassaWindow thalassaForm, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory)
         {
             this.loggerFactory = loggerFactory;
             this.core = core;
             this.thalassaForm = thalassaForm;
             this.loggerConfiguration = loggerConfiguration;
+            this.chatWindowFactory = chatWindowFactory;
 
             this.core.Output = AppendOutput;
             this.core.UpdateIsRunningVisuals = SetToggleButtonContent;
@@ -116,6 +119,11 @@ namespace StarmaidIntegrationComputer
         private void ClearOutputButton_Click(object sender, RoutedEventArgs e)
         {
             OutputRichTextBox.Document.Blocks.Clear();
+        }
+
+        private void SpawnNewTestChatWindowButton_Click(object sender, RoutedEventArgs e)
+        {
+            chatWindowFactory.CreateNew().Show();
         }
     }
 }

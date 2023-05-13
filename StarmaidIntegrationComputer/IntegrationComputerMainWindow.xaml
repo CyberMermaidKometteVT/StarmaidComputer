@@ -15,6 +15,7 @@
         <StackPanel Height="66" Orientation="Horizontal" HorizontalAlignment="Center" AutomationProperties.Name="HorizontalButtonsStackPanel">
             <Button x:Name="ToggleRunningButton" Click="ToggleRunningButton_Click" Content="Stop Running" Width="200" Height="40" FontSize="16"/>
             <Button x:Name="ToggleShowThalassaButton" Click="Thalassa_Click" Content="Thalassa" Width="200" Height="40" FontSize="16"/>
+            <Button x:Name="SpawnNewTestChatWindowButton" Click="SpawnNewTestChatWindowButton_Click" Content="New Test Chat" Width="120" Height="40" FontSize="16"/>
 
             <Button x:Name="ClearOutputButton" Click="ClearOutputButton_Click" Content="Clear" Height="40" Width="60" Margin="10,0,0,0" FontSize="16" />
         </StackPanel>

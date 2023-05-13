@@ -13,6 +13,9 @@ namespace StarmaidIntegrationComputer.StarmaidSettings
         public string TwitchClientSecret { get; set; }
         public string TwitchApiUrl { get; set; }
         public string DiscordWebhookUrl { get; set; }
+        //There is a cleaner way to do the bearer token!  See https://github.com/OkGoDoIt/OpenAI-API-dotnet#authentication
+        public string OpenAIBearerToken { get; set; }
+        public string JailbreakMessage { get; set; }
         public List<Role> Roles { get; set; }
         public string RedirectUri { get; set; }
         public char ChatCommandIdentifier { get; set; } = '!';

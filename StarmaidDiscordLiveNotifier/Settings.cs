@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 
+//KOMETTE YOU'VE GOT THE WRONG ONE
 namespace StarmaidDiscordLiveNotifier
 {
     public class Role
