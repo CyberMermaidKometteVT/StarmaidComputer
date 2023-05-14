@@ -11,6 +11,7 @@ using OpenAI_API;
 using Serilog;
 
 using StarmaidIntegrationComputer.Chat;
+using StarmaidIntegrationComputer.SpeechSynthesis;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Twitch;
 using StarmaidIntegrationComputer.Twitch.Authorization;
@@ -70,6 +71,7 @@ namespace StarmaidIntegrationComputer
             services.AddScoped<ChatComputer>();
             services.AddScoped<ChatWindowFactory>();
             services.AddSingleton(new JailbreakMessage(settings.JailbreakMessage));
+            services.AddScoped<SpeechComputer>();
 
             serviceProvider = services.BuildServiceProvider();
         }

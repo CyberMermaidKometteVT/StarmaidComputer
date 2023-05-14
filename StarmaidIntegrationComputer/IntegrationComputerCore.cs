@@ -14,6 +14,8 @@ using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.StarmaidSettings;
+using StarmaidIntegrationComputer.Chat;
+using StarmaidIntegrationComputer.SpeechSynthesis;
 #warning CRITICAL TODO: THE APP IN RELEASE MODE MIGHT NOT BE CLOSING WHEN THE WINDOW IS CLOSED!
 #warning Urgent TODO: Test Use refresh token if we're timing out!
 #warning Get some issue tracking for viewers to follow along better!
@@ -60,7 +62,21 @@ namespace StarmaidIntegrationComputer
         public readonly ILogger<IntegrationComputerCore> logger;
         private readonly ILogger<TwitchPubSub> pubSubLogger;
         private readonly ILogger<TwitchClient> chatbotLogger;
+        private readonly SpeechComputer speechComputer;
+        private ChatComputer activeChatComputerUsePropertyOnly;
+        public ChatComputer ActiveChatComputer
+        {
+            get { return activeChatComputerUsePropertyOnly; }
+            set
+            {
+                activeChatComputerUsePropertyOnly = value;
 
+                if (!ActiveChatComputer.OutputChatbotResponseHandlers.Contains(speechComputer.SpeakFakeAsync))
+                {
+                    ActiveChatComputer.OutputChatbotResponseHandlers.Add(speechComputer.SpeakFakeAsync);
+                }
+            }
+        }
 
 
         string? broadcasterId;
@@ -78,7 +94,7 @@ namespace StarmaidIntegrationComputer
         /// </summary>
         /// <remarks>TODO: Mix this up between calls, just not per session.  (If Twitch likes that.)</remarks>
 
-        public IntegrationComputerCore(ILogger<IntegrationComputerCore> logger, ILogger<TwitchPubSub> pubSubLogger, ILogger<TwitchClient> clientLogger, Settings settings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection)
+        public IntegrationComputerCore(ILogger<IntegrationComputerCore> logger, ILogger<TwitchPubSub> pubSubLogger, ILogger<TwitchClient> clientLogger, Settings settings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer)
         {
             this.settings = settings;
             this.logger = logger;
@@ -86,6 +102,7 @@ namespace StarmaidIntegrationComputer
             this.AuthorizationHelper = authorizationHelper;
             this.twitchConnection = twitchConnection;
             this.chatbotLogger = clientLogger;
+            this.speechComputer = speechComputer;
 
             authorizationHelper.ForceTwitchLoginPrompt = ForceTwitchLoginPrompt;
             authorizationHelper.OnAuthorizationProcessSuccessful = SetAccessTokenOnGetAccessTokenContinue;
@@ -251,8 +268,8 @@ namespace StarmaidIntegrationComputer
             var refreshResponseTask = twitchConnection.Auth.RefreshAuthTokenAsync(accessToken.RefreshToken, settings.TwitchClientSecret, settings.TwitchClientId);
             refreshResponseTask.ContinueWith(async responseTask =>
             {
-                //TODO: Consider further error handling
-                var response = await responseTask;
+            //TODO: Consider further error handling
+            var response = await responseTask;
                 var accessToken = AuthorizationHelper.GetAccessToken(response);
                 this.accessToken = accessToken;
                 logger.LogInformation("Token refreshed.");
@@ -310,8 +327,8 @@ namespace StarmaidIntegrationComputer
                     if (accessToken == null || accessToken.ExpiresAt >= DateTime.Now)
                     {
                         AuthorizationHelper.PromptForUserAuthorization();
-                        //An event in the prompt will move us on to StartListeningToTwitch() when the time is right.
-                    }
+                    //An event in the prompt will move us on to StartListeningToTwitch() when the time is right.
+                }
                     else
                     {
                         StartListeningToTwitchApi();
@@ -319,7 +336,7 @@ namespace StarmaidIntegrationComputer
 
                 }
                 else //!isRunning
-                {
+            {
                     pubSub?.Disconnect();
                     if (chatbot.IsConnected)
                     {

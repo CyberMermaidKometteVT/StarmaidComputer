@@ -18,7 +18,6 @@ namespace StarmaidIntegrationComputer
         private readonly IntegrationComputerCore core;
         private readonly ILoggerFactory loggerFactory;
         private readonly ChatWindowFactory chatWindowFactory;
-
         LoggerConfiguration loggerConfiguration;
 
         #region Not API related
@@ -123,7 +122,14 @@ namespace StarmaidIntegrationComputer
 
         private void SpawnNewTestChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
-            chatWindowFactory.CreateNew().Show();
+            var activeChatWindow = chatWindowFactory.CreateNew();
+
+            activeChatWindow.OnNewChatComputer += () =>
+            {
+                core.ActiveChatComputer = activeChatWindow.ActiveChatComputer;
+            };
+
+            activeChatWindow.Show();
         }
     }
 }

@@ -18,8 +18,9 @@ namespace StarmaidIntegrationComputer.Chat
     {
         private readonly OpenAIAPI api;
         private readonly ILogger<ChatComputer> logger;
-        private ChatComputer? chatComputer;
+        public ChatComputer? ActiveChatComputer { get; private set; }
         private readonly string jailbreakMessage;
+        public Action OnNewChatComputer { get; set; }
 
         public ChatWindow(OpenAIAPI api, ILogger<ChatComputer> logger, string jailbreakMessage)
         {
@@ -27,16 +28,20 @@ namespace StarmaidIntegrationComputer.Chat
             this.logger = logger;
             this.jailbreakMessage = jailbreakMessage;
             InitializeComponent();
-            CreateNewChatComputer();
 
             ChatbotResponsesRichTextBox.Document.LineHeight = 1;
         }
 
         private void CreateNewChatComputer()
         {
-            chatComputer = new ChatComputer(api, jailbreakMessage, logger);
-            chatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
-            chatComputer.OutputChatbotResponseHandlers.Add(OnMessageReceived);
+            ActiveChatComputer = new ChatComputer(api, jailbreakMessage, logger);
+            ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
+            ActiveChatComputer.OutputChatbotResponseHandlers.Add(OnMessageReceived);
+
+            if (OnNewChatComputer != null)
+            {
+                OnNewChatComputer();
+            }
         }
 
         private void UserMessageTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -53,18 +58,18 @@ namespace StarmaidIntegrationComputer.Chat
         {
             //Ignoring the await warning because we don't actually care to wait for the responses here - these messages are just getting sent!
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            if (chatComputer == null)
+            if (ActiveChatComputer == null)
             {
                 CreateNewChatComputer();
             }
 
             if (String.IsNullOrWhiteSpace(UserNameTextBox.Text))
             {
-                chatComputer.SendChat(UserMessageTextBox.Text);
+                ActiveChatComputer.SendChat(UserMessageTextBox.Text);
             }
             else
             {
-                chatComputer.SendChat(UserNameTextBox.Text, UserMessageTextBox.Text);
+                ActiveChatComputer.SendChat(UserNameTextBox.Text, UserMessageTextBox.Text);
             }
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
