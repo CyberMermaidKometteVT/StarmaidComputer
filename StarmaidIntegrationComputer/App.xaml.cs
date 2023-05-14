@@ -30,6 +30,7 @@ namespace StarmaidIntegrationComputer
     {
         private ServiceProvider serviceProvider;
         private readonly string settingsFilePath = "settings.json";
+        private readonly string speechReplacementsFilePath = "speechReplacements.json";
 
         public App()
         {
@@ -72,6 +73,7 @@ namespace StarmaidIntegrationComputer
             services.AddScoped<ChatWindowFactory>();
             services.AddSingleton(new JailbreakMessage(settings.JailbreakMessage));
             services.AddScoped<SpeechComputer>();
+            services.AddScoped(LoadSpeechReplacements);
 
             serviceProvider = services.BuildServiceProvider();
         }
@@ -123,6 +125,22 @@ namespace StarmaidIntegrationComputer
 
             return settings;
         }
+
+        private List<SpeechReplacement> LoadSpeechReplacements(IServiceProvider _)
+        {
+            string speechReplacementsJson = File.ReadAllText(speechReplacementsFilePath);
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<SpeechReplacement>>(speechReplacementsJson);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show($"Error in your speech replacements file!");
+                return null;
+            }
+        }
+
 
         /// <summary>
         /// This will exit the application if the value in question is too long to be a char, but if the value is missing altogether, will simply return <paramref name="defaultValue"/>.

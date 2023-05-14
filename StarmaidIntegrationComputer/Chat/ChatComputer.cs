@@ -14,7 +14,7 @@ namespace StarmaidIntegrationComputer.Chat
 {
     public class ChatComputer
     {
-        private OpenAIAPI api;
+        private readonly OpenAIAPI api;
         private readonly ILogger<ChatComputer> logger;
         private readonly string jailbreakMessage;
         private Conversation? conversation;
