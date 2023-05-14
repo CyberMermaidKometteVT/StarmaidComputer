@@ -12,6 +12,7 @@ namespace Thalassa
         SpeechRecognitionEngine recognitionEngine = new SpeechRecognitionEngine();
 
         public bool Listening { get; private set; }
+        public Action<string>? DisplayInput { get; set; }
 
         private ILogger<ThalassaCore> Logger { get; set; }
 
@@ -99,6 +100,5 @@ namespace Thalassa
             }
         }
 
-        public Action<string>? DisplayInput { get; set; }
     }
 }
