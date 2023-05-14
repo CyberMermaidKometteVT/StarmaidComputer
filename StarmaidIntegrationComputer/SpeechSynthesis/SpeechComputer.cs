@@ -1,8 +1,11 @@
-﻿using System.Speech.Synthesis;
+﻿using System.Collections.Generic;
+using System.Speech.Synthesis;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+
+using StarmaidIntegrationComputer.StarmaidSettings;
 
 namespace StarmaidIntegrationComputer.SpeechSynthesis
 {
@@ -10,14 +13,16 @@ namespace StarmaidIntegrationComputer.SpeechSynthesis
     {
         private readonly ILogger<SpeechComputer> logger;
         private readonly SpeechSynthesizer speechSynthesizer;
+        private readonly List<SpeechReplacement> speechReplacements;
 
         private Regex removeCodeBlocksRegex = new Regex("```(.*)```", RegexOptions.Singleline);
 
         public Prompt? LastSpeech { get; private set; }
 
-        public SpeechComputer(ILogger<SpeechComputer> logger)
+        public SpeechComputer(ILogger<SpeechComputer> logger, List<SpeechReplacement> speechReplacements)
         {
             this.logger = logger;
+            this.speechReplacements = speechReplacements ?? new List<SpeechReplacement>();
 
             speechSynthesizer = new SpeechSynthesizer();
 
@@ -43,8 +48,12 @@ namespace StarmaidIntegrationComputer.SpeechSynthesis
 
         private string CleanUpScript(string text)
         {
-            text = text.Replace("Komette", "Comet");
             text = removeCodeBlocksRegex.Replace(text, "Sending you a code block.");
+
+            foreach (SpeechReplacement speechReplacement in this.speechReplacements)
+            {
+                text = text.Replace(speechReplacement.Phrase, speechReplacement.Replacement);
+            }
 
             return text;
         }
