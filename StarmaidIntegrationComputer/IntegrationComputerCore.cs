@@ -16,21 +16,6 @@ using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Chat;
 using StarmaidIntegrationComputer.SpeechSynthesis;
-#warning CRITICAL TODO: THE APP IN RELEASE MODE MIGHT NOT BE CLOSING WHEN THE WINDOW IS CLOSED!
-#warning Urgent TODO: Test Use refresh token if we're timing out!
-#warning Get some issue tracking for this dev project for viewers to follow along better!
-#warning There is currently a hardcoded file path used by the logger.  Put that in a config file, along with loglevels and things.
-#warning Get better voice!  Maybe also include a "mute" checkbox!  Also consider a command-line setup.
-#warning Don't forget Discord integration soon!
-#warning When Thalassa speaks, figure out how to make a png glow with her words.  (Check out https://eruben.itch.io/vts-pog ?  Or maybe VNyan, if I can find a way to have some other app talk to it to tell it to modify a blendshape or something that is tied to brightness of a light? )
-#warning OBS plugin?
-#warning Replace all the logic in KruizControl with StarmidIntegrationComputer logic!
-#warning Also I'm seeing a shocking number of OperationCanceledExceptions thrown in "OnError in PubSub Websocket connection" when changing network adapters so maybe I should do something about that?
-#warning Also I get more errors if I mash the start/stop button really fast
-#warning also stop doesn't really work
-#warning I should probably make it so I can copy-paste the contents of the text box
-#warning add setting to auto close the auth window, in case someone wants to see the explanation about it and close it manually
-#warning Also if the browser doesn't launch the behavior is confusing, as we just stop in the middle of authenticating and go no further.  Maybe we should implement a timer to cancel the listening?  And maybe put that in the response page's Javascript.
 
 namespace StarmaidIntegrationComputer
 {
