@@ -2,13 +2,14 @@
 
 using Microsoft.Extensions.Logging;
 
+using Thalassa.VoiceToText;
+
 namespace Thalassa
 {
     public class ThalassaCore : IDisposable
     {
         public const string WAKE_WORD = "Thalassa";
-
-
+        private readonly VoiceToTextManager voiceToTextManager;
         SpeechRecognitionEngine recognitionEngine = new SpeechRecognitionEngine();
 
         public bool Listening { get; private set; }
@@ -27,13 +28,13 @@ namespace Thalassa
             }
         }
 
-        public ThalassaCore()
+        public ThalassaCore(VoiceToTextManager voiceToTextManager)
         {
             recognitionEngine.LoadGrammar(new Grammar(new GrammarBuilder("Thalassa")));
             recognitionEngine.SpeechRecognized += Recognizer_SpeechRecognized;
             recognitionEngine.SpeechRecognitionRejected += RecognitionEngine_SpeechRecognitionRejected;
             recognitionEngine.SetInputToDefaultAudioDevice();
-
+            this.voiceToTextManager = voiceToTextManager;
         }
 
         public void Dispose()
@@ -72,14 +73,18 @@ namespace Thalassa
         {
             string textToDisplay = $"({e.Result.Confidence}): {e.Result.Text}";
             Logger.LogInformation($"Thalassa Speech Recognized: {textToDisplay}");
+
             if (DisplayInput != null)
             {
+                DisplayInput(textToDisplay);
+                //Consider throwing an error if DisplayInput is unset
+            }
 
-                if (DisplayInput != null)
-                {
-                    DisplayInput(textToDisplay);
-                    //Consider throwing an error if DisplayInput is unset
-                }
+            if (e.Result.Confidence > 0.90 && e.Result.Text.Contains("Thalassa"))
+            {
+            Logger.LogInformation($"Wake word identified!  Starting to listen to what comes next!");
+                var result = voiceToTextManager.StartListeningAndInterpret();
+                //StartListening
             }
         }
 
@@ -89,14 +94,11 @@ namespace Thalassa
 
             string textToDisplay = $"({e.Result.Confidence}): {e.Result.Text}";
             Logger.LogInformation($"Thalassa REJECTED Speech: {textToDisplay}");
+
             if (DisplayInput != null)
             {
-
-                if (DisplayInput != null)
-                {
-                    DisplayInput(textToDisplay);
-                    //Consider throwing an error if DisplayInput is unset
-                }
+                DisplayInput(textToDisplay);
+                //Consider throwing an error if DisplayInput is unset
             }
         }
 

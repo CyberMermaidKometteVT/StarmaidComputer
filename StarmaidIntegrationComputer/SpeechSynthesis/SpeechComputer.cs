@@ -54,7 +54,6 @@ namespace StarmaidIntegrationComputer.SpeechSynthesis
             {
                 text = text.Replace(speechReplacement.Phrase, speechReplacement.Replacement);
             }
-
             return text;
         }
     }

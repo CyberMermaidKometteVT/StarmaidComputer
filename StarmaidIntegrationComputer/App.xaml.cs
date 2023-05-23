@@ -15,8 +15,10 @@ using StarmaidIntegrationComputer.SpeechSynthesis;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Twitch;
 using StarmaidIntegrationComputer.Twitch.Authorization;
+using StarmaidIntegrationComputer.VoiceToText;
 
 using Thalassa;
+using Thalassa.VoiceToText;
 
 using TwitchLib.Api.Core.Enums;
 
@@ -66,7 +68,6 @@ namespace StarmaidIntegrationComputer
             services.AddScoped(_ => TwitchApiFactory.Build(settings.TwitchClientId, settings.TwitchClientSecret, scopes));
             services.AddSingleton<ThalassaCore>();
             services.AddScoped<ThalassaWindow>();
-
             services.AddScoped(_ => scopes);
             services.AddScoped(_ => new OpenAIAPI(settings.OpenAIBearerToken));
             services.AddScoped<ChatComputer>();
@@ -74,6 +75,11 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton(new JailbreakMessage(settings.JailbreakMessage));
             services.AddScoped<SpeechComputer>();
             services.AddScoped(LoadSpeechReplacements);
+            services.AddScoped<VoiceToTextComputer>();
+            services.AddScoped<VoiceToTextManager>();
+            services.AddSingleton<TranscriptionSender>();
+            services.AddSingleton<VoiceListener>();
+
 
             serviceProvider = services.BuildServiceProvider();
         }
