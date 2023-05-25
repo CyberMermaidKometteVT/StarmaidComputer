@@ -9,10 +9,10 @@ namespace Thalassa.VoiceToText
     {
         const int maxSpeechLengthMilliseconds = 15 * 1000; //15 sec * milliseconds
         const int terminalSilenceLengthMilliseconds = 2 * 1000; // 2 sec * milliseconds
-        const int maximumMidRecordingSilenceLengthMilliseconds = 3 / 4 * 1000; // 3/4ths second * milliseconds
 
         private readonly ILogger<IVoiceSession> sessionLogger;
         private readonly WaveIn? waveIn = new WaveIn();
+        private WaveFileWriter waveFileWriter;
 
         private readonly TaskCompletionSource<byte[]> taskCompletionSource;
         public Task<byte[]> ListeningTask { get; private set; }
@@ -30,7 +30,9 @@ namespace Thalassa.VoiceToText
         {
             this.sessionLogger = sessionLogger;
 
-            waveIn.WaveFormat = new WaveFormat(48000, 1);
+            waveIn.WaveFormat = new WaveFormat(16000, 16, 1);
+            var waveInProvider = new WaveInProvider(waveIn);
+            waveFileWriter = new WaveFileWriter(resultStream, waveIn.WaveFormat);
 
             taskCompletionSource = new TaskCompletionSource<byte[]>(state: this);
             ListeningTask = taskCompletionSource.Task;
@@ -65,7 +67,7 @@ namespace Thalassa.VoiceToText
             {
                 if (!IsRunning)
                 {
-                sessionLogger.LogInformation("Ignoring incoming voice data, we are trying to stop running!");
+                    sessionLogger.LogInformation("Ignoring incoming voice data, we are trying to stop running!");
                     return;
                 }
 
@@ -97,8 +99,10 @@ namespace Thalassa.VoiceToText
                         silenceBegan = null;
                     }
 
+
                     //Record the sound
-                    resultStream.Write(e.Buffer);
+                    //resultStream.Write(e.Buffer); //delete this if the WaveFileWriter can get the job done!
+                    waveFileWriter.Write(e.Buffer);
                 }
             }
         }
@@ -115,7 +119,7 @@ namespace Thalassa.VoiceToText
             {
                 var silenceDuration = DateTime.Now - silenceBegan.Value;
                 //Has the silence been going on to stop listening?
-                sessionLogger.LogInformation($"Noting{silenceDuration.TotalMilliseconds}ms of silence.");
+                sessionLogger.LogInformation($"Noting {silenceDuration.TotalMilliseconds}ms of silence.");
                 if (silenceDuration.TotalMilliseconds > terminalSilenceLengthMilliseconds)
                 {
                     //It HAS silent long enough to stop listening, so stop recording and call back with the result!
@@ -125,10 +129,7 @@ namespace Thalassa.VoiceToText
                 {
                     //The silence is ongoing, this is not the first moment, but it hasn't been long enough to stop listening yet.  Consider recording the sound.
 
-                    //if (silenceDuration.TotalMilliseconds <= maximumMidRecordingSilenceLengthMilliseconds)
-                    //{
-                        resultStream.Write(buffer);
-                    //}
+                    resultStream.Write(buffer);
                 }
             }
         }

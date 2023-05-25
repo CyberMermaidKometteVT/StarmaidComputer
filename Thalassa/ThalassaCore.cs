@@ -34,6 +34,7 @@ namespace Thalassa
             recognitionEngine.SpeechRecognized += Recognizer_SpeechRecognized;
             recognitionEngine.SpeechRecognitionRejected += RecognitionEngine_SpeechRecognitionRejected;
             recognitionEngine.SetInputToDefaultAudioDevice();
+            recognitionEngine.EndSilenceTimeout = TimeSpan.FromMilliseconds(100);
             this.voiceToTextManager = voiceToTextManager;
         }
 
@@ -74,20 +75,30 @@ namespace Thalassa
             string textToDisplay = $"({e.Result.Confidence}): {e.Result.Text}";
             Logger.LogInformation($"Thalassa Speech Recognized: {textToDisplay}");
 
-            if (DisplayInput != null)
-            {
-                DisplayInput(textToDisplay);
-                //Consider throwing an error if DisplayInput is unset
-            }
+            DisplayIfAble(textToDisplay);
 
             if (e.Result.Confidence > 0.90 && e.Result.Text.Contains("Thalassa"))
             {
-            Logger.LogInformation($"Wake word identified!  Starting to listen to what comes next!");
-                var result = voiceToTextManager.StartListeningAndInterpret();
-                //StartListening
+                Logger.LogInformation($"Wake word identified!  Starting to listen to what comes next!");
+                var result = voiceToTextManager.StartListeningAndInterpret().ContinueWith(ReactToSpeech);
             }
         }
 
+        private void ReactToSpeech(Task<string> completeInterpretationTask)
+        {
+            //Bad case! :(
+            if (completeInterpretationTask.Exception != null)
+            {
+                string errorMessage = $"Error interpreting speech! Error message: {completeInterpretationTask.Exception.Message}";
+                Logger.LogError(completeInterpretationTask.Exception, errorMessage);
+                DisplayIfAble(errorMessage);
+                return;
+            }
+
+            Logger.LogInformation($"Speech after the wake word: {completeInterpretationTask.Result}");
+            //Good case! :D
+            DisplayIfAble($"OpenAI heard: {completeInterpretationTask.Result}");
+        }
 
         private void RecognitionEngine_SpeechRecognitionRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
         {
@@ -95,6 +106,11 @@ namespace Thalassa
             string textToDisplay = $"({e.Result.Confidence}): {e.Result.Text}";
             Logger.LogInformation($"Thalassa REJECTED Speech: {textToDisplay}");
 
+            DisplayIfAble(textToDisplay);
+        }
+
+        private void DisplayIfAble(string textToDisplay)
+        {
             if (DisplayInput != null)
             {
                 DisplayInput(textToDisplay);

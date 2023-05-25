@@ -11,6 +11,7 @@ using OpenAI_API;
 using Serilog;
 
 using StarmaidIntegrationComputer.Chat;
+using StarmaidIntegrationComputer.Common.Settings.Interfaces;
 using StarmaidIntegrationComputer.SpeechSynthesis;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Twitch;
@@ -79,6 +80,9 @@ namespace StarmaidIntegrationComputer
             services.AddScoped<VoiceToTextManager>();
             services.AddSingleton<TranscriptionSender>();
             services.AddSingleton<VoiceListener>();
+            services.AddHttpClient<TranscriptionSender>();
+
+            services.AddSingleton<IOpenAIBearerToken>(settings);
 
 
             serviceProvider = services.BuildServiceProvider();

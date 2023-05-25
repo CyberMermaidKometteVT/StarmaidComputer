@@ -21,7 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Thalassa\Thalassa.csproj" />
+    <ProjectReference Include="..\StarmaidIntegrationComputer.Common\StarmaidIntegrationComputer.Common.csproj" />
+    <ProjectReference Include="..\Thalassa\StarmaidIntegrationComputer.Thalassa.csproj" />
   </ItemGroup>
 
   <ItemGroup>

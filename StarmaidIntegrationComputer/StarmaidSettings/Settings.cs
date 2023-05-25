@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 
+using StarmaidIntegrationComputer.Common.Settings.Interfaces;
+
 namespace StarmaidIntegrationComputer.StarmaidSettings
 {
     //TODO: Consider breaking this out into interfaces to fullfil the Liskov Substitution OOP design principle.
-    public class Settings
+    public class Settings : IOpenAIBearerToken
     {
         public bool RunOnStartup { get; set; }
         public string TwitchApiUsername { get; set; }

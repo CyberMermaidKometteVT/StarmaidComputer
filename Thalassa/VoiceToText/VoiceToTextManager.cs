@@ -15,18 +15,20 @@ namespace Thalassa.VoiceToText
 
         public async Task<string> StartListeningAndInterpret(string context = "")
         {
-#error Leaving off here!  Writing to a wav file for test purposes, and maybe I'll want to keep doing that?  Not sure yet.  But either way, I need to implement the TranscriptionSender class!
             var heardAudio = await voiceListener.StartListening();
-            using (WaveFileWriter writer = new WaveFileWriter(@"D:\temp\heardAudio\out.wav", new WaveFormat(48000, 1)))
+            WaveIn wi = new WaveIn();
+            using (WaveFileWriter writer = new WaveFileWriter(@"D:\temp\heardAudio\out.wav", new WaveFormat(16000, 16, 1)))
             {
-                writer.Write(heardAudio, 0, heardAudio.Length);
+                //TODO: Unsafe conversion, I should maybe do something about this
+
+                await writer.WriteAsync(heardAudio.ToArray(), 0, (int)heardAudio.Length);
             }
-            //var interpretedText = await transcriptionSender.Interpret(context, heardAudio);
+
+            var interpretedText = await transcriptionSender.Interpret(context, heardAudio);
 
             //Any further processing on the interpreted text will go here
             //  unless that processing is dependant on the use.
-            throw new NotImplementedException();
-            //return interpretedText;
+            return interpretedText;
         }
     }
 }
