@@ -14,7 +14,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Thalassa", "Thalassa\Thalassa.csproj", "{5A75DA57-1C9B-4552-A899-404C3DF722C7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StarmaidIntegrationComputer.Thalassa", "Thalassa\StarmaidIntegrationComputer.Thalassa.csproj", "{5A75DA57-1C9B-4552-A899-404C3DF722C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarmaidIntegrationComputer.Common", "StarmaidIntegrationComputer.Common\StarmaidIntegrationComputer.Common.csproj", "{815710AE-E1E0-4657-9E2F-368CA4D9B9FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,6 +36,10 @@ Global
 		{5A75DA57-1C9B-4552-A899-404C3DF722C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A75DA57-1C9B-4552-A899-404C3DF722C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A75DA57-1C9B-4552-A899-404C3DF722C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{815710AE-E1E0-4657-9E2F-368CA4D9B9FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{815710AE-E1E0-4657-9E2F-368CA4D9B9FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{815710AE-E1E0-4657-9E2F-368CA4D9B9FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{815710AE-E1E0-4657-9E2F-368CA4D9B9FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

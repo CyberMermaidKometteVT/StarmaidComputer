@@ -1,23 +1,31 @@
 [
   {
     "Phrase": "Komette",
-    "Replacement:": "Comet"
+    "Replacement": "Comet"
   },
   {
     "Phrase": "WelcomeToJupiter",
-    "Replacement:": "Jupiter"
+    "Replacement": "Jupiter"
   },
   {
-      "Phrase": "actualystan666",
-      "Replacement:": "Stan"
+    "Phrase": "actualystan666",
+    "Replacement": "Stan"
   },
   {
     "Phrase": "Damien_Verde_ch",
-    "Replacement:": "Damien"
+    "Replacement": "Damien"
   },
   {
     "Phrase": "TerraTheEnby",
-    "Replacement:": "Terra"
+    "Replacement": "Terra"
+  },
+  {
+    "Phrase": "SpoonLoeffel",
+    "Replacement": "Spoon"
+  },
+  {
+    "Phrase": "rgood1999",
+    "Replacement": "R good"
   }
 ]
 
