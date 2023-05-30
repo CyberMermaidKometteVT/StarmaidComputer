@@ -3,7 +3,7 @@ using System.Windows;
 
 using Microsoft.Extensions.Logging;
 
-using Thalassa;
+using StarmaidIntegrationComputer.Thalassa;
 
 namespace StarmaidIntegrationComputer
 {

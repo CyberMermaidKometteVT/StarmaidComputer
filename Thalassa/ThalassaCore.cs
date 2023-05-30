@@ -2,9 +2,9 @@
 
 using Microsoft.Extensions.Logging;
 
-using Thalassa.VoiceToText;
+using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 
-namespace Thalassa
+namespace StarmaidIntegrationComputer.Thalassa
 {
     public class ThalassaCore : IDisposable
     {
@@ -14,6 +14,7 @@ namespace Thalassa
 
         public bool Listening { get; private set; }
         public Action<string>? DisplayInput { get; set; }
+        public Action<string>? SpeechInterpreted { get; set; }
 
         private ILogger<ThalassaCore> Logger { get; set; }
 
@@ -98,6 +99,7 @@ namespace Thalassa
             Logger.LogInformation($"Speech after the wake word: {completeInterpretationTask.Result}");
             //Good case! :D
             DisplayIfAble($"OpenAI heard: {completeInterpretationTask.Result}");
+            SpeechInterpreted(completeInterpretationTask.Result);
         }
 
         private void RecognitionEngine_SpeechRecognitionRejected(object? sender, SpeechRecognitionRejectedEventArgs e)

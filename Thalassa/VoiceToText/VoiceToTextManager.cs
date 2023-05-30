@@ -1,6 +1,6 @@
 ﻿using NAudio.Wave;
 
-namespace Thalassa.VoiceToText
+namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 {
     public class VoiceToTextManager
     {
@@ -21,7 +21,7 @@ namespace Thalassa.VoiceToText
             {
                 //TODO: Unsafe conversion, I should maybe do something about this
 
-                await writer.WriteAsync(heardAudio.ToArray(), 0, (int)heardAudio.Length);
+                await writer.WriteAsync(heardAudio.ToArray(), 0, heardAudio.Length);
             }
 
             var interpretedText = await transcriptionSender.Interpret(context, heardAudio);

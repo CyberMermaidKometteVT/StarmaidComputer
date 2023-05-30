@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 
@@ -7,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 
 using StarmaidIntegrationComputer.Chat;
+using StarmaidIntegrationComputer.Thalassa;
 
 namespace StarmaidIntegrationComputer
 {
@@ -18,21 +21,21 @@ namespace StarmaidIntegrationComputer
         private readonly IntegrationComputerCore core;
         private readonly ILoggerFactory loggerFactory;
         private readonly ChatWindowFactory chatWindowFactory;
+        private readonly ThalassaCore thalassaCore;
         LoggerConfiguration loggerConfiguration;
 
-        #region Not API related
         ThalassaWindow thalassaForm;
+        public List<ChatWindow> chatWindows { get; private set; } = new List<ChatWindow>();
 
-        #endregion Not API related
 
-        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, ThalassaWindow thalassaForm, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory)
+        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, ThalassaWindow thalassaForm, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore)
         {
             this.loggerFactory = loggerFactory;
             this.core = core;
             this.thalassaForm = thalassaForm;
             this.loggerConfiguration = loggerConfiguration;
             this.chatWindowFactory = chatWindowFactory;
-
+            this.thalassaCore = thalassaCore;
             this.core.Output = AppendOutput;
             this.core.UpdateIsRunningVisuals = SetToggleButtonContent;
 
@@ -43,8 +46,10 @@ namespace StarmaidIntegrationComputer
             InitializeLogging();
             InitializeThalassaForm();
             SetToggleButtonContent();
-        }
 
+            //This should realy live somewhere else
+            thalassaCore.SpeechInterpreted = OnSpeechInterpreted;
+        }
 
         private void InitializeLogging()
         {
@@ -127,9 +132,21 @@ namespace StarmaidIntegrationComputer
             activeChatWindow.OnNewChatComputer += () =>
             {
                 core.ActiveChatComputer = activeChatWindow.ActiveChatComputer;
+                activeChatWindow.Closed += (sender, args) => { chatWindows.Remove(activeChatWindow); };
             };
 
+            chatWindows.Add(activeChatWindow);
+
             activeChatWindow.Show();
+        }
+
+
+        private void OnSpeechInterpreted(string interpretedSpeech)
+        {
+            if (chatWindows.Any())
+            {
+                chatWindows.First().ActiveChatComputer.SendChat("Komette", $"(spoken) - {interpretedSpeech}");
+            }
         }
     }
 }

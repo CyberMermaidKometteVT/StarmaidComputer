@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 using NAudio.Wave;
 
-namespace Thalassa.VoiceToText
+namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 {
     internal class VoiceSession : IVoiceSession
     {
@@ -153,7 +153,7 @@ namespace Thalassa.VoiceToText
             double rms = 0;
             for (int i = 0; i < buffer.Length; i += 2)
             {
-                short sample = (short)((buffer[i + 1] << 8) | buffer[i]);
+                short sample = (short)(buffer[i + 1] << 8 | buffer[i]);
                 rms += Math.Pow(sample / 32768.0, 2);
             }
             rms = Math.Sqrt(rms / (buffer.Length / 2));

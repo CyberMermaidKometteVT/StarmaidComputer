@@ -1,4 +1,4 @@
-﻿namespace StarmaidIntegrationComputer.Thalassa.VoiceToText.Exceptions
+﻿namespace StarmaidIntegrationComputer.Thalassa.VoiceToText.JsonParsing
 {
     public class ParsedTranscriptionError
     {

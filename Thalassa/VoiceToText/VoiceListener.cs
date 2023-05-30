@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Thalassa.VoiceToText
+namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 {
     public class VoiceListener
     {

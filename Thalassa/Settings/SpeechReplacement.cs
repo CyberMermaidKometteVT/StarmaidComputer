@@ -1,4 +1,4 @@
-﻿namespace StarmaidIntegrationComputer.StarmaidSettings
+﻿namespace StarmaidIntegrationComputer.Thalassa.Settings
 {
     public class SpeechReplacement
     {

@@ -12,14 +12,14 @@ using Serilog;
 
 using StarmaidIntegrationComputer.Chat;
 using StarmaidIntegrationComputer.Common.Settings.Interfaces;
-using StarmaidIntegrationComputer.SpeechSynthesis;
 using StarmaidIntegrationComputer.StarmaidSettings;
+using StarmaidIntegrationComputer.Thalassa;
+using StarmaidIntegrationComputer.Thalassa.Chat;
+using StarmaidIntegrationComputer.Thalassa.Settings;
+using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
+using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 using StarmaidIntegrationComputer.Twitch;
 using StarmaidIntegrationComputer.Twitch.Authorization;
-using StarmaidIntegrationComputer.VoiceToText;
-
-using Thalassa;
-using Thalassa.VoiceToText;
 
 using TwitchLib.Api.Core.Enums;
 
@@ -76,7 +76,6 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton(new JailbreakMessage(settings.JailbreakMessage));
             services.AddScoped<SpeechComputer>();
             services.AddScoped(LoadSpeechReplacements);
-            services.AddScoped<VoiceToTextComputer>();
             services.AddScoped<VoiceToTextManager>();
             services.AddSingleton<TranscriptionSender>();
             services.AddSingleton<VoiceListener>();

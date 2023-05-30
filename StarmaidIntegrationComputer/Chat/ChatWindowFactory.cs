@@ -2,6 +2,8 @@
 
 using OpenAI_API;
 
+using StarmaidIntegrationComputer.Thalassa.Chat;
+
 namespace StarmaidIntegrationComputer.Chat
 {
     public class ChatWindowFactory

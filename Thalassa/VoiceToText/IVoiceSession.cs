@@ -1,5 +1,4 @@
-﻿
-namespace Thalassa.VoiceToText
+﻿namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 {
     public interface IVoiceSession
     {
