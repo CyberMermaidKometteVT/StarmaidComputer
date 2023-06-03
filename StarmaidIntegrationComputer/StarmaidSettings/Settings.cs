@@ -5,7 +5,7 @@ using StarmaidIntegrationComputer.Common.Settings.Interfaces;
 namespace StarmaidIntegrationComputer.StarmaidSettings
 {
     //TODO: Consider breaking this out into interfaces to fullfil the Liskov Substitution OOP design principle.
-    public class Settings : IOpenAIBearerToken
+    public class Settings : IOpenAIBearerToken, ISoundPathSettings, IThalassaCoreSettings
     {
         public bool RunOnStartup { get; set; }
         public string TwitchApiUsername { get; set; }
@@ -22,5 +22,8 @@ namespace StarmaidIntegrationComputer.StarmaidSettings
         public string RedirectUri { get; set; }
         public char ChatCommandIdentifier { get; set; } = '!';
         public char WhisperCommandIdentifier { get; set; } = '!';
+        public string StartingListeningSoundPath { get; set; }
+        public string StoppingListeningSoundPath { get; set; }
+        public float WakeWordConfidenceThreshold { get; set; }
     }
 }

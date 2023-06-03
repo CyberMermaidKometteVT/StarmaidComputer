@@ -59,6 +59,11 @@ namespace StarmaidIntegrationComputer
 
             //TODO: Pretty sure awake brain knows a better way to load settings than what's in this method.  Sleepy brain does not.
             var settings = LoadSettings();
+            services.AddSingleton<IOpenAIBearerToken>(settings);
+            services.AddSingleton<ISoundPathSettings>(settings);
+            services.AddSingleton<IThalassaCoreSettings>(settings);
+
+
             var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions, AuthScopes.Chat_Read, AuthScopes.Chat_Edit };
             services.AddSingleton<IntegrationComputerMainWindow>();
             services.AddSingleton(settings);
@@ -81,7 +86,6 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<VoiceListener>();
             services.AddHttpClient<TranscriptionSender>();
 
-            services.AddSingleton<IOpenAIBearerToken>(settings);
 
 
             serviceProvider = services.BuildServiceProvider();
@@ -123,7 +127,10 @@ namespace StarmaidIntegrationComputer
                 TwitchChatbotChannelName = parsedSettings.TwitchChatbotChannelName,
                 TwitchChatbotUsername = parsedSettings.TwitchChatbotUsername,
                 OpenAIBearerToken = parsedSettings.OpenAIBearerToken,
-                JailbreakMessage = parsedSettings.JailbreakMessage
+                JailbreakMessage = parsedSettings.JailbreakMessage,
+                StartingListeningSoundPath = parsedSettings.StartingListeningSoundPath,
+                StoppingListeningSoundPath = parsedSettings?.StoppingListeningSoundPath,
+                WakeWordConfidenceThreshold = parsedSettings.WakeWordConfidenceThreshold
             };
 
 

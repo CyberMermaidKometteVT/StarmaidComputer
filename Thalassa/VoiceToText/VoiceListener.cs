@@ -19,9 +19,15 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
         public Task<byte[]> StartListening()
         {
+            if (IsRunning)
+            {
+                return Task.FromResult(new byte[0]);
+            }
+
             VoiceSession session = new VoiceSession(sessionLogger);
             runningSessions.Enqueue(session);
 
+            //This code is deprecated and is currently unreachable.
             if (runningSessions.Count > 1)
             {
                 return session.ListeningTask;
@@ -41,7 +47,17 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             if (IsRunning)
             {
                 logger.LogInformation("Starting the next voice session!");
-                runningSessions.Peek().ListeningTask.Start();
+                var nextRunningSession = runningSessions.Peek();
+                //if (nextRunningSessionTask.Status == TaskStatus.WaitingForActivation)
+                //{
+
+                //    Task.Run(() => nextRunningSessionTask);
+
+                //}
+                //else
+                //{
+                    nextRunningSession.Start();
+                //}
             }
 
             logger.LogInformation("Returning on session complete!!");

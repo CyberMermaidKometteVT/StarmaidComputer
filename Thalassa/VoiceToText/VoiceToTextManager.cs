@@ -7,6 +7,8 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
         private readonly TranscriptionSender transcriptionSender;
         private readonly VoiceListener voiceListener;
 
+        public const string ALREADY_LISTENING_RESULT = "↑↑ALREADY LISTENING↑↑";
+
         public VoiceToTextManager(TranscriptionSender transcriptionSender, VoiceListener voiceListener)
         {
             this.transcriptionSender = transcriptionSender;
@@ -16,7 +18,12 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
         public async Task<string> StartListeningAndInterpret(string context = "")
         {
             var heardAudio = await voiceListener.StartListening();
-            WaveIn wi = new WaveIn();
+
+            if (heardAudio.Length == 0)
+            {
+                return ALREADY_LISTENING_RESULT;
+            }
+
             using (WaveFileWriter writer = new WaveFileWriter(@"D:\temp\heardAudio\out.wav", new WaveFormat(16000, 16, 1)))
             {
                 //TODO: Unsafe conversion, I should maybe do something about this

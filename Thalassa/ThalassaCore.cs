@@ -2,6 +2,8 @@
 
 using Microsoft.Extensions.Logging;
 
+using StarmaidIntegrationComputer.Common.Settings.Interfaces;
+using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 
 namespace StarmaidIntegrationComputer.Thalassa
@@ -10,6 +12,7 @@ namespace StarmaidIntegrationComputer.Thalassa
     {
         public const string WAKE_WORD = "Thalassa";
         private readonly VoiceToTextManager voiceToTextManager;
+        private readonly IThalassaCoreSettings settings;
         SpeechRecognitionEngine recognitionEngine = new SpeechRecognitionEngine();
 
         public bool Listening { get; private set; }
@@ -29,14 +32,22 @@ namespace StarmaidIntegrationComputer.Thalassa
             }
         }
 
-        public ThalassaCore(VoiceToTextManager voiceToTextManager)
+        public List<Action> StartingListeningHandlers { get; } = new List<Action>();
+        public List<Action> StoppingListeningHandlers { get; } = new List<Action>();
+
+        public ThalassaCore(VoiceToTextManager voiceToTextManager, IThalassaCoreSettings settings)
         {
-            recognitionEngine.LoadGrammar(new Grammar(new GrammarBuilder("Thalassa")));
+            this.voiceToTextManager = voiceToTextManager;
+            this.settings = settings;
+
+            var builder = new GrammarBuilder(WAKE_WORD);
+            //builder.Append("Alexa");
+
+            recognitionEngine.LoadGrammar(new Grammar(builder));
             recognitionEngine.SpeechRecognized += Recognizer_SpeechRecognized;
             recognitionEngine.SpeechRecognitionRejected += RecognitionEngine_SpeechRecognitionRejected;
             recognitionEngine.SetInputToDefaultAudioDevice();
-            recognitionEngine.EndSilenceTimeout = TimeSpan.FromMilliseconds(100);
-            this.voiceToTextManager = voiceToTextManager;
+            recognitionEngine.EndSilenceTimeout = TimeSpan.FromMilliseconds(50);
         }
 
         public void Dispose()
@@ -78,15 +89,18 @@ namespace StarmaidIntegrationComputer.Thalassa
 
             DisplayIfAble(textToDisplay);
 
-            if (e.Result.Confidence > 0.90 && e.Result.Text.Contains("Thalassa"))
+            if (e.Result.Confidence > settings.WakeWordConfidenceThreshold && e.Result.Text.Contains(WAKE_WORD))
             {
                 Logger.LogInformation($"Wake word identified!  Starting to listen to what comes next!");
                 var result = voiceToTextManager.StartListeningAndInterpret().ContinueWith(ReactToSpeech);
+                StartingListeningHandlers.Invoke();
             }
         }
 
         private void ReactToSpeech(Task<string> completeInterpretationTask)
         {
+            StoppingListeningHandlers.Invoke();
+
             //Bad case! :(
             if (completeInterpretationTask.Exception != null)
             {
@@ -97,6 +111,14 @@ namespace StarmaidIntegrationComputer.Thalassa
             }
 
             Logger.LogInformation($"Speech after the wake word: {completeInterpretationTask.Result}");
+
+            //Bypassing case!  ^.^,
+            if (completeInterpretationTask.Result == VoiceToTextManager.ALREADY_LISTENING_RESULT)
+            {
+                Logger.LogInformation($"Skipping interpreting the speech, as we were already interpreting it in a different task!`");
+                return;
+            }
+
             //Good case! :D
             DisplayIfAble($"OpenAI heard: {completeInterpretationTask.Result}");
             SpeechInterpreted(completeInterpretationTask.Result);

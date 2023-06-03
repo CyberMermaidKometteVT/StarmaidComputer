@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Speech.Synthesis;
+﻿using System.Speech.Synthesis;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 

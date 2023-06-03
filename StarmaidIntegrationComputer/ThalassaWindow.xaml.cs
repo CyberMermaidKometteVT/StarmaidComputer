@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Media;
 
 using Microsoft.Extensions.Logging;
 
+using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa;
 
 namespace StarmaidIntegrationComputer
@@ -14,6 +16,10 @@ namespace StarmaidIntegrationComputer
     {
         public Action<string>? DisplayInput { get; set; }
         public ILogger<ThalassaWindow> Logger { get; internal set; }
+
+        MediaPlayer startingListening = new MediaPlayer();
+        MediaPlayer stoppingListening = new MediaPlayer();
+
 
         private ILoggerFactory loggerFactory;
         public ILoggerFactory LoggerFactory
@@ -27,19 +33,31 @@ namespace StarmaidIntegrationComputer
             }
         }
 
-        private ThalassaCore core;
-        public ThalassaWindow(ThalassaCore core)
+        private readonly ISoundPathSettings soundPathSettings;
+        private readonly ThalassaCore core;
+        public ThalassaWindow(ISoundPathSettings soundPathSettings, ThalassaCore core)
         {
+            this.soundPathSettings = soundPathSettings;
             this.core = core;
             InitializeComponent();
 
             core.DisplayInput = DisplayInput;
             core.LoggerFactory = this.LoggerFactory;
+            core.StartingListeningHandlers.Add(PlayStartingListening);
+            core.StoppingListeningHandlers.Add(PlayStoppingListening);
 
             UpdateStartListeningLabel();
         }
 
-       
+        protected override void OnInitialized(EventArgs e)
+        {
+            startingListening.Open(new Uri(soundPathSettings.StartingListeningSoundPath, UriKind.RelativeOrAbsolute));
+            stoppingListening.Open(new Uri(soundPathSettings.StoppingListeningSoundPath, UriKind.RelativeOrAbsolute));
+
+            base.OnInitialized(e);
+        }
+
+
 
         private void btnStartListening_Click(object sender, RoutedEventArgs e)
         {
@@ -65,6 +83,16 @@ namespace StarmaidIntegrationComputer
             {
                 btnStartListening.Content = "&Start Listening";
             }
+        }
+
+        private void PlayStartingListening()
+        {
+
+            Dispatcher.Invoke(startingListening.Play);
+        }
+        private void PlayStoppingListening()
+        {
+            Dispatcher.Invoke(stoppingListening.Play);
         }
     }
 }
