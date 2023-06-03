@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.Logging;
 
@@ -8,9 +6,9 @@ using OpenAI_API;
 using OpenAI_API.Chat;
 using OpenAI_API.Models;
 
-using StarmaidIntegrationComputer.Common;
+using StarmaidIntegrationComputer.Common.TasksAndExecution;
 
-namespace StarmaidIntegrationComputer.Chat
+namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
     public class ChatComputer
     {

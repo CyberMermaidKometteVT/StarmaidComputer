@@ -14,8 +14,8 @@ using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.StarmaidSettings;
-using StarmaidIntegrationComputer.Chat;
-using StarmaidIntegrationComputer.SpeechSynthesis;
+using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
+using StarmaidIntegrationComputer.Thalassa.Chat;
 
 namespace StarmaidIntegrationComputer
 {

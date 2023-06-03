@@ -5,7 +5,7 @@ using StarmaidIntegrationComputer.Common.Settings.Interfaces;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText.Exceptions;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText.JsonParsing;
 
-namespace Thalassa.VoiceToText
+namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 {
     //TODO: Consider adding logging?
     public class TranscriptionSender

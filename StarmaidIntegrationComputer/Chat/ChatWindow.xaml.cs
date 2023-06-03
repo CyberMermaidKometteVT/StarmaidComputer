@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 
 using OpenAI_API;
 
+using StarmaidIntegrationComputer.Thalassa.Chat;
+
 namespace StarmaidIntegrationComputer.Chat
 {
     /// <summary>
@@ -18,16 +20,50 @@ namespace StarmaidIntegrationComputer.Chat
     {
         private readonly OpenAIAPI api;
         private readonly ILogger<ChatComputer> logger;
-        public ChatComputer? ActiveChatComputer { get; private set; }
+
+        private ChatComputer? activeChatComputerUsePropertyOnly;
+        public ChatComputer? ActiveChatComputer
+        {
+            get
+            {
+                if (activeChatComputerUsePropertyOnly == null)
+                {
+                    CreateNewChatComputer();
+                }
+                return activeChatComputerUsePropertyOnly;
+            }
+            private set { activeChatComputerUsePropertyOnly = value; }
+        }
         private readonly string jailbreakMessage;
-        public Action OnNewChatComputer { get; set; }
+
+
+        private Action onNewChatComputerUsePropertyOnly = null;
+
+        /// <summary>
+        /// Needs to be assigned before creating a new chat computer!
+        /// </summary>
+        public Action OnNewChatComputer
+        {
+            get { return onNewChatComputerUsePropertyOnly; }
+            set
+            {
+                onNewChatComputerUsePropertyOnly = value;
+                if (value != null)
+                {
+                    value();
+                }
+            }
+        }
 
         public ChatWindow(OpenAIAPI api, ILogger<ChatComputer> logger, string jailbreakMessage)
         {
             this.api = api;
             this.logger = logger;
             this.jailbreakMessage = jailbreakMessage;
+
             InitializeComponent();
+
+            CreateNewChatComputer();
 
             ChatbotResponsesRichTextBox.Document.LineHeight = 1;
         }

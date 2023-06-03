@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 using NAudio.Wave;
 
-namespace Thalassa.VoiceToText
+namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 {
     internal class VoiceSession : IVoiceSession
     {
@@ -20,7 +20,6 @@ namespace Thalassa.VoiceToText
 
 
         private MemoryStream resultStream = new MemoryStream();
-        private MemoryStream currentSilence = new MemoryStream();
         private readonly DateTime startTime = DateTime.Now;
         private DateTime? silenceBegan = null;
 
@@ -31,7 +30,6 @@ namespace Thalassa.VoiceToText
             this.sessionLogger = sessionLogger;
 
             waveIn.WaveFormat = new WaveFormat(16000, 16, 1);
-            var waveInProvider = new WaveInProvider(waveIn);
             waveFileWriter = new WaveFileWriter(resultStream, waveIn.WaveFormat);
 
             taskCompletionSource = new TaskCompletionSource<byte[]>(state: this);
@@ -54,7 +52,6 @@ namespace Thalassa.VoiceToText
             {
                 sessionLogger.LogError("Voice session erroring out!!");
                 resultStream.Dispose();
-                currentSilence.Dispose();
                 waveIn.Dispose();
 
                 throw;
@@ -71,7 +68,7 @@ namespace Thalassa.VoiceToText
                     return;
                 }
 
-                sessionLogger.LogInformation("Voice session receiving data!");
+
                 //Check if we should stop listening because we've been going on too long!
                 var recordingDuration = DateTime.Now - startTime;
                 if (recordingDuration.TotalMilliseconds > maxSpeechLengthMilliseconds)
@@ -90,18 +87,12 @@ namespace Thalassa.VoiceToText
                 {
                     //We are NOT in the middle of a moment of silence!
 
-                    //Release silence resources if necessary
-                    if (currentSilence.Length != 0)
-                    {
-                        //Don't release resources if there's nothing in it, that'll just take up unnecessary resources with disposal
-                        currentSilence.Dispose();
-                        currentSilence = new MemoryStream();
-                        silenceBegan = null;
-                    }
+                    sessionLogger.LogInformation("Voice session hearing sound!");
+
+                    silenceBegan = null;
 
 
                     //Record the sound
-                    //resultStream.Write(e.Buffer); //delete this if the WaveFileWriter can get the job done!
                     waveFileWriter.Write(e.Buffer);
                 }
             }
@@ -142,7 +133,6 @@ namespace Thalassa.VoiceToText
             waveIn.StopRecording();
             taskCompletionSource.SetResult(resultStream.ToArray());
             waveIn.Dispose();
-            currentSilence.Dispose();
             resultStream.Dispose();
         }
 
@@ -153,13 +143,17 @@ namespace Thalassa.VoiceToText
             double rms = 0;
             for (int i = 0; i < buffer.Length; i += 2)
             {
-                short sample = (short)((buffer[i + 1] << 8) | buffer[i]);
+                short sample = (short)(buffer[i + 1] << 8 | buffer[i]);
                 rms += Math.Pow(sample / 32768.0, 2);
             }
             rms = Math.Sqrt(rms / (buffer.Length / 2));
 
+            //This should be a LogTrace later!
+
+            sessionLogger.LogInformation($"rms={rms}");
+
             // Check if the RMS is below a certain threshold (indicating silence)
-            return rms < 0.01;
+            return rms < 0.008;
         }
     }
 }

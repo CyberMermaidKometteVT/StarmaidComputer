@@ -21,6 +21,9 @@ namespace StarmaidIntegrationComputer.StarmaidSettings
         public string RedirectUri { get; set; }
         public string ChatCommandIdentifier { get; set; }
         public string WhisperCommandIdentifier { get; set; }
+        public string StartingListeningSoundPath { get; set; }
+        public string StoppingListeningSoundPath { get; set; }
+        public float WakeWordConfidenceThreshold { get; set; }
     }
 
 }

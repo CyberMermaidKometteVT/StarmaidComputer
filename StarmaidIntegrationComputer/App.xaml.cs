@@ -12,14 +12,14 @@ using Serilog;
 
 using StarmaidIntegrationComputer.Chat;
 using StarmaidIntegrationComputer.Common.Settings.Interfaces;
-using StarmaidIntegrationComputer.SpeechSynthesis;
 using StarmaidIntegrationComputer.StarmaidSettings;
+using StarmaidIntegrationComputer.Thalassa;
+using StarmaidIntegrationComputer.Thalassa.Chat;
+using StarmaidIntegrationComputer.Thalassa.Settings;
+using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
+using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 using StarmaidIntegrationComputer.Twitch;
 using StarmaidIntegrationComputer.Twitch.Authorization;
-using StarmaidIntegrationComputer.VoiceToText;
-
-using Thalassa;
-using Thalassa.VoiceToText;
 
 using TwitchLib.Api.Core.Enums;
 
@@ -59,6 +59,11 @@ namespace StarmaidIntegrationComputer
 
             //TODO: Pretty sure awake brain knows a better way to load settings than what's in this method.  Sleepy brain does not.
             var settings = LoadSettings();
+            services.AddSingleton<IOpenAIBearerToken>(settings);
+            services.AddSingleton<ISoundPathSettings>(settings);
+            services.AddSingleton<IThalassaCoreSettings>(settings);
+
+
             var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions, AuthScopes.Chat_Read, AuthScopes.Chat_Edit };
             services.AddSingleton<IntegrationComputerMainWindow>();
             services.AddSingleton(settings);
@@ -76,13 +81,11 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton(new JailbreakMessage(settings.JailbreakMessage));
             services.AddScoped<SpeechComputer>();
             services.AddScoped(LoadSpeechReplacements);
-            services.AddScoped<VoiceToTextComputer>();
             services.AddScoped<VoiceToTextManager>();
             services.AddSingleton<TranscriptionSender>();
             services.AddSingleton<VoiceListener>();
             services.AddHttpClient<TranscriptionSender>();
 
-            services.AddSingleton<IOpenAIBearerToken>(settings);
 
 
             serviceProvider = services.BuildServiceProvider();
@@ -124,7 +127,10 @@ namespace StarmaidIntegrationComputer
                 TwitchChatbotChannelName = parsedSettings.TwitchChatbotChannelName,
                 TwitchChatbotUsername = parsedSettings.TwitchChatbotUsername,
                 OpenAIBearerToken = parsedSettings.OpenAIBearerToken,
-                JailbreakMessage = parsedSettings.JailbreakMessage
+                JailbreakMessage = parsedSettings.JailbreakMessage,
+                StartingListeningSoundPath = parsedSettings.StartingListeningSoundPath,
+                StoppingListeningSoundPath = parsedSettings?.StoppingListeningSoundPath,
+                WakeWordConfidenceThreshold = parsedSettings.WakeWordConfidenceThreshold
             };
 
 

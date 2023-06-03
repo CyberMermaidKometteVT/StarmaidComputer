@@ -1,4 +1,4 @@
-﻿namespace StarmaidIntegrationComputer.Chat
+﻿namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
     public class JailbreakMessage
     {

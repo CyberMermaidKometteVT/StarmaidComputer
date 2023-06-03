@@ -1,13 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Speech.Synthesis;
+﻿using System.Speech.Synthesis;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using StarmaidIntegrationComputer.StarmaidSettings;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 
-namespace StarmaidIntegrationComputer.SpeechSynthesis
+namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 {
     public class SpeechComputer
     {
@@ -50,7 +48,7 @@ namespace StarmaidIntegrationComputer.SpeechSynthesis
         {
             text = removeCodeBlocksRegex.Replace(text, "Sending you a code block.");
 
-            foreach (SpeechReplacement speechReplacement in this.speechReplacements)
+            foreach (SpeechReplacement speechReplacement in speechReplacements)
             {
                 text = text.Replace(speechReplacement.Phrase, speechReplacement.Replacement);
             }
