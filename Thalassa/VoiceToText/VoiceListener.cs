@@ -33,9 +33,22 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
                 return session.ListeningTask;
             }
 
-            session.ListeningTask.ContinueWith(t => OnSessionComplete().Result);
+            session.ListeningTask.ContinueWith(continuationFunction: FireOnSessionCompleteIfNotCanceled());
 
             return session.Start();
+        }
+
+        private Func<Task<byte[]>, byte[]> FireOnSessionCompleteIfNotCanceled()
+        {
+            return t =>
+            {
+                if (t.Status != TaskStatus.Canceled)
+                {
+                    return OnSessionComplete().Result;
+                }
+
+                return new byte[0];
+            };
         }
 
         private Task<byte[]> OnSessionComplete()
@@ -56,12 +69,22 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
                 //}
                 //else
                 //{
-                    nextRunningSession.Start();
+                nextRunningSession.Start();
                 //}
             }
 
             logger.LogInformation("Returning on session complete!!");
             return result;
+        }
+
+        internal void AbortCurrentListening()
+        {
+            foreach (IVoiceSession session in runningSessions)
+            {
+                session.Cancel();
+            }
+
+            runningSessions.Clear();
         }
     }
 }
