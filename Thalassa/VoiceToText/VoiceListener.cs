@@ -48,16 +48,7 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             {
                 logger.LogInformation("Starting the next voice session!");
                 var nextRunningSession = runningSessions.Peek();
-                //if (nextRunningSessionTask.Status == TaskStatus.WaitingForActivation)
-                //{
-
-                //    Task.Run(() => nextRunningSessionTask);
-
-                //}
-                //else
-                //{
-                    nextRunningSession.Start();
-                //}
+                nextRunningSession.Start();
             }
 
             logger.LogInformation("Returning on session complete!!");

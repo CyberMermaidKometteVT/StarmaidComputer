@@ -72,7 +72,7 @@ namespace StarmaidIntegrationComputer.Chat
         {
             ActiveChatComputer = new ChatComputer(api, jailbreakMessage, logger);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
-            ActiveChatComputer.OutputChatbotResponseHandlers.Add(OnMessageReceived);
+            ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 
             if (OnNewChatComputer != null)
             {

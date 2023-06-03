@@ -17,7 +17,8 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         private readonly string jailbreakMessage;
         private Conversation? conversation;
         public AsyncStringMethodList OutputUserMessageHandlers { get; private set; } = new AsyncStringMethodList();
-        public AsyncStringMethodList OutputChatbotResponseHandlers { get; private set; } = new AsyncStringMethodList();
+        public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
+        public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
         private Regex jailbrokenResponseRegex = new Regex(".*Thalassa:(.*)$", RegexOptions.Singleline);
 
         //TODO: Consider making this a setting!
@@ -84,8 +85,14 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             {
                 try
                 {
-                    var response = jailbrokenResponseRegex.Match(chatbotResponseMessage).Groups[1].Value;
-                    chatbotResponseMessage = response;
+                    var chattingResponse = jailbrokenResponseRegex.Match(chatbotResponseMessage).Groups[1].Value;
+
+                    OutputChatbotChattingMessageHandlers.Execute(chattingResponse);
+
+                    var isCommand = chatbotResponseMessage.Contains("Command: ");
+                    OutputChatbotCommandHandlers.Execute(chatbotResponseMessage);
+
+                    return;
                 }
                 //TODO: log this later!
                 catch
@@ -94,7 +101,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 }
             }
 
-            OutputChatbotResponseHandlers.Execute(chatbotResponseMessage);
+            OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
         }
 
         private void OutputUserMessage(string userMessage)

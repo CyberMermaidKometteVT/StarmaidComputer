@@ -92,6 +92,7 @@ namespace StarmaidIntegrationComputer.Thalassa
             if (e.Result.Confidence > settings.WakeWordConfidenceThreshold && e.Result.Text.Contains(WAKE_WORD))
             {
                 Logger.LogInformation($"Wake word identified!  Starting to listen to what comes next!");
+                string context = $"Recent chatters: 
                 var result = voiceToTextManager.StartListeningAndInterpret().ContinueWith(ReactToSpeech);
                 StartingListeningHandlers.Invoke();
             }

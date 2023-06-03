@@ -16,9 +16,12 @@ using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Thalassa.Chat;
+using System.Text.RegularExpressions;
+using StarmaidIntegrationComputer.Commands;
 
 namespace StarmaidIntegrationComputer
 {
+    //TODO: THIS IS A SUPERCLASS THAT SHOULD PROBABLY GET BROKEN OUT FURTHER!
     public class IntegrationComputerCore
     {
         private bool isRunningUsePropertyOnly;
@@ -39,6 +42,11 @@ namespace StarmaidIntegrationComputer
 
         private readonly bool ForceTwitchLoginPrompt = false;
 
+        public List<string> Raiders {get; private set;} = new List<string>();
+        public List<string> Chatters { get; private set; } = new List<string>();
+
+        public const string LAST_RAIDER_VERBIAGE = "the last raider";
+
         private TwitchAPI twitchConnection;
         private TwitchPubSub pubSub;
         private TwitchClient chatbot = new TwitchClient();
@@ -47,6 +55,7 @@ namespace StarmaidIntegrationComputer
         private readonly ILogger<TwitchPubSub> pubSubLogger;
         private readonly ILogger<TwitchClient> chatbotLogger;
         private readonly SpeechComputer speechComputer;
+        private readonly CommandFactory commandFactory;
         private ChatComputer activeChatComputerUsePropertyOnly;
         public ChatComputer ActiveChatComputer
         {
@@ -55,13 +64,17 @@ namespace StarmaidIntegrationComputer
             {
                 activeChatComputerUsePropertyOnly = value;
 
-                if (!ActiveChatComputer.OutputChatbotResponseHandlers.Contains(speechComputer.SpeakFakeAsync))
+                if (!ActiveChatComputer.OutputChatbotChattingMessageHandlers.Contains(speechComputer.SpeakFakeAsync))
                 {
-                    ActiveChatComputer.OutputChatbotResponseHandlers.Add(speechComputer.SpeakFakeAsync);
+                    ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(speechComputer.SpeakFakeAsync);
+                }
+
+                if (!ActiveChatComputer.OutputChatbotCommandHandlers.Contains(ConsiderThalassaResponseAsACommand))
+                {
+                    ActiveChatComputer.OutputChatbotCommandHandlers.Add(ConsiderThalassaResponseAsACommand);
                 }
             }
         }
-
 
         string? broadcasterId;
         AccessToken accessToken;  // THIS IS THE LONG-TERM ONE!
@@ -78,7 +91,7 @@ namespace StarmaidIntegrationComputer
         /// </summary>
         /// <remarks>TODO: Mix this up between calls, just not per session.  (If Twitch likes that.)</remarks>
 
-        public IntegrationComputerCore(ILogger<IntegrationComputerCore> logger, ILogger<TwitchPubSub> pubSubLogger, ILogger<TwitchClient> clientLogger, Settings settings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer)
+        public IntegrationComputerCore(ILogger<IntegrationComputerCore> logger, ILogger<TwitchPubSub> pubSubLogger, ILogger<TwitchClient> clientLogger, ILogger<CommandBase> commandBaseLogger, Settings settings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer)
         {
             this.settings = settings;
             this.logger = logger;
@@ -94,7 +107,7 @@ namespace StarmaidIntegrationComputer
             authorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
 
             IsRunning = settings.RunOnStartup;
-
+            commandFactory = new CommandFactory(commandBaseLogger, settings, speechComputer, chatbot, twitchConnection);
         }
 
         private void AuthorizationProcessUserCanceled()
@@ -128,6 +141,54 @@ namespace StarmaidIntegrationComputer
             ConnectChatbot();
         }
 
+        internal Task ConsiderThalassaResponseAsACommand(string thalassaResponse)
+        {
+            Regex commandRegex = new Regex(@"(?:Command: )(?<command>.*)\n(?:Target: )?(?<target>.*)?", RegexOptions.Compiled);
+            var matches = commandRegex.Matches(thalassaResponse);
+
+            logger.LogInformation($"Considering if the speech {thalassaResponse} is a command");
+            string? commandText = null;
+            string? target = null;
+            if (matches.Count > 0)
+            {
+                var match = matches.First();
+                if (match.Groups.ContainsKey("command"))
+                {
+                    commandText = match.Groups["command"].Value;
+
+                    if (match.Groups.ContainsKey("target"))
+                    {
+                        target = match.Groups["target"].Value;
+                    }
+                }
+            }
+
+            if (commandText != null)
+            {
+                logger.LogInformation($"The speech {thalassaResponse} was a command: command {commandText}, with target {target}.");
+
+                if (target == LAST_RAIDER_VERBIAGE)
+                {
+                    if (Raiders.Any())
+                    {
+                        target = Raiders.Last();
+                        logger.LogInformation($"The last raider, by the way, was {target}.");
+                    }
+                }
+
+#pragma warning disable CS8604 // Possible null reference argument.
+                var command = commandFactory.Parse(commandText, target);
+#error Immediate to do: 1 - Get the raider and chatter lists to the speech interpreter; 2 - Provide a way to abort commands.
+                command.Execute();
+#pragma warning restore CS8604 // Possible null reference argument.
+            }
+            else
+            {
+                logger.LogInformation($"The speech {thalassaResponse} was not a command.");
+            }
+            return Task.CompletedTask;
+        }
+
         private void StartListeningToTwitchApi()
         {
             pubSub.OnPubSubServiceConnected += pubSub_ServiceConnected;
@@ -158,6 +219,8 @@ namespace StarmaidIntegrationComputer
             chatbot.OnNoPermissionError += Chatbot_OnNoPermissionError;
             chatbot.OnSelfRaidError += Chatbot_OnSelfRaidError;
             chatbot.OnMessageReceived += Chatbot_OnMessageReceived;
+            chatbot.OnLeftChannel += Chatbot_OnLeftChannel;
+            chatbot.OnRaidNotification += Chatbot_OnRaidNotification;
 
             chatbotLogger.LogInformation("Connecting to chat bot!");
             bool success = chatbot.Connect();
@@ -173,6 +236,21 @@ namespace StarmaidIntegrationComputer
             }
         }
 
+        private void Chatbot_OnRaidNotification(object? sender, TwitchLib.Client.Events.OnRaidNotificationArgs e)
+        {
+            chatbotLogger.LogInformation($"Raid notification - {e.RaidNotification.DisplayName}");
+            if (!raiders.Contains(e.RaidNotification.DisplayName))
+            {
+                raiders.Add(e.RaidNotification.DisplayName);
+            }
+
+        }
+
+        private void Chatbot_OnLeftChannel(object? sender, TwitchLib.Client.Events.OnLeftChannelArgs e)
+        {
+            logger.LogInformation($"Thalassa has just left the {e.Channel} channel.");
+        }
+
         private void Chatbot_OnLog(object? sender, TwitchLib.Client.Events.OnLogArgs e)
         {
             chatbotLogger.LogInformation($"Chatbot logs: Chatbot {e.BotUsername} logs {e.Data}");
@@ -182,6 +260,11 @@ namespace StarmaidIntegrationComputer
         {
             //TODO: Change the log level of this action
             chatbotLogger.LogInformation($"Message received - {e.ChatMessage.DisplayName}: {e.ChatMessage.Message}");
+
+            if (!chatters.Contains(e.ChatMessage.DisplayName))
+            {
+                chatters.Add(e.ChatMessage.DisplayName);
+            }
         }
 
         private void Chatbot_OnSelfRaidError(object? sender, EventArgs e)
@@ -242,7 +325,6 @@ namespace StarmaidIntegrationComputer
                         return;
                     }
                     RefreshAuthToken();
-
                 }
             }
         }
@@ -250,10 +332,11 @@ namespace StarmaidIntegrationComputer
         private void RefreshAuthToken()
         {
             var refreshResponseTask = twitchConnection.Auth.RefreshAuthTokenAsync(accessToken.RefreshToken, settings.TwitchClientSecret, settings.TwitchClientId);
+
             refreshResponseTask.ContinueWith(async responseTask =>
             {
-            //TODO: Consider further error handling
-            var response = await responseTask;
+                //TODO: Consider further error handling
+                var response = await responseTask;
                 var accessToken = AuthorizationHelper.GetAccessToken(response);
                 this.accessToken = accessToken;
                 logger.LogInformation("Token refreshed.");
@@ -270,7 +353,6 @@ namespace StarmaidIntegrationComputer
         {
             Output($"Raid update - raiding {e.TargetDisplayName}!");
         }
-
 
         private void PubSub_OnChannelPointsRewardRedeemed(object? sender, OnChannelPointsRewardRedeemedArgs e)
         {
@@ -311,8 +393,8 @@ namespace StarmaidIntegrationComputer
                     if (accessToken == null || accessToken.ExpiresAt >= DateTime.Now)
                     {
                         AuthorizationHelper.PromptForUserAuthorization();
-                    //An event in the prompt will move us on to StartListeningToTwitch() when the time is right.
-                }
+                        //An event in the prompt will move us on to StartListeningToTwitch() when the time is right.
+                    }
                     else
                     {
                         StartListeningToTwitchApi();
@@ -320,7 +402,7 @@ namespace StarmaidIntegrationComputer
 
                 }
                 else //!isRunning
-            {
+                {
                     pubSub?.Disconnect();
                     if (chatbot.IsConnected)
                     {
