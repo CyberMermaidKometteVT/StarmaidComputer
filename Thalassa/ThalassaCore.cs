@@ -11,6 +11,8 @@ namespace StarmaidIntegrationComputer.Thalassa
     public class ThalassaCore : IDisposable
     {
         public const string WAKE_WORD = "Thalassa";
+        public const string ABORT_PHRASE = WAKE_WORD + " Abort";
+        public const float ABORT_THRESHOLD = 0.80f;
         private readonly VoiceToTextManager voiceToTextManager;
         private readonly IThalassaCoreSettings settings;
         SpeechRecognitionEngine recognitionEngine = new SpeechRecognitionEngine();
@@ -40,10 +42,22 @@ namespace StarmaidIntegrationComputer.Thalassa
             this.voiceToTextManager = voiceToTextManager;
             this.settings = settings;
 
-            var builder = new GrammarBuilder(WAKE_WORD);
-            //builder.Append("Alexa");
+            var wakeWordBuilder = new GrammarBuilder(WAKE_WORD);
+            var alexaToIgnoreBuilder = new GrammarBuilder("Alexa");
 
-            recognitionEngine.LoadGrammar(new Grammar(builder));
+            List<GrammarBuilder> rootGrammars = new List<GrammarBuilder> { wakeWordBuilder };
+            if (WAKE_WORD != "Alexa")
+            {
+                rootGrammars.Add(alexaToIgnoreBuilder);
+            }
+
+            var interruptBuilder = new GrammarBuilder(ABORT_PHRASE);
+            rootGrammars.Add(interruptBuilder);
+
+
+            var rootGrammarBuilder = new Choices(rootGrammars.ToArray());
+
+            recognitionEngine.LoadGrammar(new Grammar(rootGrammarBuilder));
             recognitionEngine.SpeechRecognized += Recognizer_SpeechRecognized;
             recognitionEngine.SpeechRecognitionRejected += RecognitionEngine_SpeechRecognitionRejected;
             recognitionEngine.SetInputToDefaultAudioDevice();
@@ -89,11 +103,18 @@ namespace StarmaidIntegrationComputer.Thalassa
 
             DisplayIfAble(textToDisplay);
 
-            if (e.Result.Confidence > settings.WakeWordConfidenceThreshold && e.Result.Text.Contains(WAKE_WORD))
+            if (e.Result.Confidence > settings.WakeWordConfidenceThreshold && e.Result.Text == WAKE_WORD)
             {
                 Logger.LogInformation($"Wake word identified!  Starting to listen to what comes next!");
                 var result = voiceToTextManager.StartListeningAndInterpret().ContinueWith(ReactToSpeech);
                 StartingListeningHandlers.Invoke();
+            }
+
+            if (e.Result.Confidence > ABORT_THRESHOLD && e.Result.Text == ABORT_PHRASE)
+            {
+                Logger.LogInformation($"Abort phrase identified! Interrupting action!");
+
+                voiceToTextManager.AbortCurrentListening();
             }
         }
 
@@ -110,9 +131,19 @@ namespace StarmaidIntegrationComputer.Thalassa
                 return;
             }
 
+            //Bypassing case: Abort issued
+            if (completeInterpretationTask.Status == TaskStatus.Canceled)
+            {
+
+                string abortMessage = $"ABORT ISSUED, NOT INTERPRETING SPEECH";
+                Logger.LogInformation(abortMessage);
+                DisplayIfAble(abortMessage);
+                return;
+            }
+
             Logger.LogInformation($"Speech after the wake word: {completeInterpretationTask.Result}");
 
-            //Bypassing case!  ^.^,
+            //Bypassing case: Already listening, not requeuing!  ^.^,
             if (completeInterpretationTask.Result == VoiceToTextManager.ALREADY_LISTENING_RESULT)
             {
                 Logger.LogInformation($"Skipping interpreting the speech, as we were already interpreting it in a different task!`");

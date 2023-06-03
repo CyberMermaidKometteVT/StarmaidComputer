@@ -37,5 +37,10 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             //  unless that processing is dependant on the use.
             return interpretedText;
         }
+
+        public void AbortCurrentListening()
+        {
+            voiceListener.AbortCurrentListening();
+        }
     }
 }

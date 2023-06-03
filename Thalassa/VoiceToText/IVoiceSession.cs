@@ -5,5 +5,6 @@
         Task<byte[]> ListeningTask { get; }
 
         Task<byte[]> Start();
+        void Cancel();
     }
 }

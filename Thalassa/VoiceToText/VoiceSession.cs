@@ -1,4 +1,6 @@
 ﻿
+using System.Threading.Tasks;
+
 using Microsoft.Extensions.Logging;
 
 using NAudio.Wave;
@@ -10,12 +12,13 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
         const int maxSpeechLengthMilliseconds = 15 * 1000; //15 sec * milliseconds
         const int terminalSilenceLengthMilliseconds = 2 * 1000; // 2 sec * milliseconds
 
+        public Task<byte[]> ListeningTask { get; private set; }
+
         private readonly ILogger<IVoiceSession> sessionLogger;
         private readonly WaveIn? waveIn = new WaveIn();
         private WaveFileWriter waveFileWriter;
 
         private readonly TaskCompletionSource<byte[]> taskCompletionSource;
-        public Task<byte[]> ListeningTask { get; private set; }
         public bool IsRunning { get; private set; } = false;
 
 
@@ -65,6 +68,12 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
                 if (!IsRunning)
                 {
                     sessionLogger.LogInformation("Ignoring incoming voice data, we are trying to stop running!");
+                    return;
+                }
+
+                if (ListeningTask.IsCanceled)
+                {
+                    StopListening();
                     return;
                 }
 
@@ -131,13 +140,16 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             sessionLogger.LogInformation($"Stopping listening.");
 
             waveIn.StopRecording();
-            taskCompletionSource.SetResult(resultStream.ToArray());
+            if (this.ListeningTask.Status != TaskStatus.Canceled)
+            {
+                taskCompletionSource.SetResult(resultStream.ToArray());
+            }
             waveIn.Dispose();
             resultStream.Dispose();
         }
 
 
-        bool IsSilence(byte[] buffer)
+        private bool IsSilence(byte[] buffer)
         {
             // Calculate the root mean square (RMS) of the audio data
             double rms = 0;
@@ -154,6 +166,11 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
             // Check if the RMS is below a certain threshold (indicating silence)
             return rms < 0.008;
+        }
+
+        public void Cancel()
+        {
+            this.taskCompletionSource.SetCanceled();
         }
     }
 }
