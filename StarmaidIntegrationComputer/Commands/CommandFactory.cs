@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 
 using StarmaidIntegrationComputer.Commands.Twitch;
+using StarmaidIntegrationComputer.Common.DataStructures;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 
@@ -26,7 +27,7 @@ namespace StarmaidIntegrationComputer.Commands
             this.twitchApi = twitchApi;
         }
 
-        public CommandBase Parse(string command, string target)
+        public CommandBase Parse(CommandStateBag stateBag, string command, string target)
         {
             if (command == "shoutout")
             {

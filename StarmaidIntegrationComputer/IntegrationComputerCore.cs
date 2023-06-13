@@ -18,6 +18,9 @@ using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Thalassa.Chat;
 using System.Text.RegularExpressions;
 using StarmaidIntegrationComputer.Commands;
+using StarmaidIntegrationComputer.Common.DataStructures;
+using StarmaidIntegrationComputer.Helpers;
+using StarmaidIntegrationComputer.Common.DataStructures.CommandState;
 
 namespace StarmaidIntegrationComputer
 {
@@ -42,9 +45,6 @@ namespace StarmaidIntegrationComputer
 
         private readonly bool ForceTwitchLoginPrompt = false;
 
-        public List<string> Raiders {get; private set;} = new List<string>();
-        public List<string> Chatters { get; private set; } = new List<string>();
-
         public const string LAST_RAIDER_VERBIAGE = "the last raider";
 
         private TwitchAPI twitchConnection;
@@ -56,6 +56,8 @@ namespace StarmaidIntegrationComputer
         private readonly ILogger<TwitchClient> chatbotLogger;
         private readonly SpeechComputer speechComputer;
         private readonly CommandFactory commandFactory;
+
+        private readonly CommandStateBag CommandStateBag = new CommandStateBag();
         private ChatComputer activeChatComputerUsePropertyOnly;
         public ChatComputer ActiveChatComputer
         {
@@ -169,16 +171,17 @@ namespace StarmaidIntegrationComputer
 
                 if (target == LAST_RAIDER_VERBIAGE)
                 {
-                    if (Raiders.Any())
+                    if (CommandStateBag.Raiders.Any())
                     {
-                        target = Raiders.Last();
+                        target = CommandStateBag.Raiders.Last().RaiderName;
                         logger.LogInformation($"The last raider, by the way, was {target}.");
                     }
                 }
 
 #pragma warning disable CS8604 // Possible null reference argument.
-                var command = commandFactory.Parse(commandText, target);
-#error Immediate to do: 1 - Get the raider and chatter lists to the speech interpreter; 2 - Provide a way to abort commands.
+                var command = commandFactory.Parse(CommandStateBag, commandText, target);
+#error Immediate to do: 1 - Get the raider and chatter lists to the speech interpreter (currently we ARE maintaing the lists, and the command factory knows about them!); 2 - Provide a way to abort commands.  (We've started on this, need to review the state)
+#error Hey maybe we should include a list of all raiders that have been shouted out already, and have a command to shout all of the others out!
                 command.Execute();
 #pragma warning restore CS8604 // Possible null reference argument.
             }
@@ -221,6 +224,9 @@ namespace StarmaidIntegrationComputer
             chatbot.OnMessageReceived += Chatbot_OnMessageReceived;
             chatbot.OnLeftChannel += Chatbot_OnLeftChannel;
             chatbot.OnRaidNotification += Chatbot_OnRaidNotification;
+            chatbot.OnUserJoined += Chatbot_OnUserJoined;
+            chatbot.OnUserLeft += Chatbot_OnUserLeft;
+            //chatbot.OnUserTimedout += Chatbot_OnUserTimedout; //Do we want a timed-out user list?  This is the Twitch temporary chat ban, not a leave event!
 
             chatbotLogger.LogInformation("Connecting to chat bot!");
             bool success = chatbot.Connect();
@@ -236,14 +242,43 @@ namespace StarmaidIntegrationComputer
             }
         }
 
+        private void Chatbot_OnUserLeft(object? sender, TwitchLib.Client.Events.OnUserLeftArgs e)
+        {
+            CommandStateBag.Viewers.Remove(e.Username);
+        }
+
+        private void Chatbot_OnUserJoined(object? sender, TwitchLib.Client.Events.OnUserJoinedArgs e)
+        {
+            if (!CommandStateBag.Viewers.Contains(e.Username))
+            {
+                CommandStateBag.Viewers.Add(e.Username);
+            }
+        }
+
         private void Chatbot_OnRaidNotification(object? sender, TwitchLib.Client.Events.OnRaidNotificationArgs e)
         {
             chatbotLogger.LogInformation($"Raid notification - {e.RaidNotification.DisplayName}");
-            if (!raiders.Contains(e.RaidNotification.DisplayName))
-            {
-                raiders.Add(e.RaidNotification.DisplayName);
-            }
 
+            DateTime raidTimestamp = TmiSentTsHelpers.ParseOrNow(e.RaidNotification.TmiSentTs);
+
+            RaiderInfo? previousRaider = CommandStateBag.Raiders.SingleOrDefault(previousRaider => previousRaider.RaiderName == e.RaidNotification.DisplayName);
+
+
+            if (previousRaider == null)
+            {
+                RaiderInfo raider = new RaiderInfo
+                {
+                    RaiderName = e.RaidNotification.DisplayName,
+                    RaidTime = raidTimestamp,
+                    LastShoutedOut = null
+                };
+
+                CommandStateBag.Raiders.Add(raider);
+            }
+            else
+            {
+                previousRaider.RaidTime = raidTimestamp;
+            }
         }
 
         private void Chatbot_OnLeftChannel(object? sender, TwitchLib.Client.Events.OnLeftChannelArgs e)
@@ -261,9 +296,17 @@ namespace StarmaidIntegrationComputer
             //TODO: Change the log level of this action
             chatbotLogger.LogInformation($"Message received - {e.ChatMessage.DisplayName}: {e.ChatMessage.Message}");
 
-            if (!chatters.Contains(e.ChatMessage.DisplayName))
+            if (!CommandStateBag.Chatters.Any(chatter => chatter.ChatterName == e.ChatMessage.DisplayName))
             {
-                chatters.Add(e.ChatMessage.DisplayName);
+                DateTime sentTimestamp = TmiSentTsHelpers.ParseOrNow(e.ChatMessage.TmiSentTs);
+
+                //Have a breakpoint here to see if the timestamp is a reasonable number - it might be a FromUnixTimeMilliseconds instead of a FromUnixTimeSeconds.
+
+                var messageInfo = new ChatterMessageInfo { Message = e.ChatMessage.Message, Timestamp = sentTimestamp };
+
+                Chatter newChatter = new Chatter(e.ChatMessage.DisplayName, messageInfo);
+
+                CommandStateBag.Chatters.Add(newChatter);
             }
         }
 
