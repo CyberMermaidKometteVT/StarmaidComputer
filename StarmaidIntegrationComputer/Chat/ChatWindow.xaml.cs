@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using OpenAI_API;
 
+using StarmaidIntegrationComputer.Common.DataStructures;
 using StarmaidIntegrationComputer.Thalassa.Chat;
 
 namespace StarmaidIntegrationComputer.Chat
@@ -19,6 +20,7 @@ namespace StarmaidIntegrationComputer.Chat
     public partial class ChatWindow : Window
     {
         private readonly OpenAIAPI api;
+        private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
 
         private ChatComputer? activeChatComputerUsePropertyOnly;
@@ -55,9 +57,10 @@ namespace StarmaidIntegrationComputer.Chat
             }
         }
 
-        public ChatWindow(OpenAIAPI api, ILogger<ChatComputer> logger, string jailbreakMessage)
+        public ChatWindow(OpenAIAPI api, StarmaidStateBag stateBag, ILogger<ChatComputer> logger, string jailbreakMessage)
         {
             this.api = api;
+            this.stateBag = stateBag;
             this.logger = logger;
             this.jailbreakMessage = jailbreakMessage;
 
@@ -70,7 +73,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void CreateNewChatComputer()
         {
-            ActiveChatComputer = new ChatComputer(api, jailbreakMessage, logger);
+            ActiveChatComputer = new ChatComputer(api, stateBag, jailbreakMessage, logger);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 

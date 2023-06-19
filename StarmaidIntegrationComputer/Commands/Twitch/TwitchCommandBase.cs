@@ -2,6 +2,7 @@
 
 using StarmaidIntegrationComputer.Commands.Twitch.Enums;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
+using StarmaidIntegrationComputer.Twitch;
 
 using TwitchLib.Api;
 using TwitchLib.Client;
@@ -12,12 +13,14 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
     {
         protected readonly TwitchAPI? twitchApi;
         protected readonly TwitchClient? chatbot;
+        protected readonly LiveAuthorizationInfo liveAuthorizationInfo;
         public TwitchStateToValidate stateToValidate;
-        protected TwitchCommandBase(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchStateToValidate stateToValidate, TwitchAPI? twitchApi = null, TwitchClient? chatbot = null) : base(logger, speechComputer)
+        protected TwitchCommandBase(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchStateToValidate stateToValidate, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI? twitchApi = null, TwitchClient? chatbot = null) : base(logger, speechComputer)
         {
             this.stateToValidate = stateToValidate;
             this.twitchApi = twitchApi;
             this.chatbot = chatbot;
+            this.liveAuthorizationInfo = liveAuthorizationInfo;
         }
 
         protected override bool ValidateState()

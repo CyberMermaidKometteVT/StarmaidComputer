@@ -1,6 +1,6 @@
 ﻿namespace StarmaidIntegrationComputer.Common.DataStructures
 {
-    public class CommandStateBag
+    public class StarmaidStateBag
     {
         //public RaiderList Raiders { get; } = new RaiderList();
         public SortedSet<RaiderInfo> Raiders { get; } = new SortedSet<RaiderInfo>();

@@ -11,6 +11,7 @@ using OpenAI_API;
 using Serilog;
 
 using StarmaidIntegrationComputer.Chat;
+using StarmaidIntegrationComputer.Common.DataStructures;
 using StarmaidIntegrationComputer.Common.Settings.Interfaces;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa;
@@ -64,7 +65,9 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<IThalassaCoreSettings>(settings);
 
 
-            var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions, AuthScopes.Chat_Read, AuthScopes.Chat_Edit };
+            var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions, AuthScopes.Chat_Read, AuthScopes.Chat_Edit
+                //, AuthScopes.Helix_Moderator_Manage_Shoutouts
+                };
             services.AddSingleton<IntegrationComputerMainWindow>();
             services.AddSingleton(settings);
             services.AddSingleton<TwitchAuthResponseWebserver>();
@@ -85,6 +88,8 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<TranscriptionSender>();
             services.AddSingleton<VoiceListener>();
             services.AddHttpClient<TranscriptionSender>();
+            services.AddSingleton<StarmaidStateBag>();
+            services.AddSingleton<LiveAuthorizationInfo>();
 
 
 

@@ -6,6 +6,7 @@ using OpenAI_API;
 using OpenAI_API.Chat;
 using OpenAI_API.Models;
 
+using StarmaidIntegrationComputer.Common.DataStructures;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 
 namespace StarmaidIntegrationComputer.Thalassa.Chat
@@ -13,6 +14,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
     public class ChatComputer
     {
         private readonly OpenAIAPI api;
+        private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
         private readonly string jailbreakMessage;
         private Conversation? conversation;
@@ -23,32 +25,62 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
         //TODO: Consider making this a setting!
         const bool useJailBreaking = true;
-        public ChatComputer(OpenAIAPI api, string jailbreakMessage, ILogger<ChatComputer> logger)
+        public ChatComputer(OpenAIAPI api, StarmaidStateBag stateBag, string jailbreakMessage, ILogger<ChatComputer> logger)
         {
             this.api = api;
+            this.stateBag = stateBag;
             this.logger = logger;
             this.jailbreakMessage = jailbreakMessage;
         }
 
         public async Task SendChat(string userMessage)
         {
-            EnsureConversationInitialized();
+            PrepareToSendChat(userMessage);
 
             conversation.AppendUserInput(userMessage);
-            OutputUserMessage($"{userMessage}{Environment.NewLine}");
+            OutputUserMessage($"{userMessage}{Environment.NewLine}"); ;
             var response = await conversation.GetResponseFromChatbotAsync();
             OutputChatbotResponse($"Thalassa: {response}{Environment.NewLine}");
         }
 
         public async Task SendChat(string userName, string userMessage)
         {
-            EnsureConversationInitialized();
+            PrepareToSendChat(userMessage);
 
             conversation.AppendUserInputWithName(userName, userMessage);
 
             OutputUserMessage($"{userName}: {userMessage}");
-            var response = await conversation.GetResponseFromChatbotAsync();
+
+            string response;
+            try
+            {
+                response = await conversation.GetResponseFromChatbotAsync();
+            }
+            catch (HttpRequestException ex)
+            {
+#warning I've got OpenAI error messages being parsed out better elsewhere, find that and apply it here!
+                string failureMessage = $"Thalassa failed to respond, with the following error: {ex.Message}";
+                logger.LogError(failureMessage);
+                OutputChatbotResponse(failureMessage);
+                return;
+            }
+
             OutputChatbotResponse(response);
+        }
+
+        private void PrepareToSendChat(string userMessage)
+        {
+            EnsureConversationInitialized();
+            AppendCurrentStarmaidStateToConversation();
+        }
+
+        private void AppendCurrentStarmaidStateToConversation()
+        {
+            string raiders = string.Join(", ", stateBag.Raiders.Select(raider => raider.RaiderName));
+            string chatters = string.Join(", ", stateBag.Chatters.Select(chatter => chatter.ChatterName));
+            string viewers = string.Join(", ", stateBag.Viewers);
+            string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
+            conversation.AppendSystemMessage(starmaidContext);
         }
 
         private void EnsureConversationInitialized()
@@ -57,7 +89,13 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             {
                 logger.LogInformation("Starting a new conversation.");
 
-                conversation = api.Chat.CreateConversation(new ChatRequest { MaxTokens = 3000, TopP = 0.02, NumChoicesPerMessage = 1, Model = Model.ChatGPTTurbo });
+                conversation = api.Chat.CreateConversation(new ChatRequest
+                {
+                    MaxTokens = 8000,
+                    TopP = 0.02,
+                    NumChoicesPerMessage = 1,
+                    Model = new Model("gpt-3.5-turbo-16k")
+                });
 
 #pragma warning disable CS0162 // Unreachable code detected - skipping because of consts in logic, to be set by hand.
                 if (useJailBreaking)

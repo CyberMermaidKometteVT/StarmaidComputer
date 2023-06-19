@@ -17,7 +17,7 @@ namespace StarmaidIntegrationComputer.Helpers
             DateTime result = DateTime.Now;
             if (couldParseTimestamp)
             {
-                result = DateTimeOffset.FromUnixTimeSeconds(tmiSentTsLong).UtcDateTime;
+                result = DateTimeOffset.FromUnixTimeMilliseconds(tmiSentTsLong).UtcDateTime;
             }
 
             return result;

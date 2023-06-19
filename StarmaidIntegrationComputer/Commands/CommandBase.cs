@@ -58,10 +58,11 @@ namespace StarmaidIntegrationComputer.Commands
 
         }
 
-#warning this really shouldn't work, does it?
+#warning Async event handlers might not be great, do further research
         private async void Timer_Elapsed(object? sender, ElapsedEventArgs e)
         {
             //We NEED to stop the timer immediately, or we might execute it multiple times, especially if we hit a breakpoint!
+#warning There is a case where this might not stop if we hit an exception perfoming the command, figure that out!  Maybe we had a second command queued up?
             executionTimer.Stop();
             executionTimer.Dispose();
 
