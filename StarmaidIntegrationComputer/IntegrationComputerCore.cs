@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using StarmaidIntegrationComputer.Twitch.Authorization.Models;
 
 using TwitchLib.Api;
-using TwitchLib.Api.Core.Enums;
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
@@ -23,6 +22,9 @@ using StarmaidIntegrationComputer.Helpers;
 using StarmaidIntegrationComputer.Common.DataStructures.CommandState;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Client.Events;
+
+//#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
+//#error This might be a major PITA!
 
 namespace StarmaidIntegrationComputer
 {
