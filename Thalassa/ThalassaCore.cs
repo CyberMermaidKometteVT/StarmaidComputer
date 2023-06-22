@@ -42,8 +42,13 @@ namespace StarmaidIntegrationComputer.Thalassa
             this.voiceToTextManager = voiceToTextManager;
             this.settings = settings;
             this.stateBag = stateBag;
-            var builder = new GrammarBuilder(WAKE_WORD);
+            //var builder = new GrammarBuilder(WAKE_WORD);
             //builder.Append("Alexa");
+
+            //Find sound-alike words at https://www.rhymezone.com/r/rhyme.cgi?org1=syl&org2=l&typeofrhyme=sim&Word=Thalassa
+            List<string> wakeWordAndSoundalikes = new List<string>{ WAKE_WORD, "thalasso", "thalassic", "Kailasa", "Colossae", "Kolasa", "Salassi", "Felasa", "thawless", "the last", "the least", "the list", "the lesson", "thallus", "thalami", "thallous", "Thalassoma", "tholus", "balasa", "thelazia", "Thalys", "thalassian", "Melissa", "Khalsa", "Tolosa", "halacha", "colossi", "Colusa", "Malissa", "Calusa", "Felisa", "malacia", "Melisa", "calesa", "Filosa", "dalasi", "jalsa", "Mellisa", "malisa", "Mellissa", "phalsa", "julissa", "Aglossa", "Milissa", "Folusa", "tulisa", "melosa", "calsa", "thalluses", "the lot", "the lodge", "Thelma", "salsa", "Thalia", "tholos", "falsa", "Galasso", "tholeiite", "thylacine", "Alosa", "tholoi", "theileria", "thelema", "Tholen", "Thraso", "Yalsa", "Alausa", "Thielavia", "thulia", "the holy see", "policy", "fallacy", "class a", "colossal", "solace", "holy see", "Elisa", "Hollis", "Silesia", "Tulsa", "colossus", "salas", "Selassie", "mollusca", "Collis", "yellow sea", "Alyssa", "mollusc", "philosophe", "Walesa", "mollusk", "salama", "Manasa", "Alisa", "Malia", "salles", "Mollison", "Collison", "Alissa", "salis", "mollis", "Alexa" };
+            Choices choices = new Choices(wakeWordAndSoundalikes.ToArray());
+            var builder = choices.ToGrammarBuilder();
 
             recognitionEngine.LoadGrammar(new Grammar(builder));
             recognitionEngine.SpeechRecognized += Recognizer_SpeechRecognized;
