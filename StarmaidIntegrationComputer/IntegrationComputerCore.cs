@@ -23,8 +23,8 @@ using StarmaidIntegrationComputer.Common.DataStructures.CommandState;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Client.Events;
 
-//#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
-//#error This might be a major PITA!
+#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
+#error This might be a major PITA!
 
 namespace StarmaidIntegrationComputer
 {
