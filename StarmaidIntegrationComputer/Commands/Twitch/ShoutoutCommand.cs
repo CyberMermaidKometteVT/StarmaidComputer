@@ -46,7 +46,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
                 chatbot.JoinChannel(settings.TwitchChatbotChannelName);
             }
 
-            chatbot.SendMessage(settings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by {ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}");
+            chatbot.SendMessage(settings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}");
 
             //TODO: Once the enum list for the scopes includes the right scope for this, this is how
             //  we do a /shoutout! :D

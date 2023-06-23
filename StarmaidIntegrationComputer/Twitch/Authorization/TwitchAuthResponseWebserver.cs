@@ -96,7 +96,7 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
                     OnAuthorizationCodeSet(authorizationCode);
 
                     var response = context.Response;
-                    const string responseString = "<html><body><script type='text/javascript'>window.close();</script>The window can now be closed, if it isn't automatically.</body></html>";
+                    const string responseString = "<html><head><script type='text/javascript'>function closeWindow(){window.close();} closeWindow();</script></head><body onload=\"closeWindow();\">The window can now be closed, if it isn't automatically.</body></html>";
                     byte[] contentBytes = System.Text.Encoding.UTF8.GetBytes(responseString);
 
                     response.ContentLength64 = contentBytes.Length;

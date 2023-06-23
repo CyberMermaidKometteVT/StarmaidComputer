@@ -23,8 +23,8 @@ using StarmaidIntegrationComputer.Common.DataStructures.CommandState;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Client.Events;
 
-#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
-#error This might be a major PITA!
+//#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
+//#error This might be a major PITA!
 
 namespace StarmaidIntegrationComputer
 {
@@ -45,7 +45,7 @@ namespace StarmaidIntegrationComputer
         private Settings settings;
         public TwitchAuthorizationUserTokenFlowHelper AuthorizationHelper { get; }
 
-        private readonly bool ForceTwitchLoginPrompt = false;
+        private readonly bool ForceTwitchLoginPrompt = true;
 
 
         private TwitchAPI twitchConnection;

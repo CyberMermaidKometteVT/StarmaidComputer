@@ -38,6 +38,7 @@ namespace StarmaidIntegrationComputer.Commands
 
         public CommandBase? Parse(string command, string target)
         {
+            command = command.ToLower();
             if (command == "shoutout")
             {
                 InterpretShoutoutTarget(target);
