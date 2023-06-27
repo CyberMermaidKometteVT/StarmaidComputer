@@ -1,8 +1,12 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Media;
 using System.Windows;
 using System.Windows.Media;
 
 using Microsoft.Extensions.Logging;
+
+using NAudio.Wave;
 
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa;
@@ -17,9 +21,11 @@ namespace StarmaidIntegrationComputer
         public Action<string>? DisplayInput { get; set; }
         public ILogger<ThalassaWindow> Logger { get; internal set; }
 
-        MediaPlayer startingListening = new MediaPlayer();
-        MediaPlayer stoppingListening = new MediaPlayer();
+        AudioFileReader startingListeningReader;
+        AudioFileReader stoppingListeningReader;
 
+        WaveOutEvent startingListening = new WaveOutEvent();
+        WaveOutEvent stoppingListening = new WaveOutEvent();
 
         private ILoggerFactory loggerFactory;
         public ILoggerFactory LoggerFactory
@@ -51,10 +57,38 @@ namespace StarmaidIntegrationComputer
 
         protected override void OnInitialized(EventArgs e)
         {
-            startingListening.Open(new Uri(soundPathSettings.StartingListeningSoundPath, UriKind.RelativeOrAbsolute));
-            stoppingListening.Open(new Uri(soundPathSettings.StoppingListeningSoundPath, UriKind.RelativeOrAbsolute));
+            startingListeningReader = new AudioFileReader(soundPathSettings.StartingListeningSoundPath);
+            startingListening.Init(startingListeningReader);
+
+            stoppingListeningReader = new AudioFileReader(soundPathSettings.StoppingListeningSoundPath);
+            stoppingListening.Init(stoppingListeningReader);
 
             base.OnInitialized(e);
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+
+            if (startingListeningReader != null)
+            {
+                startingListeningReader.Dispose();
+            }
+
+            if (stoppingListeningReader != null)
+            {
+                stoppingListeningReader.Dispose();
+            }
+
+            if (startingListening != null)
+            {
+                startingListening.Dispose();
+            }
+
+            if (stoppingListening != null)
+            {
+                stoppingListening.Dispose();
+            }
         }
 
 
@@ -88,11 +122,26 @@ namespace StarmaidIntegrationComputer
         private void PlayStartingListening()
         {
 
-            Dispatcher.Invoke(startingListening.Play);
+            Dispatcher.Invoke(PlayStartingListeningFile);
         }
         private void PlayStoppingListening()
         {
-            Dispatcher.Invoke(stoppingListening.Play);
+            Dispatcher.Invoke(PlayStoppingListeningFile);
+        }
+
+        private void PlayStartingListeningFile()
+        {
+
+            startingListeningReader.Position = 0;
+            startingListening.Play();
+        }
+
+        private void PlayStoppingListeningFile()
+        {
+
+            stoppingListeningReader.Position = 0;
+            stoppingListening.Play();
+
         }
     }
 }
