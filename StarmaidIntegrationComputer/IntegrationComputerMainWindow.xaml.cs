@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 
 using Microsoft.Extensions.Logging;
 
@@ -26,6 +27,9 @@ namespace StarmaidIntegrationComputer
 
         ThalassaWindow thalassaForm;
         public List<ChatWindow> chatWindows { get; private set; } = new List<ChatWindow>();
+
+        ScrollViewer outputScrollViewer;
+
 
 
         public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, ThalassaWindow thalassaForm, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore)
@@ -73,6 +77,7 @@ namespace StarmaidIntegrationComputer
         private async void IntegrationComputerMainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             await core.EnactIsRunning();
+            outputScrollViewer = (ScrollViewer)FindName("OutputScrollViewer");
         }
 
         private void SetToggleButtonContent()
@@ -96,7 +101,24 @@ namespace StarmaidIntegrationComputer
 
         private void AppendOutput(string newContent)
         {
-            Action behaviorToExecute = () => OutputRichTextBox.AppendText($"\n{newContent}");
+
+
+            Action behaviorToExecute = () =>
+            {
+                double verticalOffset = outputScrollViewer.VerticalOffset;
+                double extentHeight = outputScrollViewer.ExtentHeight;
+                double viewportHeight = outputScrollViewer.ViewportHeight;
+
+                bool wasScrolledToBottom = verticalOffset + viewportHeight >= extentHeight;
+
+
+                OutputRichTextBox.AppendText($"\n{newContent}");
+
+                if (wasScrolledToBottom)
+                {
+                    OutputRichTextBox.ScrollToEnd();
+                }
+            };
 
             if (OutputRichTextBox.Dispatcher.Thread == Thread.CurrentThread)
             {
@@ -146,6 +168,14 @@ namespace StarmaidIntegrationComputer
             if (chatWindows.Any())
             {
                 chatWindows.First().ActiveChatComputer.SendChat("Komette", $"(spoken) - {interpretedSpeech}");
+            }
+        }
+
+        private void OutputRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (Autoscroll.IsChecked == true)
+            {
+                OutputScrollViewer.ScrollToEnd();
             }
         }
     }
