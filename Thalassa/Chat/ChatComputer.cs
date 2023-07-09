@@ -91,10 +91,14 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
                 conversation = api.Chat.CreateConversation(new ChatRequest
                 {
+                    //MaxTokens = 6000,
                     MaxTokens = 8000,
                     TopP = 0.02,
                     NumChoicesPerMessage = 1,
+                    //Model = new Model("gpt-4")
                     Model = new Model("gpt-3.5-turbo-16k")
+                    //Model = new Model("gpt-3.5-turbo-16k-0613")
+
                 });
 
 #pragma warning disable CS0162 // Unreachable code detected - skipping because of consts in logic, to be set by hand.
@@ -102,6 +106,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 {
                     conversation.AppendSystemMessage(jailbreakMessage);
                     conversation.AppendSystemMessage("Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.");
+                    conversation.AppendSystemMessage("Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!");
                 }
                 else
                 {
