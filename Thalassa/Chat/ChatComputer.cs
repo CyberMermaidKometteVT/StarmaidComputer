@@ -90,8 +90,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 conversation = api.Chat.CreateConversation(new ChatRequest
                 {
                     //MaxTokens = 6000,
-                    //MaxTokens = 8000,
-                    MaxTokens = 200000,
+                    MaxTokens = 8000,
                     TopP = 0.02,
                     NumChoicesPerMessage = 1,
                     //Model = new Model("gpt-4")

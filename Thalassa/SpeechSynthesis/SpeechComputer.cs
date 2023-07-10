@@ -75,7 +75,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         {
             Match? errorMatch = interpretOpenAiHttpError.Match(text);
 
-            if (errorMatch == null)
+            if (errorMatch == null || errorMatch.Value.Length == 0)
             {
                 return text;
             }
