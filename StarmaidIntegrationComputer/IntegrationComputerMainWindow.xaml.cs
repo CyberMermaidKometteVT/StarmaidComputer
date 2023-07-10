@@ -82,7 +82,7 @@ namespace StarmaidIntegrationComputer
 
         private void SetToggleButtonContent()
         {
-            Action behaviorToExecute = () => ToggleRunningButton.Content = core.IsRunning ? "Stop Running" : "Start Running";
+            Action behaviorToExecute = () => ToggleRunningButton.Content = core.IsRunning ? "Twitch Disconnect" : "Twitch Connect";
 
             if (ToggleRunningButton.Dispatcher.Thread == Thread.CurrentThread)
             {
