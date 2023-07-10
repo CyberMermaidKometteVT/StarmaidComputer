@@ -135,7 +135,9 @@ namespace StarmaidIntegrationComputer
                 JailbreakMessage = parsedSettings.JailbreakMessage,
                 StartingListeningSoundPath = parsedSettings.StartingListeningSoundPath,
                 StoppingListeningSoundPath = parsedSettings?.StoppingListeningSoundPath,
-                WakeWordConfidenceThreshold = parsedSettings.WakeWordConfidenceThreshold
+                WakeWordConfidenceThreshold = parsedSettings.WakeWordConfidenceThreshold,
+                LogInWithIncognitoBrowser = parsedSettings.LogInWithIncognitoBrowser,
+                ForceTwitchLoginPrompt = parsedSettings.ForceTwitchLoginPrompt
             };
 
 

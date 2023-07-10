@@ -8,6 +8,6 @@ namespace StarmaidIntegrationComputer.Commands.Twitch.Enums
         None = 0,
         Api = 1,
         Chatbot = 2,
-        ChatbotAndApi= 3
+        ChatbotAndApi = 3
     }
 }

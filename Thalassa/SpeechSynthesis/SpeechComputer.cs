@@ -20,7 +20,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         const string urlGroupName = "url";
         const string statusCodeGroupName = "statusCode";
         const string contentGroupName = "content";
-        private Regex interpretOpenAiHttpError = new Regex(@"Error responding, error: Error at chat/completions (?<" + urlGroupName+@">\(.*\)) with HTTP status code: (?<"+statusCodeGroupName+@">\w+)\. Content: (?<"+contentGroupName+@">.*)$", RegexOptions.Singleline);
+        private Regex interpretOpenAiHttpError = new Regex(@"Error responding, error: Error at chat/completions (?<" + urlGroupName + @">\(.*\)) with HTTP status code: (?<" + statusCodeGroupName + @">\w+)\. Content: (?<" + contentGroupName + @">.*)$", RegexOptions.Singleline);
 
         public Prompt? LastSpeech { get; private set; }
 
@@ -81,7 +81,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
             }
 
             Group? contentGroup = null;
-            Group? statusCodeGroup =null;
+            Group? statusCodeGroup = null;
 
             bool errorContentFound = errorMatch?.Groups.TryGetValue(contentGroupName, out contentGroup) ?? false;
 
@@ -101,7 +101,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
             text = $"OpenAI error. {statusCodeMessage}. {parsedJsonError.code}. See log for more details.";
 
-            return text.Replace('_',' ');
+            return text.Replace('_', ' ');
         }
 
     }

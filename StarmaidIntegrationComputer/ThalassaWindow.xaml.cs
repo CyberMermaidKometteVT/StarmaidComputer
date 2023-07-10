@@ -1,8 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Media;
 using System.Windows;
-using System.Windows.Media;
 
 using Microsoft.Extensions.Logging;
 
