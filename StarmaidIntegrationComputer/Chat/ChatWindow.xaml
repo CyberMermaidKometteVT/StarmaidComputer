@@ -35,8 +35,9 @@
             <Button Name="ThalassaAbortCommand" Margin="4px,0,0,0" IsEnabled="False" Width="135">(No Command Pending)</Button>
             <Button Name="ThalassaShutUp" Margin="4px,0,0,0" IsEnabled="False" Width="72">(Not Talking)</Button>
         </StackPanel>
-        <CheckBox x:Name="Autoscroll" Width="100" Height="21" Margin="4,3,0,0" HorizontalAlignment="Right" Grid.Column="4" VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked">Auto Scroll</CheckBox>
-
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="4" HorizontalAlignment="Right">
+        <CheckBox x:Name="Autoscroll" Width="100" Height="21" Margin="4,3,0,0"  VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked">Auto Scroll</CheckBox>
+        </StackPanel>
         <ScrollViewer Name="ChatbotResponsesScrollViewer" CanContentScroll="True" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="3">
             <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" TextChanged="ChatbotResponsesRichTextBox_TextChanged" IsReadOnly="True" />
         </ScrollViewer>
