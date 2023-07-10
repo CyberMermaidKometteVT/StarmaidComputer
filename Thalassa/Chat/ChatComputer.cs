@@ -21,7 +21,6 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         public AsyncStringMethodList OutputUserMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
-        private Regex jailbrokenResponseRegex = new Regex(".*Thalassa:(.*)$", RegexOptions.Singleline);
 
         //TODO: Consider making this a setting!
         const bool useJailBreaking = true;
@@ -59,7 +58,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             catch (HttpRequestException ex)
             {
 #warning I've got OpenAI error messages being parsed out better elsewhere, find that and apply it here!
-                string failureMessage = $"Thalassa failed to respond, with the following error: {ex.Message}";
+                string failureMessage = $"Error responding, error: {ex.Message}";
                 logger.LogError(failureMessage);
                 OutputChatbotResponse(failureMessage);
                 return;
@@ -92,7 +91,8 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 conversation = api.Chat.CreateConversation(new ChatRequest
                 {
                     //MaxTokens = 6000,
-                    MaxTokens = 8000,
+                    //MaxTokens = 8000,
+                    MaxTokens = 200000,
                     TopP = 0.02,
                     NumChoicesPerMessage = 1,
                     //Model = new Model("gpt-4")
@@ -128,9 +128,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             {
                 try
                 {
-                    var chattingResponse = jailbrokenResponseRegex.Match(chatbotResponseMessage).Groups[1].Value;
-
-                    OutputChatbotChattingMessageHandlers.Execute(chattingResponse);
+                    OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
 
                     var isCommand = chatbotResponseMessage.Contains("Command: ");
                     OutputChatbotCommandHandlers.Execute(chatbotResponseMessage);

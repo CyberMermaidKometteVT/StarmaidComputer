@@ -135,7 +135,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private Task OnMessageReceived(string receivedMessage)
         {
-            receivedMessage = $"Thalassa:{receivedMessage}{Environment.NewLine}";
+            receivedMessage = $"Thalassa: {receivedMessage}{Environment.NewLine}";
             if (Dispatcher.Thread == Thread.CurrentThread)
             {
                 ChatbotResponsesRichTextBox.AppendText(receivedMessage);
@@ -160,6 +160,23 @@ namespace StarmaidIntegrationComputer.Chat
         {
             CreateNewChatComputer();
             ChatbotResponsesRichTextBox.Document.Blocks.Clear();
+        }
+
+        private void ChatbotResponsesRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (Autoscroll.IsChecked == true)
+            {
+                ChatbotResponsesScrollViewer.ScrollToEnd();
+            }
+        }
+
+        private void Autoscroll_Checked(object sender, RoutedEventArgs e)
+        {
+            if (this.IsInitialized && Autoscroll.IsChecked == true)
+            {
+                ChatbotResponsesScrollViewer.ScrollToEnd();
+            }
+
         }
     }
 }
