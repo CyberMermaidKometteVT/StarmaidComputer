@@ -6,8 +6,17 @@
         xmlns:local="clr-namespace:StarmaidIntegrationComputer.Chat"
         mc:Ignorable="d"
         Title="ChatWindow" Height="450" Width="800">
+    <!--<Grid Margin="5px">
+        <Grid.RowDefinitions>
+            
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            
+        </Grid.ColumnDefinitions>-->
+
     <Grid Margin="5px">
         <Grid.RowDefinitions>
+            <RowDefinition Height="20"></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition></RowDefinition>
@@ -19,8 +28,17 @@
             <ColumnDefinition />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
-        <ScrollViewer CanContentScroll="True" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="3">
-            <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" />
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
+            <Label HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Height="23">Thalassa</Label>
+            <Button Name="ThalassaListenToggleButton" Click="SendMessageButton_Click">Listen</Button>
+            <Button Name="ThalassaEndWake" IsEnabled="False" Click="SendMessageButton_Click" Margin="4px,0,0,0" Width="75">(Not Awake)</Button>
+            <Button Name="ThalassaAbortCommand" Margin="4px,0,0,0" IsEnabled="False" Width="135">(No Command Pending)</Button>
+            <Button Name="ThalassaShutUp" Margin="4px,0,0,0" IsEnabled="False" Width="72">(Not Talking)</Button>
+        </StackPanel>
+        <CheckBox x:Name="Autoscroll" Width="100" Height="21" Margin="4,3,0,0" HorizontalAlignment="Right" Grid.Column="4" VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked">Auto Scroll</CheckBox>
+
+        <ScrollViewer Name="ChatbotResponsesScrollViewer" CanContentScroll="True" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="3">
+            <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" TextChanged="ChatbotResponsesRichTextBox_TextChanged" IsReadOnly="True" />
         </ScrollViewer>
         <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4">
             <Button Name="ResetConversation" Click="ResetConversation_Click">RESET</Button>
@@ -31,4 +49,5 @@
             <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click">Send</Button>
         </StackPanel>
     </Grid>
+    <!--</Grid>-->
 </Window>

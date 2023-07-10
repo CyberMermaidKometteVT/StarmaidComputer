@@ -178,5 +178,13 @@ namespace StarmaidIntegrationComputer
                 OutputScrollViewer.ScrollToEnd();
             }
         }
+
+        private void Autoscroll_Checked(object sender, RoutedEventArgs e)
+        {
+            if (this.IsInitialized && Autoscroll.IsChecked == true)
+            {
+                OutputScrollViewer.ScrollToEnd();
+            }
+        }
     }
 }

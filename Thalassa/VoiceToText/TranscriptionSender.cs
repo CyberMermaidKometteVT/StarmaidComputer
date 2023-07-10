@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 
 using StarmaidIntegrationComputer.Common.Settings.Interfaces;
+using StarmaidIntegrationComputer.Thalassa.OpenAiCommon.JsonParsing;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText.Exceptions;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText.JsonParsing;
 
@@ -85,7 +86,7 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             {
                 try
                 {
-                    ParsedTranscriptionError error = JsonSerializer.Deserialize<ParsedTranscriptionError>(interpretingResponse);
+                    ParsedOpenAiError error = JsonSerializer.Deserialize<ParsedOpenAiError>(interpretingResponse);
 
                     throw new TranscriptionSenderException($"Error interpreting speech - {error.error.message}", interpretingResponse);
                 }

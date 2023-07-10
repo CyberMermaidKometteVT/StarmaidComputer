@@ -12,7 +12,7 @@ namespace StarmaidIntegrationComputer.Commands
 {
     public abstract class CommandBase
     {
-        public int DelayInMilliseconds { get; set; } = 5 * 1000;
+        public int DelayInMilliseconds { get; set; } = 10 * 1000;
 
         public bool IsRunning { get; private set; } = false;
         public bool IsCompleted { get; private set; } = false;

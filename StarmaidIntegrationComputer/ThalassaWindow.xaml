@@ -8,7 +8,7 @@
         Title="Thalassa" Height="450" Width="800">
     <Grid>
         <Button x:Name="btnStartListening" Content="Awaken Thalassa" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="128" Height="38" Click="btnStartListening_Click" FontSize="16"/>
-        <TextBlock x:Name="textBlock" HorizontalAlignment="Center" Height="358" Margin="0,66,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="780" FontSize="16"/>
+        <TextBlock x:Name="textBlock" HorizontalAlignment="Center" Height="358" Margin="0,66,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="780" FontSize="16" IsEnabled="False"/>
 
     </Grid>
 </Window>
