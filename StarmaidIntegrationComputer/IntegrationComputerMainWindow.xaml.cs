@@ -24,19 +24,16 @@ namespace StarmaidIntegrationComputer
         private readonly ChatWindowFactory chatWindowFactory;
         private readonly ThalassaCore thalassaCore;
         LoggerConfiguration loggerConfiguration;
-
-        ThalassaWindow thalassaForm;
         public List<ChatWindow> chatWindows { get; private set; } = new List<ChatWindow>();
 
         ScrollViewer outputScrollViewer;
 
 
 
-        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, ThalassaWindow thalassaForm, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore)
+        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore)
         {
             this.loggerFactory = loggerFactory;
             this.core = core;
-            this.thalassaForm = thalassaForm;
             this.loggerConfiguration = loggerConfiguration;
             this.chatWindowFactory = chatWindowFactory;
             this.thalassaCore = thalassaCore;
@@ -48,8 +45,10 @@ namespace StarmaidIntegrationComputer
 
             InitializeComponent();
             InitializeLogging();
-            InitializeThalassaForm();
             SetToggleButtonContent();
+
+            this.thalassaCore.LoggerFactory = loggerFactory;
+
 
             //This should realy live somewhere else
             thalassaCore.SpeechInterpreted = OnSpeechInterpreted;
@@ -68,16 +67,16 @@ namespace StarmaidIntegrationComputer
             loggerFactory.AddSerilog(serilogLogger, true);
         }
 
-        private void InitializeThalassaForm()
-        {
-            thalassaForm.DisplayInput = OutputRichTextBox.AppendText;
-            thalassaForm.LoggerFactory = loggerFactory;
-        }
-
         private async void IntegrationComputerMainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            thalassaCore.DisplayInput = DispatchAppendText;
             await core.EnactIsRunning();
             outputScrollViewer = (ScrollViewer)FindName("OutputScrollViewer");
+        }
+
+        private void DispatchAppendText(string text)
+        {
+            Dispatcher.Invoke(() => OutputRichTextBox.AppendText(text));
         }
 
         private void SetToggleButtonContent()
@@ -127,18 +126,6 @@ namespace StarmaidIntegrationComputer
             else
             {
                 OutputRichTextBox.Dispatcher.Invoke(behaviorToExecute);
-            }
-        }
-
-        private void Thalassa_Click(object sender, RoutedEventArgs e)
-        {
-            if (thalassaForm.IsVisible)
-            {
-                thalassaForm.Hide();
-            }
-            else
-            {
-                thalassaForm.Show();
             }
         }
 

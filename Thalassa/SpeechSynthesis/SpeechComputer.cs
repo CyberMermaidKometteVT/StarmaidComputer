@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.Logging;
 
+using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.OpenAiCommon.JsonParsing;
 using StarmaidIntegrationComputer.Thalassa.Settings;
 
@@ -23,6 +24,10 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         private Regex interpretOpenAiHttpError = new Regex(@"Error responding, error: Error at chat/completions (?<" + urlGroupName + @">\(.*\)) with HTTP status code: (?<" + statusCodeGroupName + @">\w+)\. Content: (?<" + contentGroupName + @">.*)$", RegexOptions.Singleline);
 
         public Prompt? LastSpeech { get; private set; }
+        public bool IsSpeaking { get { return speechSynthesizer.State == SynthesizerState.Speaking; } }
+
+        public List<Action> SpeechStartingHandlers { get; } = new List<Action>();
+        public List<Action> SpeechCompletedHandlers { get; } = new List<Action>();
 
         public SpeechComputer(ILogger<SpeechComputer> logger, List<SpeechReplacement> speechReplacements)
         {
@@ -35,7 +40,21 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
             //  speechSynthesizer.GetInstalledVoices()
             speechSynthesizer.SelectVoice("Microsoft Zira Desktop");
 
+            speechSynthesizer.SpeakStarted += SpeechSynthesizer_SpeakStarted;
+            speechSynthesizer.SpeakCompleted += SpeechSynthesizer_SpeakCompleted;
+
         }
+
+        private void SpeechSynthesizer_SpeakCompleted(object? sender, SpeakCompletedEventArgs e)
+        {
+            SpeechCompletedHandlers.Invoke();
+        }
+
+        private void SpeechSynthesizer_SpeakStarted(object? sender, SpeakStartedEventArgs e)
+        {
+            SpeechStartingHandlers.Invoke();
+        }
+
         public void Speak(string text)
         {
             logger.LogInformation($"Speaking: {text}");
@@ -49,6 +68,11 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         {
             Speak(text);
             return Task.CompletedTask;
+        }
+
+        public void CancelSpeech()
+        {
+            speechSynthesizer.SpeakAsyncCancelAll();
         }
 
         private string CleanUpScript(string text)

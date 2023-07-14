@@ -76,7 +76,6 @@ namespace StarmaidIntegrationComputer
             services.AddScoped<TwitchAuthorizationUserTokenFlowHelper>();
             services.AddScoped(_ => TwitchApiFactory.Build(settings.TwitchClientId, settings.TwitchClientSecret, scopes));
             services.AddSingleton<ThalassaCore>();
-            services.AddScoped<ThalassaWindow>();
             services.AddScoped(_ => scopes);
             services.AddScoped(_ => new OpenAIAPI(settings.OpenAIBearerToken));
             services.AddScoped<ChatComputer>();
@@ -90,6 +89,7 @@ namespace StarmaidIntegrationComputer
             services.AddHttpClient<TranscriptionSender>();
             services.AddSingleton<StarmaidStateBag>();
             services.AddSingleton<LiveAuthorizationInfo>();
+            services.AddSingleton<SoundEffectPlayer>();
 
 
 

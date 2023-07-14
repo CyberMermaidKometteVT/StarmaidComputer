@@ -4,13 +4,17 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 using Microsoft.Extensions.Logging;
 
 using OpenAI_API;
 
 using StarmaidIntegrationComputer.Common.DataStructures;
+using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Thalassa.Chat;
+using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
+using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 
 namespace StarmaidIntegrationComputer.Chat
 {
@@ -37,8 +41,10 @@ namespace StarmaidIntegrationComputer.Chat
             private set { activeChatComputerUsePropertyOnly = value; }
         }
         private readonly string jailbreakMessage;
-
-
+        private readonly SoundEffectPlayer soundEffectPlayer;
+        private readonly ThalassaCore thalassaCore;
+        private readonly SpeechComputer speechComputer;
+        private readonly VoiceListener voiceListener;
         private Action onNewChatComputerUsePropertyOnly = null;
 
         /// <summary>
@@ -57,18 +63,39 @@ namespace StarmaidIntegrationComputer.Chat
             }
         }
 
-        public ChatWindow(OpenAIAPI api, StarmaidStateBag stateBag, ILogger<ChatComputer> logger, string jailbreakMessage)
+        //TODO: Consider ripping logic out into a custom control, and/or a controller for the Thalassa command strip.
+        public ChatWindow(ChatWindowCtorArgs args)
         {
-            this.api = api;
-            this.stateBag = stateBag;
-            this.logger = logger;
-            this.jailbreakMessage = jailbreakMessage;
+            this.api = args.Api;
+            this.stateBag = args.StateBag;
+            this.logger = args.Logger;
+            this.jailbreakMessage = args.JailbreakMessage;
+            this.soundEffectPlayer = args.SoundEffectPlayer;
+            this.thalassaCore = args.ThalassaCore;
+            this.speechComputer = args.SpeechComputer;
+            this.voiceListener = args.VoiceListener;
+
+            AddButtonStateEventHandlers();
 
             InitializeComponent();
 
             CreateNewChatComputer();
 
+            SetAllButtonStates(speechComputer);
+
             ChatbotResponsesRichTextBox.Document.LineHeight = 1;
+        }
+
+        private void AddButtonStateEventHandlers()
+        {
+            speechComputer.SpeechStartingHandlers.Add(OnThalassaSpeechBegun);
+            speechComputer.SpeechCompletedHandlers.Add(OnThalassaSpeechOver);
+
+            thalassaCore.StartingListeningHandlers.Add(PlayStartingListening);
+            thalassaCore.StoppingListeningHandlers.Add(PlayStoppingListening);
+
+            voiceListener.SessionStartingHandlers.Add(OnSpeechInterpretationBegun);
+            voiceListener.SessionCompleteHandlers.Add(OnSpeechInterpretationOver);
         }
 
         private void CreateNewChatComputer()
@@ -82,6 +109,91 @@ namespace StarmaidIntegrationComputer.Chat
                 OnNewChatComputer();
             }
         }
+
+        private void SetAllButtonStates(SpeechComputer speechComputer)
+        {
+            if (speechComputer.IsSpeaking)
+            {
+                OnThalassaSpeechBegun();
+            }
+            else
+            {
+                OnThalassaSpeechOver();
+            }
+
+            UpdateStartListeningLabel();
+        }
+
+
+        private void UpdateStartListeningLabel()
+        {
+            if (thalassaCore.Listening)
+            {
+                ThalassaListenToggleButton.Content = "S_leep";
+            }
+            else
+            {
+                ThalassaListenToggleButton.Content = "_Listen";
+            }
+        }
+
+        private void PlayStartingListening()
+        {
+            Dispatcher.Invoke(soundEffectPlayer.PlayStartingListeningFile);
+        }
+
+        private void PlayStoppingListening()
+        {
+            Dispatcher.Invoke(soundEffectPlayer.PlayStoppingListeningFile);
+        }
+
+        #region Event handlers
+        private void OnSpeechInterpretationBegun()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ThalassaInputOverButton.IsEnabled = true;
+                ThalassaInputOverButton.Content = "_Input Over";
+            });
+        }
+
+        private void OnSpeechInterpretationOver()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ThalassaInputOverButton.IsEnabled = false;
+                ThalassaInputOverButton.Content = "(Not Currently Awake)";
+            });
+        }
+
+        private void OnThalassaSpeechBegun()
+        {
+            ThalassaShutUpButton.IsEnabled = true;
+            ThalassaShutUpButton.Content = "Shut up!";
+        }
+
+        private void OnThalassaSpeechOver()
+        {
+            ThalassaShutUpButton.IsEnabled = false;
+            ThalassaShutUpButton.Content = "(Not Talking)";
+
+        }
+
+        private void ThalassaListenToggleButton_Click(object sender, RoutedEventArgs e)
+        {
+
+            if (thalassaCore.Listening)
+            {
+                thalassaCore.StopListening();
+            }
+            else
+            {
+                thalassaCore.StartListening();
+            }
+
+            UpdateStartListeningLabel();
+        }
+
 
         private void UserMessageTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -176,7 +288,23 @@ namespace StarmaidIntegrationComputer.Chat
             {
                 ChatbotResponsesScrollViewer.ScrollToEnd();
             }
+        }
+        #endregion Event handlers
 
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            this.thalassaCore.StartingListeningHandlers.Remove(PlayStartingListening);
+            this.thalassaCore.StoppingListeningHandlers.Remove(PlayStoppingListening);
+        }
+
+        private void ThalassaShutUpButton_Click(object sender, RoutedEventArgs e)
+        {
+            speechComputer.CancelSpeech();
+        }
+
+        private void ThalassaInputOverButton_Click(object sender, RoutedEventArgs e)
+        {
+            voiceListener.StopListening();
         }
     }
 }

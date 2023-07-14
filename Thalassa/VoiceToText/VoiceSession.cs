@@ -125,8 +125,13 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             }
         }
 
-        private void StopListening()
+        public void StopListening()
         {
+            if (!IsRunning)
+            {
+                return;
+            }
+
             IsRunning = false;
             sessionLogger.LogInformation($"Stopping listening.");
 
