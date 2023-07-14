@@ -5,30 +5,53 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StarmaidIntegrationComputer.Chat"
         mc:Ignorable="d"
-        Title="ChatWindow" Height="450" Width="800">
+        Title="ChatWindow" Height="450" Width="800"
+        FocusManager.FocusedElement="{Binding ElementName=UserMessageTextBox}" Closed="Window_Closed">
+
+    <!--<Grid Margin="5px">
+        <Grid.RowDefinitions>
+            
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            
+        </Grid.ColumnDefinitions>-->
+
     <Grid Margin="5px">
         <Grid.RowDefinitions>
+            <RowDefinition Height="20"></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition Height="30"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-            <ColumnDefinition />
-            <ColumnDefinition />
-            <ColumnDefinition />
+            <ColumnDefinition Width="198*" />
+            <ColumnDefinition Width="198*" />
+            <ColumnDefinition Width="198*" />
+            <ColumnDefinition Width="41*" />
+            <ColumnDefinition Width="156*"/>
         </Grid.ColumnDefinitions>
-        <ScrollViewer CanContentScroll="True" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="3">
-            <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" />
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
+            <Label HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Height="23">Thalassa</Label>
+            <Button Name="ThalassaListenToggleButton" Click="ThalassaListenToggleButton_Click" Width="35">_Listen</Button>
+            <Button Name="ThalassaInputOverButton" Click="ThalassaInputOverButton_Click" IsEnabled="False" Width="125" Margin="4px,0,0,0">(Not Currently Awake)</Button>
+            <Button Name="ThalassaAbortCommandButton" Margin="4px,0,0,0" IsEnabled="False" Width="135">(No _Command Pending)</Button>
+            <Button Name="ThalassaShutUpButton" Click="ThalassaShutUpButton_Click" Margin="4px,0,0,0" IsEnabled="False" Width="72">(Not _Talking)</Button>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="4" HorizontalAlignment="Left" Margin="52,0,0,0">
+            <CheckBox x:Name="Autoscroll" Width="100" Height="21" Margin="4,3,0,0"  VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked">Auto Scroll</CheckBox>
+        </StackPanel>
+        <ScrollViewer Name="ChatbotResponsesScrollViewer" CanContentScroll="True" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" Grid.RowSpan="3">
+            <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" TextChanged="ChatbotResponsesRichTextBox_TextChanged" IsReadOnly="True" />
         </ScrollViewer>
-        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4">
-            <Button Name="ResetConversation" Click="ResetConversation_Click">RESET</Button>
-            <Label>Name</Label>
-            <TextBox Name="UserNameTextBox" Width="100" Text="Komette" />
-            <Label>Message</Label>
+        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="5" Margin="0,125,0,0" Grid.RowSpan="2">
+            <Button Name="ResetConversation" Click="ResetConversation_Click">_RESET</Button>
+            <Label Target="{Binding ElementName=UserNameTextBox}">_Name</Label>
+            <TextBox Name="UserNameTextBox" Width="100" Text="Komette"/>
+            <Label Target="{Binding ElementName=UserMessageTextBox}">_Message</Label>
             <TextBox Name="UserMessageTextBox" Width="500" TextChanged="UserMessageTextBox_TextChanged" KeyUp="UserMessageTextBox_KeyUp"/>
-            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click">Send</Button>
+            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click">Se_nd</Button>
         </StackPanel>
     </Grid>
+    <!--</Grid>-->
 </Window>

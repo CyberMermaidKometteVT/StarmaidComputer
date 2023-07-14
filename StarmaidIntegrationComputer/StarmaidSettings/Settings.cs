@@ -25,5 +25,7 @@ namespace StarmaidIntegrationComputer.StarmaidSettings
         public string StartingListeningSoundPath { get; set; }
         public string StoppingListeningSoundPath { get; set; }
         public float WakeWordConfidenceThreshold { get; set; }
+        public bool ForceTwitchLoginPrompt { get; set; } = false;
+        public bool LogInWithIncognitoBrowser { get; set; } = true;
     }
 }

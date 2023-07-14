@@ -1,6 +1,6 @@
-﻿namespace StarmaidIntegrationComputer.Thalassa.VoiceToText.JsonParsing
+﻿namespace StarmaidIntegrationComputer.Thalassa.OpenAiCommon.JsonParsing
 {
-    public class ParsedTranscriptionError
+    public class ParsedOpenAiError
     {
         public class ParsedError
         {

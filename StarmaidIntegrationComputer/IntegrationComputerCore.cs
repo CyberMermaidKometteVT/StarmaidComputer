@@ -45,8 +45,6 @@ namespace StarmaidIntegrationComputer
         private Settings settings;
         public TwitchAuthorizationUserTokenFlowHelper AuthorizationHelper { get; }
 
-        private readonly bool ForceTwitchLoginPrompt = true;
-
 
         private TwitchAPI twitchConnection;
         private TwitchPubSub pubSub;
@@ -107,7 +105,6 @@ namespace StarmaidIntegrationComputer
 
             ILogger<CommandBase> commandBaseLogger = loggerFactory.CreateLogger<CommandBase>();
 
-            authorizationHelper.ForceTwitchLoginPrompt = ForceTwitchLoginPrompt;
             authorizationHelper.OnAuthorizationProcessSuccessful = SetAccessTokenOnGetAccessTokenContinue;
             authorizationHelper.OnAuthorizationProcessFailed = AuthorizationProcessFailed;
             authorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
