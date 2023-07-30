@@ -1,4 +1,4 @@
-﻿namespace StarmaidIntegrationComputer.Common.DataStructures
+﻿namespace StarmaidIntegrationComputer.Common.DataStructures.StarmaidState
 {
     public class StarmaidStateBag
     {

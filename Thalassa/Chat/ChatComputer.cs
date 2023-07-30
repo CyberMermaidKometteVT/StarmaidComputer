@@ -5,8 +5,9 @@ using OpenAI_API;
 using OpenAI_API.Chat;
 using OpenAI_API.Models;
 
-using StarmaidIntegrationComputer.Common.DataStructures;
+using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 
 namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
@@ -15,7 +16,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         private readonly OpenAIAPI api;
         private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
-        private readonly string jailbreakMessage;
+        private readonly OpenAISettings openAISettings;
         private Conversation? conversation;
         public AsyncStringMethodList OutputUserMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
@@ -23,12 +24,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
         //TODO: Consider making this a setting!
         const bool useJailBreaking = true;
-        public ChatComputer(OpenAIAPI api, StarmaidStateBag stateBag, string jailbreakMessage, ILogger<ChatComputer> logger)
+        public ChatComputer(OpenAIAPI api, StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger)
         {
             this.api = api;
             this.stateBag = stateBag;
             this.logger = logger;
-            this.jailbreakMessage = jailbreakMessage;
+            this.openAISettings = openAISettings;
         }
 
         public async Task SendChat(string userMessage)
@@ -101,7 +102,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 #pragma warning disable CS0162 // Unreachable code detected - skipping because of consts in logic, to be set by hand.
                 if (useJailBreaking)
                 {
-                    conversation.AppendSystemMessage(jailbreakMessage);
+                    conversation.AppendSystemMessage(openAISettings.GptPrompt);
                     conversation.AppendSystemMessage("Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.");
                     conversation.AppendSystemMessage("Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!");
                 }

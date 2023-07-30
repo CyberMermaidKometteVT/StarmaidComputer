@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows.Threading;
 
 using NAudio.Wave;
 
@@ -15,7 +14,7 @@ namespace StarmaidIntegrationComputer
         WaveOutEvent startingListening = new WaveOutEvent();
         WaveOutEvent stoppingListening = new WaveOutEvent();
 
-        public SoundEffectPlayer(ISoundPathSettings soundPathSettings)
+        public SoundEffectPlayer(SoundPathSettings soundPathSettings)
         {
             startingListeningReader = new AudioFileReader(soundPathSettings.StartingListeningSoundPath);
             startingListening.Init(startingListeningReader);

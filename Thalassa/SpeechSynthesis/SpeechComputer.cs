@@ -14,7 +14,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
     {
         private readonly ILogger<SpeechComputer> logger;
         private readonly SpeechSynthesizer speechSynthesizer;
-        private readonly List<SpeechReplacement> speechReplacements;
+        private readonly SpeechReplacements speechReplacements;
 
         private Regex removeCodeBlocksRegex = new Regex("```(.*)```", RegexOptions.Singleline);
 
@@ -29,10 +29,10 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         public List<Action> SpeechStartingHandlers { get; } = new List<Action>();
         public List<Action> SpeechCompletedHandlers { get; } = new List<Action>();
 
-        public SpeechComputer(ILogger<SpeechComputer> logger, List<SpeechReplacement> speechReplacements)
+        public SpeechComputer(ILogger<SpeechComputer> logger, SpeechReplacements speechReplacements)
         {
             this.logger = logger;
-            this.speechReplacements = speechReplacements ?? new List<SpeechReplacement>();
+            this.speechReplacements = speechReplacements;
 
             speechSynthesizer = new SpeechSynthesizer();
 
@@ -88,7 +88,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         {
             text = removeCodeBlocksRegex.Replace(text, "Sending you a code block.");
 
-            foreach (SpeechReplacement speechReplacement in speechReplacements)
+            foreach (SpeechReplacement speechReplacement in speechReplacements.Replacements)
             {
                 text = text.Replace(speechReplacement.Phrase, speechReplacement.Replacement);
             }

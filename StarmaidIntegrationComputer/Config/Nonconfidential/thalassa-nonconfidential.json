@@ -1,0 +1,9 @@
+{
+  "ThalassaSettings": {
+    "WakeWordConfidenceThreshold": 0.85
+  },
+  "SoundPathSettings": {
+    "StartingListeningSoundPath": "Assets\\Sounds\\Thalassa_Listening.mp3",
+    "StoppingListeningSoundPath": "Assets\\Sounds\\Thalassa_Done_Listening.mp3"
+  }
+}

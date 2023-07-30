@@ -10,9 +10,10 @@ using Microsoft.Extensions.Logging;
 
 using OpenAI_API;
 
-using StarmaidIntegrationComputer.Common.DataStructures;
+using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Thalassa.Chat;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 
@@ -40,7 +41,7 @@ namespace StarmaidIntegrationComputer.Chat
             }
             private set { activeChatComputerUsePropertyOnly = value; }
         }
-        private readonly string jailbreakMessage;
+        private readonly OpenAISettings openAISettings;
         private readonly SoundEffectPlayer soundEffectPlayer;
         private readonly ThalassaCore thalassaCore;
         private readonly SpeechComputer speechComputer;
@@ -69,7 +70,7 @@ namespace StarmaidIntegrationComputer.Chat
             this.api = args.Api;
             this.stateBag = args.StateBag;
             this.logger = args.Logger;
-            this.jailbreakMessage = args.JailbreakMessage;
+            this.openAISettings = args.OpenAISettings;
             this.soundEffectPlayer = args.SoundEffectPlayer;
             this.thalassaCore = args.ThalassaCore;
             this.speechComputer = args.SpeechComputer;
@@ -100,7 +101,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void CreateNewChatComputer()
         {
-            ActiveChatComputer = new ChatComputer(api, stateBag, jailbreakMessage, logger);
+            ActiveChatComputer = new ChatComputer(api, stateBag, openAISettings, logger);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 

@@ -3,7 +3,7 @@
 using Microsoft.Extensions.Logging;
 
 using StarmaidIntegrationComputer.Commands.Twitch;
-using StarmaidIntegrationComputer.Common.DataStructures;
+using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Twitch;
@@ -16,7 +16,7 @@ namespace StarmaidIntegrationComputer.Commands
     internal class CommandFactory
     {
         private readonly ILogger<CommandBase> commandLogger;
-        private readonly Settings settings;
+        private readonly TwitchSensitiveSettings twitchSensitiveSettings;
         private readonly SpeechComputer speechComputer;
         private readonly TwitchClient chatbot;
         private readonly TwitchAPI twitchApi;
@@ -25,10 +25,10 @@ namespace StarmaidIntegrationComputer.Commands
 
         public const string LAST_RAIDER_VERBIAGE = "the last raider";
 
-        public CommandFactory(ILogger<CommandBase> logger, Settings settings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag)
+        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag)
         {
             this.commandLogger = logger;
-            this.settings = settings;
+            this.twitchSensitiveSettings = twitchSensitiveSettings;
             this.speechComputer = speechComputer;
             this.chatbot = chatbot;
             this.twitchApi = twitchApi;
@@ -43,7 +43,7 @@ namespace StarmaidIntegrationComputer.Commands
             {
                 InterpretShoutoutTarget(target);
 
-                return new ShoutoutCommand(commandLogger, speechComputer, settings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target);
+                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target);
             }
 
             return null;

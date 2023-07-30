@@ -1,9 +1,9 @@
 ﻿namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
-    public class JailbreakMessage
+    public class GptPrompt
     {
         public string Value { get; private set; }
-        public JailbreakMessage(string value)
+        public GptPrompt(string value)
         {
             Value = value;
         }

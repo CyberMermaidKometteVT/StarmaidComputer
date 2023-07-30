@@ -22,13 +22,13 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         HttpListener httpListener = new HttpListener();
 
 
-        public TwitchAuthResponseWebserver(Settings settings, AuthResponseParsing authResponseParser, ILogger<TwitchAuthResponseWebserver> logger)
+        public TwitchAuthResponseWebserver(TwitchSensitiveSettings twitchSensitiveSettings, AuthResponseParsing authResponseParser, ILogger<TwitchAuthResponseWebserver> logger)
         {
             //this.settings = settings;
             this.authResponseParser = authResponseParser;
             this.logger = logger;
 
-            httpListener.Prefixes.Add(settings.RedirectUri);
+            httpListener.Prefixes.Add(twitchSensitiveSettings.RedirectUri);
         }
         public void StartListening(string oauthState)
         {

@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 using System.Text.RegularExpressions;
 
-using StarmaidIntegrationComputer.Common.Settings.Interfaces;
 using StarmaidIntegrationComputer.Thalassa.OpenAiCommon.JsonParsing;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText.Exceptions;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText.JsonParsing;
 
@@ -12,11 +12,11 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
     public class TranscriptionSender
     {
         private HttpClient httpClient;
-        private readonly IOpenAIBearerToken settings;
+        private readonly OpenAISensitiveSettings settings;
 
         const string transcriptionsUri = "https://api.openai.com/v1/audio/transcriptions";
 
-        public TranscriptionSender(HttpClient httpClient, IOpenAIBearerToken settings)
+        public TranscriptionSender(HttpClient httpClient, OpenAISensitiveSettings settings)
         {
             this.httpClient = httpClient;
             this.settings = settings;
