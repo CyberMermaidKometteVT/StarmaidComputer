@@ -17,13 +17,13 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 {
     internal class ShoutoutCommand : TwitchCommandBase
     {
-        private readonly Settings settings;
+        private readonly TwitchSensitiveSettings twitchSensitiveSettings;
 
         public string ShoutoutTarget { get; private set; }
 
-        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, Settings settings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target) : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchApi, chatbot)
+        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target) : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchApi, chatbot)
         {
-            this.settings = settings;
+            this.twitchSensitiveSettings = twitchSensitiveSettings;
             this.ShoutoutTarget = target;
         }
 
@@ -43,10 +43,10 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             //TODO: ??? why does the chatbot's Joined Channels list empty??  It's clearly still in there!
             if (chatbot.JoinedChannels.Count() == 0)
             {
-                chatbot.JoinChannel(settings.TwitchChatbotChannelName);
+                chatbot.JoinChannel(twitchSensitiveSettings.TwitchChatbotChannelName);
             }
 
-            chatbot.SendMessage(settings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}");
+            chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}");
 
             //TODO: Once the enum list for the scopes includes the right scope for this, this is how
             //  we do a /shoutout! :D

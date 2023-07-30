@@ -2,9 +2,9 @@
 
 using Microsoft.Extensions.Logging;
 
-using StarmaidIntegrationComputer.Common.DataStructures;
-using StarmaidIntegrationComputer.Common.Settings.Interfaces;
+using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 
 namespace StarmaidIntegrationComputer.Thalassa
@@ -13,7 +13,7 @@ namespace StarmaidIntegrationComputer.Thalassa
     {
         public const string WAKE_WORD = "Thalassa";
         private readonly VoiceToTextManager voiceToTextManager;
-        private readonly IThalassaCoreSettings settings;
+        private readonly ThalassaSettings settings;
         private readonly StarmaidStateBag stateBag;
         SpeechRecognitionEngine recognitionEngine = new SpeechRecognitionEngine();
 
@@ -37,7 +37,7 @@ namespace StarmaidIntegrationComputer.Thalassa
         public List<Action> StartingListeningHandlers { get; } = new List<Action>();
         public List<Action> StoppingListeningHandlers { get; } = new List<Action>();
 
-        public ThalassaCore(VoiceToTextManager voiceToTextManager, IThalassaCoreSettings settings, StarmaidStateBag stateBag)
+        public ThalassaCore(VoiceToTextManager voiceToTextManager, ThalassaSettings settings, StarmaidStateBag stateBag)
         {
             this.voiceToTextManager = voiceToTextManager;
             this.settings = settings;

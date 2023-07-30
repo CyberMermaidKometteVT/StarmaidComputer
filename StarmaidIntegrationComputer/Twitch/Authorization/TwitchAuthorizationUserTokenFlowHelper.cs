@@ -10,17 +10,17 @@ using TwitchLib.Api;
 using Microsoft.Extensions.Logging;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Auth;
-using StarmaidIntegrationComputer.StarmaidSettings;
 using Microsoft.Win32;
 using System.IO;
 using Microsoft.CodeAnalysis;
 using StarmaidIntegrationComputer.Common.DataStructures;
+using StarmaidIntegrationComputer.StarmaidSettings;
 
 namespace StarmaidIntegrationComputer.Twitch.Authorization
 {
     public class TwitchAuthorizationUserTokenFlowHelper
     {
-        private readonly Settings settings;
+        private readonly TwitchSensitiveSettings twitchSensitiveSettings;
         private readonly ILogger<TwitchAuthorizationUserTokenFlowHelper> logger;
         private TwitchAuthResponseWebserver webserver;
 
@@ -31,7 +31,7 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         {
             get
             {
-                if (twitchApiConnectionOnlyUseProperty == null) twitchApiConnectionOnlyUseProperty = TwitchApiFactory.Build(settings.TwitchClientId, settings.TwitchClientSecret, scopes);
+                if (twitchApiConnectionOnlyUseProperty == null) twitchApiConnectionOnlyUseProperty = TwitchApiFactory.Build(twitchSensitiveSettings.TwitchClientId, twitchSensitiveSettings.TwitchClientSecret, scopes);
                 return twitchApiConnectionOnlyUseProperty;
             }
             set
@@ -53,16 +53,16 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         public Action OnAuthorizationProcessUserCanceled { get; set; }
         public Action<AccessToken> OnAuthorizationProcessSuccessful { get; set; }
 
-        public TwitchAuthorizationUserTokenFlowHelper(Settings settings, ILogger<TwitchAuthorizationUserTokenFlowHelper> logger, List<AuthScopes> scopes, TwitchAuthResponseWebserver webserver, TwitchAPI? twitchApiConnection)
+        public TwitchAuthorizationUserTokenFlowHelper(TwitchAuthorizationUserTokenFlowHelperCtorArgs ctorArgs)
         {
-            this.settings = settings;
-            this.logger = logger;
-            this.webserver = webserver;
-            this.scopes = scopes;
-            TwitchApiConnection = twitchApiConnection;
+            this.twitchSensitiveSettings = ctorArgs.TwitchSensitiveSettings;
+            this.logger = ctorArgs.Logger;
+            this.webserver = ctorArgs.Webserver;
+            this.scopes = ctorArgs.Scopes;
+            TwitchApiConnection = ctorArgs.TwitchApiConnection;
 
-            forceTwitchLoginPrompt = settings.ForceTwitchLoginPrompt;
-            logInWithIncognitoBrowser = settings.LogInWithIncognitoBrowser;
+            forceTwitchLoginPrompt = ctorArgs.TwitchSettings.ForceTwitchLoginPrompt;
+            logInWithIncognitoBrowser = ctorArgs.TwitchSettings.LogInWithIncognitoBrowser;
 
             this.webserver.OnError = AuthorizationServer_Error;
             this.webserver.OnAuthorizationCodeSet = AuthorizationServer_CodeSet;
@@ -84,7 +84,7 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         }
         public void PromptForUserAuthorization()
         {
-            var authorizationCodeUrl = new TwitchAPI().Auth.GetAuthorizationCodeUrl(settings.RedirectUri, scopes, forceTwitchLoginPrompt, OauthState, settings.TwitchClientId);
+            var authorizationCodeUrl = new TwitchAPI().Auth.GetAuthorizationCodeUrl(twitchSensitiveSettings.RedirectUri, scopes, forceTwitchLoginPrompt, OauthState, twitchSensitiveSettings.TwitchClientId);
 
             logger.LogInformation("Showing auth browser window.");
             webserver.StartListening(OauthState);
@@ -269,7 +269,7 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         private void FinishAuthenticatingThenStartListening(AuthorizationCode authorizationCode)
         {
 
-            Task<AuthCodeResponse> getAccessTokenApiCallTask = TwitchApiConnection.Auth.GetAccessTokenFromCodeAsync(authorizationCode.Code, settings.TwitchClientSecret, settings.RedirectUri, settings.TwitchClientId);
+            Task<AuthCodeResponse> getAccessTokenApiCallTask = TwitchApiConnection.Auth.GetAccessTokenFromCodeAsync(authorizationCode.Code, twitchSensitiveSettings.TwitchClientSecret, twitchSensitiveSettings.RedirectUri, twitchSensitiveSettings.TwitchClientId);
 
 
             getAccessTokenApiCallTask.ContinueWith(SetAccessTokenOnGetAccessTokenContinue);

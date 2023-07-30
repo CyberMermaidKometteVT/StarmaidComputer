@@ -8,6 +8,40 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Config\Nonconfidential\discord-nonconfidential.json" />
+    <None Remove="Config\Nonconfidential\openai-nonconfidential.json" />
+    <None Remove="Config\Nonconfidential\thalassa-nonconfidential.json" />
+    <None Remove="Config\Nonconfidential\twitch-nonconfidential.json" />
+    <None Remove="Config\Sensitive\discord-sensitive.json" />
+    <None Remove="Config\Sensitive\openai-sensitive.json" />
+    <None Remove="Config\Sensitive\twitch-sensitive.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Config\Nonconfidential\discord-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Nonconfidential\openai-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Nonconfidential\thalassa-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Nonconfidential\twitch-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\discord-sensitive.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\openai-sensitive.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\twitch-sensitive.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Discord.Net" Version="3.9.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.6.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
@@ -41,7 +75,7 @@
     <None Update="settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="speechReplacements.json">
+    <None Update="Config\Nonconfidential\speechReplacements.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

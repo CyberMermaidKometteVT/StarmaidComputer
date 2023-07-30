@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace StarmaidIntegrationComputer.Common.DataStructures
+﻿namespace StarmaidIntegrationComputer.Common.DataStructures
 {
     public static class StringListExtensions
     {
