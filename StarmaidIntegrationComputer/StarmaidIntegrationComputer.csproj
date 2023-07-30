@@ -13,8 +13,11 @@
     <None Remove="Config\Nonconfidential\thalassa-nonconfidential.json" />
     <None Remove="Config\Nonconfidential\twitch-nonconfidential.json" />
     <None Remove="Config\Sensitive\discord-sensitive.json" />
+    <None Remove="Config\Sensitive\discord-sensitive.local.json" />
     <None Remove="Config\Sensitive\openai-sensitive.json" />
+    <None Remove="Config\Sensitive\openai-sensitive.local.json" />
     <None Remove="Config\Sensitive\twitch-sensitive.json" />
+    <None Remove="Config\Sensitive\twitch-sensitive.local.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,13 +34,22 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Config\Sensitive\discord-sensitive.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\discord-sensitive.local.json" Condition="Exists('Config\Sensitive\discord-sensitive.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Config\Sensitive\openai-sensitive.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\openai-sensitive.local.json" Condition="Exists('Config\Sensitive\openai-sensitive.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Config\Sensitive\twitch-sensitive.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\twitch-sensitive.local.json" Condition="Exists('Config\Sensitive\twitch-sensitive.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

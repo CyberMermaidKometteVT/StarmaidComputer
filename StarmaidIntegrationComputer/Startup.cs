@@ -18,6 +18,8 @@ using System.IO;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using System.Linq;
+using Microsoft.Extensions.Hosting;
 
 namespace StarmaidIntegrationComputer
 {
@@ -27,6 +29,12 @@ namespace StarmaidIntegrationComputer
         private const string configFolder = "Config";
         private const string configSubfolderNonconfidential = "Nonconfidential";
         private const string configSubfolderSensitive = "Sensitive";
+
+        private string[] allEnvironmentNames = { environmentNameLocal };
+        private string currentEnvironmentName = environmentNameLocal;
+
+        private const string environmentNameLocal = "local";
+
 
         public ServiceProvider ConfigureServices()
         {
@@ -42,7 +50,7 @@ namespace StarmaidIntegrationComputer
 
             });
 
-            IConfigurationRoot configuration = this.LoadConfiguration(services);
+            IConfigurationRoot configuration = this.LoadConfiguration();
 
             TwitchSensitiveSettings twitchSensitiveSettings = InjectSetting<TwitchSensitiveSettings>(services, configuration);
             OpenAISensitiveSettings openAiSensitiveSettings = InjectSetting<OpenAISensitiveSettings>(services, configuration);
@@ -87,15 +95,19 @@ namespace StarmaidIntegrationComputer
             return services.BuildServiceProvider();
         }
 
-        private IConfigurationRoot LoadConfiguration(ServiceCollection services)
+        private IConfigurationRoot LoadConfiguration()
         {
             var basePath = Path.Combine(Directory.GetCurrentDirectory(), configFolder);
             var sensitivePath = Path.Combine(basePath, configSubfolderSensitive);
             var nonconfidentialPath = Path.Combine(basePath, configSubfolderNonconfidential);
 
             List<string> allJsonFilePaths = new List<string>();
-            allJsonFilePaths.AddRange(Directory.GetFiles(sensitivePath));
-            allJsonFilePaths.AddRange(Directory.GetFiles(nonconfidentialPath));
+
+            allJsonFilePaths.AddRange(Directory.GetFiles(sensitivePath).Where(path => !IsEnvironmentFile(path)));
+            allJsonFilePaths.AddRange(Directory.GetFiles(nonconfidentialPath).Where(path => !IsEnvironmentFile(path)));
+
+            allJsonFilePaths.AddRange(Directory.GetFiles(sensitivePath).Where(IsCurrentEnvironment));
+            allJsonFilePaths.AddRange(Directory.GetFiles(nonconfidentialPath).Where(IsCurrentEnvironment));
 
             var configurationBuilder = new ConfigurationBuilder()
                 .SetBasePath(basePath);
@@ -106,6 +118,17 @@ namespace StarmaidIntegrationComputer
 
             return configuration;
         }
+
+        private bool IsEnvironmentFile(string fileName)
+        {
+            return allEnvironmentNames.Any(environmentName => fileName.EndsWith($".{environmentName}.json"));
+        }
+
+        private bool IsCurrentEnvironment(string fileName)
+{
+            return fileName.EndsWith($".{currentEnvironmentName}.json");
+        }
+
 
         private T InjectSetting<T>(ServiceCollection services, IConfigurationRoot configuration) where T : class, new()
         {
