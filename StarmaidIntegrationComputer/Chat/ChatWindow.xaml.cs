@@ -263,9 +263,19 @@ namespace StarmaidIntegrationComputer.Chat
         private void UserMessageTextBox_KeyUp(object sender, KeyEventArgs e)
         {
             //Only send the message if we're hitting ENTER but not SHIFT-ENTER
-            if (e.Key == Key.Enter && !Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift))
+            if (e.Key == Key.Enter)
             {
-                SendMessage();
+                if (!Keyboard.IsKeyDown(Key.LeftShift) && !Keyboard.IsKeyDown(Key.RightShift))
+                {
+                    SendMessage();
+                }
+                else
+                {
+
+                    int selectionStart = UserMessageTextBox.SelectionStart;
+                    UserMessageTextBox.Text = UserMessageTextBox.Text.Insert(selectionStart, Environment.NewLine);
+                    UserMessageTextBox.SelectionStart = selectionStart + 2;
+                }
             }
         }
 
