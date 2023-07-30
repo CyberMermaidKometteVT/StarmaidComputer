@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Security.Cryptography.Xml;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 using Microsoft.Extensions.Logging;
@@ -41,6 +44,9 @@ namespace StarmaidIntegrationComputer.Chat
             }
             private set { activeChatComputerUsePropertyOnly = value; }
         }
+
+        private readonly IReadOnlyList<Control> controlsForResize;
+        private const int defaultFontSize = 12;
         private readonly OpenAISettings openAISettings;
         private readonly SoundEffectPlayer soundEffectPlayer;
         private readonly ThalassaCore thalassaCore;
@@ -79,6 +85,10 @@ namespace StarmaidIntegrationComputer.Chat
             AddButtonStateEventHandlers();
 
             InitializeComponent();
+
+
+            this.controlsForResize = new List<Control> { ChatbotResponsesRichTextBox, ThalassaLabel, ThalassaListenToggleButton, ThalassaInputOverButton, ThalassaAbortCommandButton, ThalassaShutUpButton, /*AutoscrollCheckBox,*/ ResetConversationButton, UserNameLabel, UserNameTextBox, UserMessageLabel, UserMessageTextBox, SendMessageButton }
+            .AsReadOnly();
 
             CreateNewChatComputer();
 
@@ -287,7 +297,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void ChatbotResponsesRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (Autoscroll.IsChecked == true)
+            if (AutoscrollCheckBox.IsChecked == true)
             {
                 ChatbotResponsesScrollViewer.ScrollToEnd();
             }
@@ -295,7 +305,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void Autoscroll_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsInitialized && Autoscroll.IsChecked == true)
+            if (this.IsInitialized && AutoscrollCheckBox.IsChecked == true)
             {
                 ChatbotResponsesScrollViewer.ScrollToEnd();
             }
@@ -316,6 +326,53 @@ namespace StarmaidIntegrationComputer.Chat
         private void ThalassaInputOverButton_Click(object sender, RoutedEventArgs e)
         {
             voiceListener.StopListening();
+        }
+
+        private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                IncrementFormTextScale(e.Delta / 120);
+                e.Handled = true;
+            }
+        }
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.D0)
+            {
+                ResetFormTextScale();
+                e.Handled = true;
+            }
+        }
+
+        private void IncrementFormTextScale(int numberOfClicks)
+        {
+            foreach (Control control in controlsForResize)
+            {
+                if (control.FontSize + numberOfClicks > 0)
+                {
+                    control.FontSize += numberOfClicks;
+                }
+            }
+
+
+
+            ScaleTransform transform = (AutoscrollCheckBox.RenderTransform as ScaleTransform) ?? new ScaleTransform(1.0, 1.0, 0.5, 0.5);
+            transform.ScaleX += numberOfClicks / 10.0;
+            transform.ScaleY += numberOfClicks / 10.0;
+
+            AutoscrollCheckBox.RenderTransform = transform;
+        }
+
+        private void ResetFormTextScale()
+        {
+            foreach (Control control in controlsForResize)
+            {
+                control.FontSize = defaultFontSize;
+            }
+            AutoscrollCheckBox.RenderTransform = new ScaleTransform(1.0, 1.0, 0.5, 0.5);
+
         }
     }
 }
