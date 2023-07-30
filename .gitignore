@@ -455,3 +455,4 @@ $RECYCLE.BIN/
 
 settings.json
 /StarmaidIntegrationComputer/settings - Copy.json
+*.local.json
