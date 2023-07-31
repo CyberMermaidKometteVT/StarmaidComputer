@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.Xml;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -95,6 +97,15 @@ namespace StarmaidIntegrationComputer.Chat
             SetAllButtonStates(speechComputer);
 
             ChatbotResponsesRichTextBox.Document.LineHeight = 1;
+            RemoveBlankFirstRichTextBoxLine();
+        }
+
+        private void RemoveBlankFirstRichTextBoxLine()
+        {
+            if ((ChatbotResponsesRichTextBox.Document.Blocks.FirstBlock as Paragraph).Inlines.Count() == 0)
+            {
+                ChatbotResponsesRichTextBox.Document.Blocks.Remove(ChatbotResponsesRichTextBox.Document.Blocks.FirstBlock);
+            }
         }
 
         private void AddButtonStateEventHandlers()
@@ -236,38 +247,65 @@ namespace StarmaidIntegrationComputer.Chat
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
-        //I'm worried it's a bad idea to make this async, since it involves thread I/O
-        private Task OnMessageSent(string sentMessage)
+        private async Task OnMessageSent(string userName, string sentMessage)
         {
-            sentMessage += Environment.NewLine;
-            if (Dispatcher.Thread == Thread.CurrentThread)
-            {
-                ChatbotResponsesRichTextBox.AppendText(sentMessage);
-                UserMessageTextBox.Clear();
-                return Task.CompletedTask;
-            }
-            else
-            {
-                return Dispatcher.InvokeAsync(() =>
-                {
-                    ChatbotResponsesRichTextBox.AppendText(sentMessage);
-                    UserMessageTextBox.Clear();
-                }).Task;
-            }
+            await AppendLabeledText($"{userName}: ", sentMessage, 0.5);
+            await ExecuteOnDispatcherThread(UserMessageTextBox.Clear);
         }
 
         private Task OnMessageReceived(string receivedMessage)
         {
-            receivedMessage = $"Thalassa: {receivedMessage}{Environment.NewLine}";
+            return AppendLabeledText("Thalassa: ", receivedMessage, 1);
+            //receivedMessage = $"Thalassa: {receivedMessage}{Environment.NewLine}";
+            //if (Dispatcher.Thread == Thread.CurrentThread)
+            //{
+            //    ChatbotResponsesRichTextBox.AppendText(receivedMessage);
+            //    return Task.CompletedTask;
+            //}
+            //else
+            //{
+            //    return Dispatcher.InvokeAsync(() => ChatbotResponsesRichTextBox.AppendText(receivedMessage)).Task;
+            //}
+        }
+
+        private Task AppendLabeledText(string label, string text, double dividerLineThickness = 0)
+        {
+            Action append = () =>
+            {
+                Paragraph paragraph = new Paragraph();
+
+                Span boldSpan = new Span(new Run(label));
+                boldSpan.FontWeight = FontWeights.Bold;
+
+                Run textRun = new Run(text);
+
+                paragraph.Inlines.Add(boldSpan);
+                paragraph.Inlines.Add(textRun);
+
+                if (dividerLineThickness != 0)
+                {
+                    Border divider = new Border();
+                    divider.BorderThickness = new Thickness(0, dividerLineThickness, 0, 0);
+                    divider.BorderBrush = new SolidColorBrush(Colors.Gray);
+                    divider.Margin = new Thickness(0, 5, 0, 5);
+
+                    paragraph.Inlines.Add(divider);
+                }
+
+                this.ChatbotResponsesRichTextBox.Document.Blocks.Add(paragraph);
+            };
+
+            return ExecuteOnDispatcherThread(append);
+        }
+
+        private Task ExecuteOnDispatcherThread(Action action)
+        {
             if (Dispatcher.Thread == Thread.CurrentThread)
             {
-                ChatbotResponsesRichTextBox.AppendText(receivedMessage);
+                action();
                 return Task.CompletedTask;
             }
-            else
-            {
-                return Dispatcher.InvokeAsync(() => ChatbotResponsesRichTextBox.AppendText(receivedMessage)).Task;
-            }
+            return Dispatcher.InvokeAsync(action).Task;
         }
 
         private void UserMessageTextBox_KeyUp(object sender, KeyEventArgs e)
@@ -357,12 +395,12 @@ namespace StarmaidIntegrationComputer.Chat
             }
 
 
-
             ScaleTransform transform = (AutoscrollCheckBox.RenderTransform as ScaleTransform) ?? new ScaleTransform(1.0, 1.0, 0.5, 0.5);
             transform.ScaleX += numberOfClicks / 10.0;
             transform.ScaleY += numberOfClicks / 10.0;
 
             AutoscrollCheckBox.RenderTransform = transform;
+            AutoscrollCheckBox.RenderTransformOrigin = new Point(1,0);
         }
 
         private void ResetFormTextScale()

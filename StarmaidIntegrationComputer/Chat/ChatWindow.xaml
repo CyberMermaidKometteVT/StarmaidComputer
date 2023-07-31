@@ -41,9 +41,9 @@
             <Button Name="ThalassaAbortCommandButton" Margin="4px,0,0,0" IsEnabled="False" MinWidth="135" Grid.Row="0" Grid.Column="3">(No _Command Pending)</Button>
             <Button Name="ThalassaShutUpButton" Click="ThalassaShutUpButton_Click" Margin="4px,0,0,0" IsEnabled="False" MinWidth="72" Grid.Row="0" Grid.Column="4">(Not _Talking)</Button>
             <Label Name="SpacingLabel" Grid.Row="0" Grid.Column="5"></Label>
-            <CheckBox x:Name="AutoscrollCheckBox" Height="21" Margin="0,3,0,0"  VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked" Grid.Row="0" Grid.Column="6">Auto Scroll</CheckBox>
+            <CheckBox x:Name="AutoscrollCheckBox" Height="21" Margin="0,3,0,0" VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked" Grid.Row="0" Grid.Column="6">Auto Scroll</CheckBox>
         </Grid>
-        
+
         <ScrollViewer Name="ChatbotResponsesScrollViewer" CanContentScroll="True" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" Grid.RowSpan="2">
             <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" TextChanged="ChatbotResponsesRichTextBox_TextChanged" IsReadOnly="True" />
         </ScrollViewer>

@@ -18,7 +18,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         private readonly ILogger<ChatComputer> logger;
         private readonly OpenAISettings openAISettings;
         private Conversation? conversation;
-        public AsyncStringMethodList OutputUserMessageHandlers { get; private set; } = new AsyncStringMethodList();
+        public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; private set; } = new AsyncTwoStringsMethodList();
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
 
@@ -37,7 +37,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             PrepareToSendChat(userMessage);
 
             conversation.AppendUserInput(userMessage);
-            OutputUserMessage($"{userMessage}{Environment.NewLine}"); ;
+            OutputUserMessage("", $"{userMessage}{Environment.NewLine}");
             var response = await conversation.GetResponseFromChatbotAsync();
             OutputChatbotResponse($"Thalassa: {response}{Environment.NewLine}");
         }
@@ -48,7 +48,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
             conversation.AppendUserInputWithName(userName, userMessage);
 
-            OutputUserMessage($"{userName}: {userMessage}");
+            OutputUserMessage(userName, userMessage.TrimEnd());
 
             string response;
             try
@@ -143,11 +143,11 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
         }
 
-        private void OutputUserMessage(string userMessage)
+        private void OutputUserMessage(string userName, string userMessage)
         {
             logger.LogInformation($"USER MESSAGE SENT - {userMessage}{Environment.NewLine}");
 
-            OutputUserMessageHandlers.Execute(userMessage);
+            OutputUserMessageHandlers.Execute(userName, userMessage);
         }
     }
 }
