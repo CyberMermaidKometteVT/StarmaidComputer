@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.Xml;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 using Microsoft.Extensions.Logging;
@@ -41,6 +46,9 @@ namespace StarmaidIntegrationComputer.Chat
             }
             private set { activeChatComputerUsePropertyOnly = value; }
         }
+
+        private readonly IReadOnlyList<Control> controlsForResize;
+        private const int defaultFontSize = 12;
         private readonly OpenAISettings openAISettings;
         private readonly SoundEffectPlayer soundEffectPlayer;
         private readonly ThalassaCore thalassaCore;
@@ -80,11 +88,24 @@ namespace StarmaidIntegrationComputer.Chat
 
             InitializeComponent();
 
+
+            this.controlsForResize = new List<Control> { ChatbotResponsesRichTextBox, ThalassaLabel, ThalassaListenToggleButton, ThalassaInputOverButton, ThalassaAbortCommandButton, ThalassaShutUpButton, /*AutoscrollCheckBox,*/ ResetConversationButton, UserNameLabel, UserNameTextBox, UserMessageLabel, UserMessageTextBox, SendMessageButton }
+            .AsReadOnly();
+
             CreateNewChatComputer();
 
             SetAllButtonStates(speechComputer);
 
             ChatbotResponsesRichTextBox.Document.LineHeight = 1;
+            RemoveBlankFirstRichTextBoxLine();
+        }
+
+        private void RemoveBlankFirstRichTextBoxLine()
+        {
+            if ((ChatbotResponsesRichTextBox.Document.Blocks.FirstBlock as Paragraph).Inlines.Count() == 0)
+            {
+                ChatbotResponsesRichTextBox.Document.Blocks.Remove(ChatbotResponsesRichTextBox.Document.Blocks.FirstBlock);
+            }
         }
 
         private void AddButtonStateEventHandlers()
@@ -226,38 +247,65 @@ namespace StarmaidIntegrationComputer.Chat
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
-        //I'm worried it's a bad idea to make this async, since it involves thread I/O
-        private Task OnMessageSent(string sentMessage)
+        private async Task OnMessageSent(string userName, string sentMessage)
         {
-            sentMessage += Environment.NewLine;
-            if (Dispatcher.Thread == Thread.CurrentThread)
-            {
-                ChatbotResponsesRichTextBox.AppendText(sentMessage);
-                UserMessageTextBox.Clear();
-                return Task.CompletedTask;
-            }
-            else
-            {
-                return Dispatcher.InvokeAsync(() =>
-                {
-                    ChatbotResponsesRichTextBox.AppendText(sentMessage);
-                    UserMessageTextBox.Clear();
-                }).Task;
-            }
+            await AppendLabeledText($"{userName}: ", sentMessage, 0.5);
+            await ExecuteOnDispatcherThread(UserMessageTextBox.Clear);
         }
 
         private Task OnMessageReceived(string receivedMessage)
         {
-            receivedMessage = $"Thalassa: {receivedMessage}{Environment.NewLine}";
+            return AppendLabeledText("Thalassa: ", receivedMessage, 1);
+            //receivedMessage = $"Thalassa: {receivedMessage}{Environment.NewLine}";
+            //if (Dispatcher.Thread == Thread.CurrentThread)
+            //{
+            //    ChatbotResponsesRichTextBox.AppendText(receivedMessage);
+            //    return Task.CompletedTask;
+            //}
+            //else
+            //{
+            //    return Dispatcher.InvokeAsync(() => ChatbotResponsesRichTextBox.AppendText(receivedMessage)).Task;
+            //}
+        }
+
+        private Task AppendLabeledText(string label, string text, double dividerLineThickness = 0)
+        {
+            Action append = () =>
+            {
+                Paragraph paragraph = new Paragraph();
+
+                Span boldSpan = new Span(new Run(label));
+                boldSpan.FontWeight = FontWeights.Bold;
+
+                Run textRun = new Run(text);
+
+                paragraph.Inlines.Add(boldSpan);
+                paragraph.Inlines.Add(textRun);
+
+                if (dividerLineThickness != 0)
+                {
+                    Border divider = new Border();
+                    divider.BorderThickness = new Thickness(0, dividerLineThickness, 0, 0);
+                    divider.BorderBrush = new SolidColorBrush(Colors.Gray);
+                    divider.Margin = new Thickness(0, 5, 0, 5);
+
+                    paragraph.Inlines.Add(divider);
+                }
+
+                this.ChatbotResponsesRichTextBox.Document.Blocks.Add(paragraph);
+            };
+
+            return ExecuteOnDispatcherThread(append);
+        }
+
+        private Task ExecuteOnDispatcherThread(Action action)
+        {
             if (Dispatcher.Thread == Thread.CurrentThread)
             {
-                ChatbotResponsesRichTextBox.AppendText(receivedMessage);
+                action();
                 return Task.CompletedTask;
             }
-            else
-            {
-                return Dispatcher.InvokeAsync(() => ChatbotResponsesRichTextBox.AppendText(receivedMessage)).Task;
-            }
+            return Dispatcher.InvokeAsync(action).Task;
         }
 
         private void UserMessageTextBox_KeyUp(object sender, KeyEventArgs e)
@@ -287,7 +335,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void ChatbotResponsesRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (Autoscroll.IsChecked == true)
+            if (AutoscrollCheckBox.IsChecked == true)
             {
                 ChatbotResponsesScrollViewer.ScrollToEnd();
             }
@@ -295,7 +343,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void Autoscroll_Checked(object sender, RoutedEventArgs e)
         {
-            if (this.IsInitialized && Autoscroll.IsChecked == true)
+            if (this.IsInitialized && AutoscrollCheckBox.IsChecked == true)
             {
                 ChatbotResponsesScrollViewer.ScrollToEnd();
             }
@@ -316,6 +364,53 @@ namespace StarmaidIntegrationComputer.Chat
         private void ThalassaInputOverButton_Click(object sender, RoutedEventArgs e)
         {
             voiceListener.StopListening();
+        }
+
+        private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                IncrementFormTextScale(e.Delta / 120);
+                e.Handled = true;
+            }
+        }
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.D0)
+            {
+                ResetFormTextScale();
+                e.Handled = true;
+            }
+        }
+
+        private void IncrementFormTextScale(int numberOfClicks)
+        {
+            foreach (Control control in controlsForResize)
+            {
+                if (control.FontSize + numberOfClicks > 0)
+                {
+                    control.FontSize += numberOfClicks;
+                }
+            }
+
+
+            ScaleTransform transform = (AutoscrollCheckBox.RenderTransform as ScaleTransform) ?? new ScaleTransform(1.0, 1.0, 0.5, 0.5);
+            transform.ScaleX += numberOfClicks / 10.0;
+            transform.ScaleY += numberOfClicks / 10.0;
+
+            AutoscrollCheckBox.RenderTransform = transform;
+            AutoscrollCheckBox.RenderTransformOrigin = new Point(1,0);
+        }
+
+        private void ResetFormTextScale()
+        {
+            foreach (Control control in controlsForResize)
+            {
+                control.FontSize = defaultFontSize;
+            }
+            AutoscrollCheckBox.RenderTransform = new ScaleTransform(1.0, 1.0, 0.5, 0.5);
+
         }
     }
 }
