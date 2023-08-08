@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.Xml;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,7 +12,7 @@ using System.Windows.Threading;
 
 using Microsoft.Extensions.Logging;
 
-using OpenAI_API;
+using OpenAI.Managers;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Thalassa;
@@ -29,7 +28,6 @@ namespace StarmaidIntegrationComputer.Chat
     /// </summary>
     public partial class ChatWindow : Window
     {
-        private readonly OpenAIAPI api;
         private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
 
@@ -54,6 +52,7 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly ThalassaCore thalassaCore;
         private readonly SpeechComputer speechComputer;
         private readonly VoiceListener voiceListener;
+        private readonly OpenAIService openAIService;
         private Action onNewChatComputerUsePropertyOnly = null;
 
         /// <summary>
@@ -75,7 +74,6 @@ namespace StarmaidIntegrationComputer.Chat
         //TODO: Consider ripping logic out into a custom control, and/or a controller for the Thalassa command strip.
         public ChatWindow(ChatWindowCtorArgs args)
         {
-            this.api = args.Api;
             this.stateBag = args.StateBag;
             this.logger = args.Logger;
             this.openAISettings = args.OpenAISettings;
@@ -83,6 +81,7 @@ namespace StarmaidIntegrationComputer.Chat
             this.thalassaCore = args.ThalassaCore;
             this.speechComputer = args.SpeechComputer;
             this.voiceListener = args.VoiceListener;
+            this.openAIService = args.OpenAIService;
 
             AddButtonStateEventHandlers();
 
@@ -121,8 +120,8 @@ namespace StarmaidIntegrationComputer.Chat
         }
 
         private void CreateNewChatComputer()
-        {
-            ActiveChatComputer = new ChatComputer(api, stateBag, openAISettings, logger);
+{
+            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAIService);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 
