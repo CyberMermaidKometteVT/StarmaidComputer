@@ -17,7 +17,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
         private readonly OpenAISettings openAISettings;
-        ChatCompletionCreateRequest conversation;
+        ChatCompletionCreateRequest request;
         public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; private set; } = new AsyncTwoStringsMethodList();
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
@@ -36,9 +36,9 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         {
             PrepareToSendChat();
 
-            conversation.Messages.Add(new ChatMessage("user", userMessage));
+            request.Messages.Add(new ChatMessage("user", userMessage));
             OutputUserMessage("", $"{userMessage}{Environment.NewLine}");
-            ChatCompletionCreateResponse? response = await openAIService.CreateCompletion(conversation);
+            ChatCompletionCreateResponse? response = await openAIService.CreateCompletion(request);
             var responseText = response.Choices.First().Message.Content;
             OutputChatbotResponse($"Thalassa: {responseText}{Environment.NewLine}");
         }
@@ -47,7 +47,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         {
             PrepareToSendChat();
 
-            conversation.Messages.Add(new ChatMessage("user", userMessage, userName));
+            request.Messages.Add(new ChatMessage("user", userMessage, userName));
 
             //conversation.AppendUserInputWithName(userName, userMessage);
 
@@ -56,11 +56,11 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             string response;
             try
             {
-                ChatCompletionCreateResponse? completionResponse = await openAIService.CreateCompletion(conversation);
+                ChatCompletionCreateResponse? completionResponse = await openAIService.CreateCompletion(request);
                 var responseMessage = completionResponse.Choices.First().Message;
                 response = responseMessage.Content;
 
-                conversation.Messages.Add(responseMessage);
+                request.Messages.Add(responseMessage);
             }
             catch (HttpRequestException ex)
             {
@@ -85,16 +85,16 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             string chatters = string.Join(", ", stateBag.Chatters.Select(chatter => chatter.ChatterName));
             string viewers = string.Join(", ", stateBag.Viewers);
             string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
-            conversation.Messages.Add(new ChatMessage("system", starmaidContext));
+            request.Messages.Add(new ChatMessage("system", starmaidContext));
             //conversation.AppendSystemMessage(starmaidContext);
         }
 
         private void EnsureConversationInitialized()
         {
-            if (conversation == null)
+            if (request == null)
             {
                 logger.LogInformation("Starting a new conversation.");
-                conversation  = new ChatCompletionCreateRequest
+                request  = new ChatCompletionCreateRequest
                 {
                     Model = OpenAI.ObjectModels.Models.Gpt_3_5_Turbo_16k,
                     Messages = new List<ChatMessage>(),
@@ -110,14 +110,14 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                     const string initialSystemMessage2 = "Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.";
 
                     const string initialSystemMessage3 = "Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!";
-                    conversation.Messages.Add(new ChatMessage("system", openAISettings.GptPrompt));
-                    conversation.Messages.Add(new ChatMessage("system", initialSystemMessage2));
-                    conversation.Messages.Add(new ChatMessage("system", initialSystemMessage3));
+                    request.Messages.Add(new ChatMessage("system", openAISettings.GptPrompt));
+                    request.Messages.Add(new ChatMessage("system", initialSystemMessage2));
+                    request.Messages.Add(new ChatMessage("system", initialSystemMessage3));
                 }
                 else
                 {
                     const string minimalPrompt = "You are Thalassa, the shipboard AI of the sci-fi spaceship, the Starmaid. You are owned by Komette, a mermaid from space with cybernetic enhancements. Your role is to discuss topics with Komette, while she is streaming to her audience.  Your pronouns are she/her. Komette's pronouns are also she/her.";
-                    conversation.Messages.Add(new ChatMessage("system", minimalPrompt));
+                    request.Messages.Add(new ChatMessage("system", minimalPrompt));
                 }
 #pragma warning restore CS0162 // Unreachable code detected
             }
