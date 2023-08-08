@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 using OpenAI.Managers;
 using OpenAI.ObjectModels.RequestModels;
@@ -49,8 +48,6 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
             request.Messages.Add(new ChatMessage("user", userMessage, userName));
 
-            //conversation.AppendUserInputWithName(userName, userMessage);
-
             OutputUserMessage(userName, userMessage.TrimEnd());
 
             string response;
@@ -86,7 +83,6 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             string viewers = string.Join(", ", stateBag.Viewers);
             string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
             request.Messages.Add(new ChatMessage("system", starmaidContext));
-            //conversation.AppendSystemMessage(starmaidContext);
         }
 
         private void EnsureConversationInitialized()
