@@ -1,9 +1,9 @@
 ﻿
 using Microsoft.Extensions.Logging;
 
-using OpenAI_API;
-using OpenAI_API.Chat;
-using OpenAI_API.Models;
+using OpenAI.Managers;
+using OpenAI.ObjectModels.RequestModels;
+using OpenAI.ObjectModels.ResponseModels;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
@@ -13,47 +13,59 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
     public class ChatComputer
     {
-        private readonly OpenAIAPI api;
+        private readonly OpenAIService openAIService;
+        /// <summary>
+        /// Deprecated
+        /// </summary>
+        //private readonly OpenAIAPI api;
         private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
         private readonly OpenAISettings openAISettings;
-        private Conversation? conversation;
+        ChatCompletionCreateRequest conversation;
+        //private Conversation? conversation;
         public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; private set; } = new AsyncTwoStringsMethodList();
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
 
         //TODO: Consider making this a setting!
         const bool useJailBreaking = true;
-        public ChatComputer(OpenAIAPI api, StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger)
+        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAIService openAIService)
         {
-            this.api = api;
             this.stateBag = stateBag;
             this.logger = logger;
             this.openAISettings = openAISettings;
+            this.openAIService = openAIService;
         }
 
         public async Task SendChat(string userMessage)
         {
-            PrepareToSendChat(userMessage);
+            PrepareToSendChat();
 
-            conversation.AppendUserInput(userMessage);
+            conversation.Messages.Add(new ChatMessage("user", userMessage));
             OutputUserMessage("", $"{userMessage}{Environment.NewLine}");
-            var response = await conversation.GetResponseFromChatbotAsync();
-            OutputChatbotResponse($"Thalassa: {response}{Environment.NewLine}");
+            ChatCompletionCreateResponse? response = await openAIService.CreateCompletion(conversation);
+            var responseText = response.Choices.First().Message.Content;
+            OutputChatbotResponse($"Thalassa: {responseText}{Environment.NewLine}");
         }
 
         public async Task SendChat(string userName, string userMessage)
         {
-            PrepareToSendChat(userMessage);
+            PrepareToSendChat();
 
-            conversation.AppendUserInputWithName(userName, userMessage);
+            conversation.Messages.Add(new ChatMessage("user", userMessage, userName));
+
+            //conversation.AppendUserInputWithName(userName, userMessage);
 
             OutputUserMessage(userName, userMessage.TrimEnd());
 
             string response;
             try
             {
-                response = await conversation.GetResponseFromChatbotAsync();
+                ChatCompletionCreateResponse? completionResponse = await openAIService.CreateCompletion(conversation);
+                var responseMessage = completionResponse.Choices.First().Message;
+                response = responseMessage.Content;
+
+                conversation.Messages.Add(responseMessage);
             }
             catch (HttpRequestException ex)
             {
@@ -66,7 +78,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             OutputChatbotResponse(response);
         }
 
-        private void PrepareToSendChat(string userMessage)
+        private void PrepareToSendChat()
         {
             EnsureConversationInitialized();
             AppendCurrentStarmaidStateToConversation();
@@ -78,7 +90,8 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             string chatters = string.Join(", ", stateBag.Chatters.Select(chatter => chatter.ChatterName));
             string viewers = string.Join(", ", stateBag.Viewers);
             string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
-            conversation.AppendSystemMessage(starmaidContext);
+            conversation.Messages.Add(new ChatMessage("system", starmaidContext));
+            //conversation.AppendSystemMessage(starmaidContext);
         }
 
         private void EnsureConversationInitialized()
@@ -86,29 +99,30 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             if (conversation == null)
             {
                 logger.LogInformation("Starting a new conversation.");
-
-                conversation = api.Chat.CreateConversation(new ChatRequest
+                conversation  = new ChatCompletionCreateRequest
                 {
-                    //MaxTokens = 6000,
+                    Model = OpenAI.ObjectModels.Models.Gpt_3_5_Turbo_16k,
+                    Messages = new List<ChatMessage>(),
                     MaxTokens = 8000,
-                    TopP = 0.02,
-                    NumChoicesPerMessage = 1,
-                    //Model = new Model("gpt-4")
-                    Model = new Model("gpt-3.5-turbo-16k")
-                    //Model = new Model("gpt-3.5-turbo-16k-0613")
-
-                });
+                    TopP = 0.02f,
+                    N = 1,
+                };
 
 #pragma warning disable CS0162 // Unreachable code detected - skipping because of consts in logic, to be set by hand.
                 if (useJailBreaking)
                 {
-                    conversation.AppendSystemMessage(openAISettings.GptPrompt);
-                    conversation.AppendSystemMessage("Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.");
-                    conversation.AppendSystemMessage("Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!");
+                    //TODO: Consolidate these into the first message, or at least evaluate if that works better?
+                    const string initialSystemMessage2 = "Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.";
+
+                    const string initialSystemMessage3 = "Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!";
+                    conversation.Messages.Add(new ChatMessage("system", openAISettings.GptPrompt));
+                    conversation.Messages.Add(new ChatMessage("system", initialSystemMessage2));
+                    conversation.Messages.Add(new ChatMessage("system", initialSystemMessage3));
                 }
                 else
                 {
-                    conversation.AppendSystemMessage("You are Thalassa, the shipboard AI of the sci-fi spaceship, the Starmaid. You are owned by Komette, a mermaid from space with cybernetic enhancements. Your role is to discuss topics with Komette, while she is streaming to her audience.  Your pronouns are she/her. Komette's pronouns are also she/her.");
+                    const string minimalPrompt = "You are Thalassa, the shipboard AI of the sci-fi spaceship, the Starmaid. You are owned by Komette, a mermaid from space with cybernetic enhancements. Your role is to discuss topics with Komette, while she is streaming to her audience.  Your pronouns are she/her. Komette's pronouns are also she/her.";
+                    conversation.Messages.Add(new ChatMessage("system", minimalPrompt));
                 }
 #pragma warning restore CS0162 // Unreachable code detected
             }
@@ -128,7 +142,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 {
                     OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
 
-                    var isCommand = chatbotResponseMessage.Contains("Command: ");
+                    bool isCommand = chatbotResponseMessage.Contains("Command: ");
                     OutputChatbotCommandHandlers.Execute(chatbotResponseMessage);
 
                     return;
