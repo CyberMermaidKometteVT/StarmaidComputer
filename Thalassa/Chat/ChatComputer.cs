@@ -8,6 +8,7 @@ using OpenAI.ObjectModels.ResponseModels;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.Settings;
+//using ChatMessage = OpenAI.ObjectModels.RequestModels.ChatMessage;
 
 namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
