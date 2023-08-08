@@ -14,15 +14,10 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
     public class ChatComputer
     {
         private readonly OpenAIService openAIService;
-        /// <summary>
-        /// Deprecated
-        /// </summary>
-        //private readonly OpenAIAPI api;
         private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
         private readonly OpenAISettings openAISettings;
         ChatCompletionCreateRequest conversation;
-        //private Conversation? conversation;
         public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; private set; } = new AsyncTwoStringsMethodList();
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
