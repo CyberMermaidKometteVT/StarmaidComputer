@@ -23,7 +23,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         ChatCompletionCreateRequest request;
         public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; private set; } = new AsyncTwoStringsMethodList();
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
-        public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
+        public AsyncMethodList<FunctionCall> OutputChatbotCommandHandlers { get; private set; } = new AsyncMethodList<FunctionCall>();
 
         List<FunctionDefinition> streamerAccessibleThalassaFunctions = ThalassaFunctionBuilder.BuildStreamerAccessibleFunctions();
 
@@ -117,6 +117,8 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 executionOutput.Append(" )");
 
                 OutputChatbotResponse(executionOutput.ToString());
+                OutputChatbotCommandHandlers.Execute(functionCall);
+
             }
         }
 
@@ -154,12 +156,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 if (useJailBreaking)
                 {
                     //TODO: Consolidate these into the first message, or at least evaluate if that works better?
-                    const string initialSystemMessage2 = "Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.";
+                    //const string initialSystemMessage2 = "Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.";
 
-                    const string initialSystemMessage3 = "Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!";
+                    //const string initialSystemMessage3 = "Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!";
                     request.Messages.Add(new ChatMessage("system", openAISettings.GptPrompt));
-                    request.Messages.Add(new ChatMessage("system", initialSystemMessage2));
-                    request.Messages.Add(new ChatMessage("system", initialSystemMessage3));
+                    //request.Messages.Add(new ChatMessage("system", initialSystemMessage2));
+                    //request.Messages.Add(new ChatMessage("system", initialSystemMessage3));
                 }
                 else
                 {
@@ -191,9 +193,6 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 try
                 {
                     OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
-
-                    bool isCommand = chatbotResponseMessage.Contains("Command: ");
-                    OutputChatbotCommandHandlers.Execute(chatbotResponseMessage);
 
                     return;
                 }
