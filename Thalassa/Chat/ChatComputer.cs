@@ -1,8 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text;
 
+using Microsoft.Extensions.Logging;
+
+using OpenAI.Builders;
 using OpenAI.Managers;
 using OpenAI.ObjectModels.RequestModels;
 using OpenAI.ObjectModels.ResponseModels;
+using OpenAI.ObjectModels.SharedModels;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
@@ -21,6 +25,8 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
 
+        List<FunctionDefinition> streamerAccessibleThalassaFunctions = ThalassaFunctionBuilder.BuildStreamerAccessibleFunctions();
+
         //TODO: Consider making this a setting!
         const bool useJailBreaking = true;
         public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAIService openAIService)
@@ -38,9 +44,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             request.Messages.Add(new ChatMessage("user", userMessage));
             OutputUserMessage("", $"{userMessage}{Environment.NewLine}");
             ChatCompletionCreateResponse? response = await openAIService.CreateCompletion(request);
-            var responseText = response.Choices.First().Message.Content;
+            var firstResponseChoice = response.Choices.First();
+            var responseText = firstResponseChoice.Message.Content;
             OutputChatbotResponse($"Thalassa: {responseText}{Environment.NewLine}");
+            OutputChatbotFunctionCall(firstResponseChoice);
         }
+
 
         public async Task SendChat(string userName, string userMessage)
         {
@@ -54,10 +63,21 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             try
             {
                 ChatCompletionCreateResponse? completionResponse = await openAIService.CreateCompletion(request);
-                var responseMessage = completionResponse.Choices.First().Message;
+                var firstResponseChoice = completionResponse.Choices.First();
+                var responseMessage = firstResponseChoice.Message;
                 response = responseMessage.Content;
 
-                request.Messages.Add(responseMessage);
+                if (responseMessage.FunctionCall == null)
+                {
+                    request.Messages.Add(responseMessage);
+                }
+
+                OutputChatbotFunctionCall(firstResponseChoice);
+
+                if (response != null)
+                {
+                    OutputChatbotResponse(response);
+                }
             }
             catch (HttpRequestException ex)
             {
@@ -66,9 +86,40 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 OutputChatbotResponse(failureMessage);
                 return;
             }
-
-            OutputChatbotResponse(response);
         }
+
+        private void OutputChatbotFunctionCall(ChatChoiceResponse firstResponseChoice)
+        {
+            var functionCall = firstResponseChoice.Message.FunctionCall;
+            if (functionCall != null)
+            {
+#warning Replace with better solution!
+                StringBuilder executionOutput = new StringBuilder("Executing: ")
+                    .Append(functionCall.Name).Append("(");
+                if (!String.IsNullOrWhiteSpace(functionCall.Arguments))
+                {
+                    bool firstArgument = true;
+                    foreach (KeyValuePair<string, object> argumentByName in functionCall.ParseArguments())
+                    {
+                        if (!firstArgument)
+                        {
+                            executionOutput.Append(",");
+                        }
+
+                        firstArgument = false;
+
+                        executionOutput.Append(" ");
+                        executionOutput.Append(argumentByName.Key)
+                            .Append(": ")
+                            .Append(argumentByName.Value);
+                    }
+                }
+                executionOutput.Append(" )");
+
+                OutputChatbotResponse(executionOutput.ToString());
+            }
+        }
+
 
         private void PrepareToSendChat()
         {
@@ -90,7 +141,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             if (request == null)
             {
                 logger.LogInformation("Starting a new conversation.");
-                request  = new ChatCompletionCreateRequest
+                request = new ChatCompletionCreateRequest
                 {
                     Model = OpenAI.ObjectModels.Models.Gpt_3_5_Turbo_16k,
                     Messages = new List<ChatMessage>(),
@@ -115,6 +166,8 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                     const string minimalPrompt = "You are Thalassa, the shipboard AI of the sci-fi spaceship, the Starmaid. You are owned by Komette, a mermaid from space with cybernetic enhancements. Your role is to discuss topics with Komette, while she is streaming to her audience.  Your pronouns are she/her. Komette's pronouns are also she/her.";
                     request.Messages.Add(new ChatMessage("system", minimalPrompt));
                 }
+
+                request.Functions = streamerAccessibleThalassaFunctions;
 #pragma warning restore CS0162 // Unreachable code detected
             }
             else
@@ -125,6 +178,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
         private void OutputChatbotResponse(string chatbotResponseMessage)
         {
+            if (String.IsNullOrWhiteSpace(chatbotResponseMessage))
+            {
+                logger.LogInformation($"MESSAGE-LESS CHATBOT RESPONSE RECEIVED!");
+                return;
+            }
+
             logger.LogInformation($"CHATBOT MESSAGE RECEIVED, VERBOSE VERSION: {chatbotResponseMessage}{Environment.NewLine}");
 
             if (useJailBreaking)
