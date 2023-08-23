@@ -67,9 +67,15 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 var responseMessage = firstResponseChoice.Message;
                 response = responseMessage.Content;
 
-                if (responseMessage.FunctionCall == null)
+                if (responseMessage.Content != null)
                 {
                     request.Messages.Add(responseMessage);
+                }
+                else
+                {
+                    //TODO: Figure out if we need to identify the case where Content is null but there is no function call involved
+                    var functionCallMessage = new ChatMessage(responseMessage.Role, "", responseMessage.Name, responseMessage.FunctionCall);
+                    request.Messages.Add(functionCallMessage);
                 }
 
                 OutputChatbotFunctionCall(firstResponseChoice);

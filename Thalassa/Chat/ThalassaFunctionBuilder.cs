@@ -11,12 +11,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             .Validate()
             .Build();
 
-        private static FunctionDefinition shoutoutDefinition = new FunctionDefinitionBuilder("Shoutout", "This will shout out a Twitch user in Komette's chat, or the phrase, \"the last raider\". A shoutout is a positive celebration of that user's stream. It will usually be someone who has raided her, but might be a chatter, or might even be someone who's not currently viewing her stream at all. This is NOT a simple greeting, it is not just a compliment, and it should only be called if she is specifically calling for a shout out, other celebrations of the person such as \"say hi to\" should not cause this to be called.")
+        private static FunctionDefinition shoutoutDefinition = new FunctionDefinitionBuilder("Shoutout", "This will perform the special Twitch shoutout command, used only if Komette has specifically used the phrase \"shoutout\" in her last message, and will not be used in place of a greeting or celebration of a person. This is not the colloquial use of the word \"shoutout\" and being told to send greetings or celebrations to someone should never result in this being called. Most of the time, a")
             .AddParameter("target", PropertyDefinition.DefineString("The username of the Twitch channel that will be the target of the shoutout."))
             .Validate()
             .Build();
 
-        private static FunctionDefinition timeoutDefinition = new FunctionDefinitionBuilder("Timeout", "Times out the target user, preventing them from chatting for a certain duration.")
+        private static FunctionDefinition timeoutDefinition = new FunctionDefinitionBuilder("Timeout", "Disables the target user from chatting for a certain duration, used if and only if Komette specifically uses the phrase \"timeout\"")
             .AddParameter("target", PropertyDefinition.DefineString("The username of the Twitch user that will be the target of the timeout, or the phrase, \"the last raider\"."))
             .AddParameter("duration", PropertyDefinition.DefineInteger("The duration of the timeout, in seconds. This should default to 300, unless it's actuallystan666 being timed out, in which case, it should default to 60."))
             .Validate()
