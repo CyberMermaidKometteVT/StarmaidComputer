@@ -3,6 +3,7 @@
 using OpenAI.Managers;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Thalassa.Chat;
 using StarmaidIntegrationComputer.Thalassa.Settings;
@@ -21,8 +22,10 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly SpeechComputer speechComputer;
         private readonly VoiceListener voiceListener;
         private readonly OpenAIService openAIService;
+        private readonly StreamerProfileSettings streamerProfileSettings;
+        private readonly ThalassaFunctionBuilder thalassaFunctionBuilder;
 
-        public ChatWindowFactory(StarmaidStateBag stateBag, ILogger<ChatComputer> logger, OpenAISettings openAISettings, SoundEffectPlayer soundEffectPlayer, ThalassaCore thalassaCore, SpeechComputer speechComputer, VoiceListener voiceListener, OpenAIService openAIService)
+        public ChatWindowFactory(StarmaidStateBag stateBag, ILogger<ChatComputer> logger, OpenAISettings openAISettings, SoundEffectPlayer soundEffectPlayer, ThalassaCore thalassaCore, SpeechComputer speechComputer, VoiceListener voiceListener, OpenAIService openAIService, StreamerProfileSettings streamerProfileSettings, ThalassaFunctionBuilder thalassaFunctionBuilder)
         {
             this.stateBag = stateBag;
             this.logger = logger;
@@ -31,6 +34,8 @@ namespace StarmaidIntegrationComputer.Chat
             this.speechComputer = speechComputer;
             this.voiceListener = voiceListener;
             this.openAIService = openAIService;
+            this.streamerProfileSettings = streamerProfileSettings;
+            this.thalassaFunctionBuilder = thalassaFunctionBuilder;
             this.openAISettings = openAISettings;
         }
 
@@ -45,7 +50,9 @@ namespace StarmaidIntegrationComputer.Chat
                 ThalassaCore = thalassaCore,
                 SpeechComputer = speechComputer,
                 VoiceListener = voiceListener,
-                OpenAIService = openAIService
+                OpenAIService = openAIService,
+                StreamerProfileSettings = streamerProfileSettings,
+                ThalassaFunctionBuilder = thalassaFunctionBuilder
             };
 
             return new ChatWindow(args);

@@ -60,7 +60,7 @@ namespace StarmaidIntegrationComputer
 
             var speechComputer = serviceProvider.GetService<SpeechComputer>();
             speechComputer.SpeechCompletedHandlers.Add(() => throw ex);
-            speechComputer.Speak($"The Starmaid Integration Computer, which runs Thalassa, just crashed. It's a {ex.GetType()}, see the log for more details.");
+            speechComputer.Speak($"The Integration Computer, which runs the AI, just crashed. It's a {ex.GetType()}, see the log for more details.");
             while (speechComputer.IsSpeaking)
             {
                 Thread.Sleep(1000);
