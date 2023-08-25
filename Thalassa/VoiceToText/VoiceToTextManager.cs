@@ -9,6 +9,8 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
         public const string ALREADY_LISTENING_RESULT = "↑↑ALREADY LISTENING↑↑";
 
+        private const bool RECORD_HEARD_AUDIO = false;
+
         public VoiceToTextManager(TranscriptionSender transcriptionSender, VoiceListener voiceListener)
         {
             this.transcriptionSender = transcriptionSender;
@@ -24,11 +26,16 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
                 return ALREADY_LISTENING_RESULT;
             }
 
-            using (WaveFileWriter writer = new WaveFileWriter(@"D:\temp\heardAudio\out.wav", new WaveFormat(16000, 16, 1)))
+            if (RECORD_HEARD_AUDIO)
             {
-                //TODO: Unsafe conversion, I should maybe do something about this
+#pragma warning disable CS0162 // Unreachable code detected
+                using (WaveFileWriter writer = new WaveFileWriter(@"D:\temp\heardAudio\out.wav", new WaveFormat(16000, 16, 1)))
+                {
+                    //TODO: Unsafe conversion, I should maybe do something about this
 
-                await writer.WriteAsync(heardAudio.ToArray(), 0, heardAudio.Length);
+                    await writer.WriteAsync(heardAudio.ToArray(), 0, heardAudio.Length);
+                }
+#pragma warning restore CS0162 // Unreachable code detected
             }
 
             var interpretedText = await transcriptionSender.Interpret(context, heardAudio);

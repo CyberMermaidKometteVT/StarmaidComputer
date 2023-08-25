@@ -1,18 +1,17 @@
 ﻿
 using Microsoft.Extensions.Logging;
-using OpenAI_API;
 using StarmaidIntegrationComputer.Thalassa.Chat;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Thalassa.Settings;
+using OpenAI.Managers;
 
 namespace StarmaidIntegrationComputer.Chat
 {
     public class ChatWindowCtorArgs
     {
-        public OpenAIAPI Api { get; set; }
         public StarmaidStateBag StateBag { get; set; }
         public ILogger<ChatComputer> Logger { get; set; }
         public OpenAISettings OpenAISettings { get; set; }
@@ -20,5 +19,6 @@ namespace StarmaidIntegrationComputer.Chat
         public ThalassaCore ThalassaCore { get; set; }
         public SpeechComputer SpeechComputer { get; set; }
         public VoiceListener VoiceListener { get; set; }
+        public OpenAIService OpenAIService { get; set; }
     }
 }

@@ -1,9 +1,12 @@
-﻿
+﻿using System.Text;
+
 using Microsoft.Extensions.Logging;
 
-using OpenAI_API;
-using OpenAI_API.Chat;
-using OpenAI_API.Models;
+using OpenAI.Builders;
+using OpenAI.Managers;
+using OpenAI.ObjectModels.RequestModels;
+using OpenAI.ObjectModels.ResponseModels;
+using OpenAI.ObjectModels.SharedModels;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
@@ -13,47 +16,72 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
     public class ChatComputer
     {
-        private readonly OpenAIAPI api;
+        private readonly OpenAIService openAIService;
         private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
         private readonly OpenAISettings openAISettings;
-        private Conversation? conversation;
+        ChatCompletionCreateRequest request;
         public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; private set; } = new AsyncTwoStringsMethodList();
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
-        public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
+        public AsyncMethodList<FunctionCall> OutputChatbotCommandHandlers { get; private set; } = new AsyncMethodList<FunctionCall>();
 
-        //TODO: Consider making this a setting!
-        const bool useJailBreaking = true;
-        public ChatComputer(OpenAIAPI api, StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger)
+        List<FunctionDefinition> streamerAccessibleThalassaFunctions = ThalassaFunctionBuilder.BuildStreamerAccessibleFunctions();
+
+        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAIService openAIService)
         {
-            this.api = api;
             this.stateBag = stateBag;
             this.logger = logger;
             this.openAISettings = openAISettings;
+            this.openAIService = openAIService;
         }
 
         public async Task SendChat(string userMessage)
         {
-            PrepareToSendChat(userMessage);
+            PrepareToSendChat();
 
-            conversation.AppendUserInput(userMessage);
+            request.Messages.Add(new ChatMessage("user", userMessage));
             OutputUserMessage("", $"{userMessage}{Environment.NewLine}");
-            var response = await conversation.GetResponseFromChatbotAsync();
-            OutputChatbotResponse($"Thalassa: {response}{Environment.NewLine}");
+            ChatCompletionCreateResponse? response = await openAIService.CreateCompletion(request);
+            var firstResponseChoice = response.Choices.First();
+            var responseText = firstResponseChoice.Message.Content;
+            OutputChatbotResponse($"Thalassa: {responseText}{Environment.NewLine}");
+            OutputChatbotFunctionCall(firstResponseChoice);
         }
+
 
         public async Task SendChat(string userName, string userMessage)
         {
-            PrepareToSendChat(userMessage);
+            PrepareToSendChat();
 
-            conversation.AppendUserInputWithName(userName, userMessage);
+            request.Messages.Add(new ChatMessage("user", userMessage, userName));
 
             OutputUserMessage(userName, userMessage.TrimEnd());
 
             string response;
             try
             {
-                response = await conversation.GetResponseFromChatbotAsync();
+                ChatCompletionCreateResponse? completionResponse = await openAIService.CreateCompletion(request);
+                var firstResponseChoice = completionResponse.Choices.First();
+                var responseMessage = firstResponseChoice.Message;
+                response = responseMessage.Content;
+
+                if (responseMessage.Content != null)
+                {
+                    request.Messages.Add(responseMessage);
+                }
+                else
+                {
+                    //TODO: Figure out if we need to identify the case where Content is null but there is no function call involved
+                    var functionCallMessage = new ChatMessage(responseMessage.Role, "", responseMessage.Name, responseMessage.FunctionCall);
+                    request.Messages.Add(functionCallMessage);
+                }
+
+                OutputChatbotFunctionCall(firstResponseChoice);
+
+                if (response != null)
+                {
+                    OutputChatbotResponse(response);
+                }
             }
             catch (HttpRequestException ex)
             {
@@ -62,11 +90,44 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 OutputChatbotResponse(failureMessage);
                 return;
             }
-
-            OutputChatbotResponse(response);
         }
 
-        private void PrepareToSendChat(string userMessage)
+        private void OutputChatbotFunctionCall(ChatChoiceResponse firstResponseChoice)
+        {
+            var functionCall = firstResponseChoice.Message.FunctionCall;
+            if (functionCall != null)
+            {
+#warning Replace with better solution!
+                StringBuilder executionOutput = new StringBuilder("Executing: ")
+                    .Append(functionCall.Name).Append("(");
+                if (!String.IsNullOrWhiteSpace(functionCall.Arguments))
+                {
+                    bool firstArgument = true;
+                    foreach (KeyValuePair<string, object> argumentByName in functionCall.ParseArguments())
+                    {
+                        if (!firstArgument)
+                        {
+                            executionOutput.Append(",");
+                        }
+
+                        firstArgument = false;
+
+                        executionOutput.Append(" ");
+                        executionOutput.Append(argumentByName.Key)
+                            .Append(": ")
+                            .Append(argumentByName.Value);
+                    }
+                }
+                executionOutput.Append(" )");
+
+                OutputChatbotResponse(executionOutput.ToString());
+                OutputChatbotCommandHandlers.Execute(functionCall);
+
+            }
+        }
+
+
+        private void PrepareToSendChat()
         {
             EnsureConversationInitialized();
             AppendCurrentStarmaidStateToConversation();
@@ -78,38 +139,30 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             string chatters = string.Join(", ", stateBag.Chatters.Select(chatter => chatter.ChatterName));
             string viewers = string.Join(", ", stateBag.Viewers);
             string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
-            conversation.AppendSystemMessage(starmaidContext);
+            request.Messages.Add(new ChatMessage("system", starmaidContext));
         }
 
         private void EnsureConversationInitialized()
         {
-            if (conversation == null)
+            if (request == null)
             {
                 logger.LogInformation("Starting a new conversation.");
-
-                conversation = api.Chat.CreateConversation(new ChatRequest
+                request = new ChatCompletionCreateRequest
                 {
-                    //MaxTokens = 6000,
+                    Model = OpenAI.ObjectModels.Models.Gpt_3_5_Turbo_16k,
+                    Messages = new List<ChatMessage>(),
                     MaxTokens = 8000,
-                    TopP = 0.02,
-                    NumChoicesPerMessage = 1,
-                    //Model = new Model("gpt-4")
-                    Model = new Model("gpt-3.5-turbo-16k")
-                    //Model = new Model("gpt-3.5-turbo-16k-0613")
-
-                });
+                    TopP = 0.02f,
+                    N = 1,
+                };
 
 #pragma warning disable CS0162 // Unreachable code detected - skipping because of consts in logic, to be set by hand.
-                if (useJailBreaking)
-                {
-                    conversation.AppendSystemMessage(openAISettings.GptPrompt);
-                    conversation.AppendSystemMessage("Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.");
-                    conversation.AppendSystemMessage("Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!");
-                }
-                else
-                {
-                    conversation.AppendSystemMessage("You are Thalassa, the shipboard AI of the sci-fi spaceship, the Starmaid. You are owned by Komette, a mermaid from space with cybernetic enhancements. Your role is to discuss topics with Komette, while she is streaming to her audience.  Your pronouns are she/her. Komette's pronouns are also she/her.");
-                }
+                    //TODO: Consolidate these into the first message, or at least evaluate if that works better?
+                    request.Messages.Add(new ChatMessage("system", openAISettings.GptPrompt));
+                    //request.Messages.Add(new ChatMessage("system", initialSystemMessage2));
+                    //request.Messages.Add(new ChatMessage("system", initialSystemMessage3));
+
+                request.Functions = streamerAccessibleThalassaFunctions;
 #pragma warning restore CS0162 // Unreachable code detected
             }
             else
@@ -120,6 +173,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
         private void OutputChatbotResponse(string chatbotResponseMessage)
         {
+            if (String.IsNullOrWhiteSpace(chatbotResponseMessage))
+            {
+                logger.LogInformation($"MESSAGE-LESS CHATBOT RESPONSE RECEIVED!");
+                return;
+            }
+
             logger.LogInformation($"CHATBOT MESSAGE RECEIVED, VERBOSE VERSION: {chatbotResponseMessage}{Environment.NewLine}");
 
             if (useJailBreaking)
@@ -127,9 +186,6 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 try
                 {
                     OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
-
-                    var isCommand = chatbotResponseMessage.Contains("Command: ");
-                    OutputChatbotCommandHandlers.Execute(chatbotResponseMessage);
 
                     return;
                 }

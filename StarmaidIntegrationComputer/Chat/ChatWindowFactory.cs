@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using OpenAI_API;
+using OpenAI.Managers;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Thalassa;
@@ -13,7 +13,6 @@ namespace StarmaidIntegrationComputer.Chat
 {
     public class ChatWindowFactory
     {
-        private readonly OpenAIAPI api;
         private readonly StarmaidStateBag stateBag;
         private readonly OpenAISettings openAISettings;
         private readonly ILogger<ChatComputer> logger;
@@ -21,16 +20,17 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly ThalassaCore thalassaCore;
         private readonly SpeechComputer speechComputer;
         private readonly VoiceListener voiceListener;
+        private readonly OpenAIService openAIService;
 
-        public ChatWindowFactory(OpenAIAPI api, StarmaidStateBag stateBag, ILogger<ChatComputer> logger, OpenAISettings openAISettings, SoundEffectPlayer soundEffectPlayer, ThalassaCore thalassaCore, SpeechComputer speechComputer, VoiceListener voiceListener)
+        public ChatWindowFactory(StarmaidStateBag stateBag, ILogger<ChatComputer> logger, OpenAISettings openAISettings, SoundEffectPlayer soundEffectPlayer, ThalassaCore thalassaCore, SpeechComputer speechComputer, VoiceListener voiceListener, OpenAIService openAIService)
         {
-            this.api = api;
             this.stateBag = stateBag;
             this.logger = logger;
             this.soundEffectPlayer = soundEffectPlayer;
             this.thalassaCore = thalassaCore;
             this.speechComputer = speechComputer;
             this.voiceListener = voiceListener;
+            this.openAIService = openAIService;
             this.openAISettings = openAISettings;
         }
 
@@ -38,14 +38,14 @@ namespace StarmaidIntegrationComputer.Chat
         {
             var args = new ChatWindowCtorArgs
             {
-                Api = api,
                 StateBag = stateBag,
                 Logger = logger,
                 OpenAISettings = openAISettings,
                 SoundEffectPlayer = soundEffectPlayer,
                 ThalassaCore = thalassaCore,
                 SpeechComputer = speechComputer,
-                VoiceListener = voiceListener
+                VoiceListener = voiceListener,
+                OpenAIService = openAIService
             };
 
             return new ChatWindow(args);

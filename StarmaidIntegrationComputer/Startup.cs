@@ -12,14 +12,13 @@ using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Api.Core.Enums;
-using OpenAI_API;
 using Serilog;
 using System.IO;
-using System.Windows;
 using Microsoft.Extensions.Configuration;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using System.Linq;
-using Microsoft.Extensions.Hosting;
+using OpenAI.Managers;
+using OpenAI.Extensions;
 
 namespace StarmaidIntegrationComputer
 {
@@ -76,7 +75,6 @@ namespace StarmaidIntegrationComputer
             services.AddScoped<TwitchAuthorizationUserTokenFlowHelper>();
             services.AddSingleton<ThalassaCore>();
             services.AddScoped(_ => scopes);
-            services.AddScoped(_ => new OpenAIAPI(openAiSensitiveSettings.OpenAIBearerToken));
             services.AddScoped<ChatComputer>();
             services.AddScoped<ChatWindowFactory>();
             services.AddScoped<SpeechComputer>();
@@ -87,6 +85,8 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<StarmaidStateBag>();
             services.AddSingleton<LiveAuthorizationInfo>();
             services.AddSingleton<SoundEffectPlayer>();
+            services.AddScoped<OpenAIService>();
+            services.AddOpenAIService(options => options.ApiKey = openAiSensitiveSettings.OpenAIBearerToken);
 
             services.AddScoped(_ =>
                 TwitchApiFactory.Build(twitchSensitiveSettings.TwitchClientId, twitchSensitiveSettings.TwitchClientSecret, scopes)
@@ -129,7 +129,6 @@ namespace StarmaidIntegrationComputer
             return fileName.EndsWith($".{currentEnvironmentName}.json");
         }
 
-
         private T InjectSetting<T>(ServiceCollection services, IConfigurationRoot configuration) where T : class, new()
         {
             T setting = new T();
@@ -138,32 +137,5 @@ namespace StarmaidIntegrationComputer
 
             return setting;
         }
-
-
-        /// <summary>
-        /// This will exit the application if the value in question is too long to be a char, but if the value is missing altogether, will simply return <paramref name="defaultValue"/>.
-        /// </summary>
-        private char? ParseCharFromStringInJson(string source, string parsedName, char? defaultValue = null)
-        {
-            if (source == null || source.Length == 0)
-            {
-                return defaultValue;
-            }
-
-            bool identifierParsedSuccessfully = Char.TryParse(source, out char parsedChar);
-
-            if (!identifierParsedSuccessfully)
-            {
-                MessageBox.Show($"Failed to parse {parsedName} in your settings file, it should be a one-character string like '!'.");
-                Application.Current.Shutdown();
-
-                //This is returning a value, but we ARE shutting down.  The default value is used to keep things from raising exceptions before shutdown.  Presumably the default value should be a reasonable default to keep operating temporarily.
-                return defaultValue;
-            }
-
-            return parsedChar;
-        }
-
-
     }
 }

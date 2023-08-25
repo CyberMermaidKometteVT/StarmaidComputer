@@ -21,6 +21,8 @@ using StarmaidIntegrationComputer.Helpers;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Client.Events;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using OpenAI.ObjectModels.RequestModels;
+using System.Text.Json;
 
 //#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
 //#error This might be a major PITA!
@@ -138,49 +140,22 @@ namespace StarmaidIntegrationComputer
             ConnectChatbot();
         }
 
-        internal Task ConsiderThalassaResponseAsACommand(string thalassaResponse)
+        internal Task ConsiderThalassaResponseAsACommand(FunctionCall thalassaResponse)
         {
-            Regex commandRegex = new Regex(@"(?:Command: )(?<command>.*)\n(?:Target: )?(?<target>.*)?", RegexOptions.Compiled);
-            var matches = commandRegex.Matches(thalassaResponse);
+            Dictionary<string, object>? arguments = thalassaResponse.ParseArguments();
 
-            logger.LogInformation($"Considering if the speech {thalassaResponse} is a command");
-            string? commandText = null;
-            string? target = null;
-            if (matches.Count > 0)
+            object targetArgumentBoxed = null;
+            arguments.TryGetValue("target", out targetArgumentBoxed);
+            JsonElement targetArgumentJson = default(JsonElement);
+            string targetArgument = null;
+            if (targetArgumentBoxed != null)
             {
-                var match = matches.First();
-                if (match.Groups.ContainsKey("command"))
-                {
-                    commandText = match.Groups["command"].Value;
-
-                    if (match.Groups.ContainsKey("target"))
-                    {
-                        target = match.Groups["target"].Value;
-                    }
-                }
+                targetArgument= ((System.Text.Json.JsonElement)targetArgumentBoxed).ToString();
             }
 
-            if (commandText != null)
-            {
-                logger.LogInformation($"The speech {thalassaResponse} was a command: command {commandText}, with target {target}.");
+            var command = commandFactory.Parse(thalassaResponse.Name, targetArgument);
+            command.Execute();
 
-#pragma warning disable CS8604 // Possible null reference argument.
-                var command = commandFactory.Parse(commandText, target);
-
-                if (command == null)
-                {
-                    logger.LogError($"Unknown command, not executing it: command \"{commandText}\" with target \"{target}\"");
-                }
-                else
-                {
-                    command.Execute();
-                }
-#pragma warning restore CS8604 // Possible null reference argument.
-            }
-            else
-            {
-                logger.LogInformation($"The speech {thalassaResponse} was not a command.");
-            }
             return Task.CompletedTask;
         }
 
