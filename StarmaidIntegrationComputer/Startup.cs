@@ -19,6 +19,7 @@ using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using System.Linq;
 using OpenAI.Managers;
 using OpenAI.Extensions;
+using StarmaidIntegrationComputer.Common.Settings;
 
 namespace StarmaidIntegrationComputer
 {
@@ -58,8 +59,9 @@ namespace StarmaidIntegrationComputer
             InjectSetting<SoundPathSettings>(services, configuration);
             InjectSetting<OpenAISettings>(services, configuration);
             InjectSetting<SpeechReplacements>(services, configuration);
-            var one = InjectSetting<DiscordSensitiveSettings>(services, configuration);
-            var two = InjectSetting<DiscordSettings>(services, configuration);
+            InjectSetting<DiscordSensitiveSettings>(services, configuration);
+            InjectSetting<DiscordSettings>(services, configuration);
+            InjectSetting<StreamerProfileSettings>(services, configuration);
 
             //TODO: Pretty sure awake brain knows a better way to load settings than what's in this method.  Sleepy brain does not.
             services.AddScoped<IntegrationComputerCoreCtorArgs>();
@@ -85,6 +87,7 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<StarmaidStateBag>();
             services.AddSingleton<LiveAuthorizationInfo>();
             services.AddSingleton<SoundEffectPlayer>();
+            services.AddSingleton<ThalassaFunctionBuilder>();
             services.AddScoped<OpenAIService>();
             services.AddOpenAIService(options => options.ApiKey = openAiSensitiveSettings.OpenAIBearerToken);
 

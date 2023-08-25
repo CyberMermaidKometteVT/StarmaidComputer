@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using OpenAI.Managers;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Thalassa.Chat;
 using StarmaidIntegrationComputer.Thalassa.Settings;
@@ -53,6 +54,8 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly SpeechComputer speechComputer;
         private readonly VoiceListener voiceListener;
         private readonly OpenAIService openAIService;
+        private readonly StreamerProfileSettings streamerProfileSettings;
+        private readonly ThalassaFunctionBuilder thalassaFunctionBuilder;
         private Action onNewChatComputerUsePropertyOnly = null;
 
         /// <summary>
@@ -82,6 +85,8 @@ namespace StarmaidIntegrationComputer.Chat
             this.speechComputer = args.SpeechComputer;
             this.voiceListener = args.VoiceListener;
             this.openAIService = args.OpenAIService;
+            this.streamerProfileSettings = args.StreamerProfileSettings;
+            this.thalassaFunctionBuilder = args.ThalassaFunctionBuilder;
 
             AddButtonStateEventHandlers();
 
@@ -94,6 +99,8 @@ namespace StarmaidIntegrationComputer.Chat
             CreateNewChatComputer();
 
             SetAllButtonStates(speechComputer);
+
+            UserNameTextBox.Text = streamerProfileSettings.StreamerName;
 
             ChatbotResponsesRichTextBox.Document.LineHeight = 1;
             RemoveBlankFirstRichTextBoxLine();
@@ -120,8 +127,8 @@ namespace StarmaidIntegrationComputer.Chat
         }
 
         private void CreateNewChatComputer()
-{
-            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAIService);
+        {
+            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAIService, thalassaFunctionBuilder);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 
@@ -254,17 +261,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private Task OnMessageReceived(string receivedMessage)
         {
-            return AppendLabeledText("Thalassa: ", receivedMessage, 1);
-            //receivedMessage = $"Thalassa: {receivedMessage}{Environment.NewLine}";
-            //if (Dispatcher.Thread == Thread.CurrentThread)
-            //{
-            //    ChatbotResponsesRichTextBox.AppendText(receivedMessage);
-            //    return Task.CompletedTask;
-            //}
-            //else
-            //{
-            //    return Dispatcher.InvokeAsync(() => ChatbotResponsesRichTextBox.AppendText(receivedMessage)).Task;
-            //}
+            return AppendLabeledText($"{streamerProfileSettings.AiName}: ", receivedMessage, 1);
         }
 
         private Task AppendLabeledText(string label, string text, double dividerLineThickness = 0)
@@ -399,7 +396,7 @@ namespace StarmaidIntegrationComputer.Chat
             transform.ScaleY += numberOfClicks / 10.0;
 
             AutoscrollCheckBox.RenderTransform = transform;
-            AutoscrollCheckBox.RenderTransformOrigin = new Point(1,0);
+            AutoscrollCheckBox.RenderTransformOrigin = new Point(1, 0);
         }
 
         private void ResetFormTextScale()

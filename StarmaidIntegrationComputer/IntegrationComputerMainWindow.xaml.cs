@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 
 using StarmaidIntegrationComputer.Chat;
+using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Thalassa;
 
 namespace StarmaidIntegrationComputer
@@ -23,6 +24,7 @@ namespace StarmaidIntegrationComputer
         private readonly ILoggerFactory loggerFactory;
         private readonly ChatWindowFactory chatWindowFactory;
         private readonly ThalassaCore thalassaCore;
+        private readonly StreamerProfileSettings streamerProfileSettings;
         LoggerConfiguration loggerConfiguration;
         public List<ChatWindow> chatWindows { get; private set; } = new List<ChatWindow>();
 
@@ -30,13 +32,14 @@ namespace StarmaidIntegrationComputer
 
 
 
-        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore)
+        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore, StreamerProfileSettings streamerProfileSettings)
         {
             this.loggerFactory = loggerFactory;
             this.core = core;
             this.loggerConfiguration = loggerConfiguration;
             this.chatWindowFactory = chatWindowFactory;
             this.thalassaCore = thalassaCore;
+            this.streamerProfileSettings = streamerProfileSettings;
             this.core.Output = AppendOutput;
             this.core.UpdateIsRunningVisuals = SetToggleButtonContent;
 
@@ -154,7 +157,7 @@ namespace StarmaidIntegrationComputer
         {
             if (chatWindows.Any())
             {
-                chatWindows.First().ActiveChatComputer.SendChat("Komette", $"(spoken) - {interpretedSpeech}");
+                chatWindows.First().ActiveChatComputer.SendChat(streamerProfileSettings.StreamerName, $"(spoken) - {interpretedSpeech}");
             }
         }
 

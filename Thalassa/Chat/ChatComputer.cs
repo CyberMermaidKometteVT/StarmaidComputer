@@ -25,14 +25,16 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
         public AsyncMethodList<FunctionCall> OutputChatbotCommandHandlers { get; private set; } = new AsyncMethodList<FunctionCall>();
 
-        List<FunctionDefinition> streamerAccessibleThalassaFunctions = ThalassaFunctionBuilder.BuildStreamerAccessibleFunctions();
+        private readonly List<FunctionDefinition> streamerAccessibleThalassaFunctions;
 
-        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAIService openAIService)
+        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAIService openAIService, ThalassaFunctionBuilder thalassaFunctionBuilder)
         {
             this.stateBag = stateBag;
             this.logger = logger;
             this.openAISettings = openAISettings;
             this.openAIService = openAIService;
+
+            streamerAccessibleThalassaFunctions = thalassaFunctionBuilder.BuildStreamerAccessibleFunctions();
         }
 
         public async Task SendChat(string userMessage)
@@ -156,14 +158,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                     N = 1,
                 };
 
-#pragma warning disable CS0162 // Unreachable code detected - skipping because of consts in logic, to be set by hand.
-                    //TODO: Consolidate these into the first message, or at least evaluate if that works better?
-                    request.Messages.Add(new ChatMessage("system", openAISettings.GptPrompt));
-                    //request.Messages.Add(new ChatMessage("system", initialSystemMessage2));
-                    //request.Messages.Add(new ChatMessage("system", initialSystemMessage3));
+                //TODO: Add multiple initial prompt functionality to the json
+                request.Messages.Add(new ChatMessage("system", openAISettings.GptPrompt));
+                //request.Messages.Add(new ChatMessage("system", initialSystemMessage2));
+                //request.Messages.Add(new ChatMessage("system", initialSystemMessage3));
 
                 request.Functions = streamerAccessibleThalassaFunctions;
-#pragma warning restore CS0162 // Unreachable code detected
             }
             else
             {
@@ -181,19 +181,16 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
             logger.LogInformation($"CHATBOT MESSAGE RECEIVED, VERBOSE VERSION: {chatbotResponseMessage}{Environment.NewLine}");
 
-            if (useJailBreaking)
+            try
             {
-                try
-                {
-                    OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
+                OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
 
-                    return;
-                }
-                //TODO: log this later!
-                catch
-                {
-                    logger.LogError($"Failed to interpret the jailbroken response to {chatbotResponseMessage}!");
-                }
+                return;
+            }
+            //TODO: log this later!
+            catch
+            {
+                logger.LogError($"Failed to interpret the jailbroken response to {chatbotResponseMessage}!");
             }
 
             OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
