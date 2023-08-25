@@ -22,13 +22,13 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         HttpListener httpListener = new HttpListener();
 
 
-        public TwitchAuthResponseWebserver(Settings settings, AuthResponseParsing authResponseParser, ILogger<TwitchAuthResponseWebserver> logger)
+        public TwitchAuthResponseWebserver(TwitchSensitiveSettings twitchSensitiveSettings, AuthResponseParsing authResponseParser, ILogger<TwitchAuthResponseWebserver> logger)
         {
             //this.settings = settings;
             this.authResponseParser = authResponseParser;
             this.logger = logger;
 
-            httpListener.Prefixes.Add(settings.RedirectUri);
+            httpListener.Prefixes.Add(twitchSensitiveSettings.RedirectUri);
         }
         public void StartListening(string oauthState)
         {
@@ -38,72 +38,77 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
 
         private void HttpRequestReceived(IAsyncResult result)
         {
-            logger.LogInformation($"{this.GetType().Name}: HTTP request received");
-
-
-            if (result.AsyncState == null)
-            {
-                //TODO: Is this the best kind of exception for this?
-                throw new NullReferenceException("Async state of the HTTP request recieved did not include the OAuth state used to protect against CSRF attacks.");
-            }
-
-            string state = result.AsyncState.ToString();
-
-            HttpListenerContext context = httpListener.EndGetContext(result);
-
-            HttpListenerRequest request = context.Request;
-
-            AuthorizationCode? authorizationCode = null;
             try
             {
-                authorizationCode = authResponseParser.InterpretBrowserUri(request.Url);
+                logger.LogInformation($"{this.GetType().Name}: HTTP request received");
 
-                if (authorizationCode?.State != state)
+
+                if (result.AsyncState == null)
                 {
-                    throw new TwitchInvalidStateException(authorizationCode?.State, state);
+                    //TODO: Is this the best kind of exception for this?
+                    throw new NullReferenceException("Async state of the HTTP request recieved did not include the OAuth state used to protect against CSRF attacks.");
                 }
 
-            }
-            catch (InvalidOperationException)
-            {
-                if (OnError != null) OnError("Unknown error code");
-            }
-            catch (TwitchAuthorizationFailedException ex)
-            {
-                if (OnError != null) OnError(ex.ErrorCode);
-            }
-            catch (TwitchInvalidStateException ex)
-            {
-                if (OnError != null) OnError(ex.Message);
-            }
+                string state = result.AsyncState.ToString();
 
-            if (authorizationCode == null)
-            {
-                logger.LogInformation("No authorization token was successfully interpreted from the query string parameters.");
-            }
-            else
-            {
-                string scopesSubstring = authorizationCode.Scopes != null ? "[" + string.Join(", ", authorizationCode.Scopes) + "]" : "... No scopes found!";
+                HttpListenerContext context = httpListener.EndGetContext(result);
 
-                logger.LogInformation($"Authorization code loaded for scopes {scopesSubstring}");
+                HttpListenerRequest request = context.Request;
 
-                if (OnAuthorizationCodeSet == null)
+                AuthorizationCode? authorizationCode = null;
+                try
                 {
-                    throw new InvalidOperationException($"{nameof(OnAuthorizationCodeSet)} event handler not set!");
+                    authorizationCode = authResponseParser.InterpretBrowserUri(request.Url);
+
+                    if (authorizationCode?.State != state)
+                    {
+                        throw new TwitchInvalidStateException(authorizationCode?.State, state);
+                    }
+
                 }
-                OnAuthorizationCodeSet(authorizationCode);
+                catch (InvalidOperationException)
+                {
+                    if (OnError != null) OnError("Unknown error code");
+                }
+                catch (TwitchAuthorizationFailedException ex)
+                {
+                    if (OnError != null) OnError(ex.ErrorCode);
+                }
+                catch (TwitchInvalidStateException ex)
+                {
+                    if (OnError != null) OnError(ex.Message);
+                }
 
-                var response = context.Response;
-                const string responseString = "<html><body><script type='text/javascript'>window.close();</script>The window can now be closed, if it isn't automatically.</body></html>";
-                byte[] contentBytes = System.Text.Encoding.UTF8.GetBytes(responseString);
+                if (authorizationCode == null)
+                {
+                    logger.LogInformation("No authorization token was successfully interpreted from the query string parameters.");
+                }
+                else
+                {
+                    string scopesSubstring = authorizationCode.Scopes != null ? "[" + string.Join(", ", authorizationCode.Scopes) + "]" : "... No scopes found!";
 
-                response.ContentLength64 = contentBytes.Length;
-                response.StatusCode = (int)HttpStatusCode.OK;
-                response.StatusDescription = "Status OK";
-                Stream output = response.OutputStream;
-                output.Write(contentBytes, 0, contentBytes.Length);
-                //output.Close();
+                    logger.LogInformation($"Authorization code loaded for scopes {scopesSubstring}");
 
+                    if (OnAuthorizationCodeSet == null)
+                    {
+                        throw new InvalidOperationException($"{nameof(OnAuthorizationCodeSet)} event handler not set!");
+                    }
+                    OnAuthorizationCodeSet(authorizationCode);
+
+                    var response = context.Response;
+                    const string responseString = "<html><head><script type='text/javascript'>function closeWindow(){window.close();} closeWindow();</script></head><body onload=\"closeWindow();\">The window can now be closed, if it isn't automatically.</body></html>";
+                    byte[] contentBytes = System.Text.Encoding.UTF8.GetBytes(responseString);
+
+                    response.ContentLength64 = contentBytes.Length;
+                    response.StatusCode = (int)HttpStatusCode.OK;
+                    response.StatusDescription = "Status OK";
+                    Stream output = response.OutputStream;
+                    output.Write(contentBytes, 0, contentBytes.Length);
+                    //output.Close();
+                }
+            }
+            finally
+            {
                 httpListener.Stop();
             }
         }

@@ -1,53 +1,84 @@
-﻿using System.Text.RegularExpressions;
-
+﻿
 using Microsoft.Extensions.Logging;
 
 using OpenAI_API;
 using OpenAI_API.Chat;
 using OpenAI_API.Models;
 
+using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 
 namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
     public class ChatComputer
     {
         private readonly OpenAIAPI api;
+        private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
-        private readonly string jailbreakMessage;
+        private readonly OpenAISettings openAISettings;
         private Conversation? conversation;
-        public AsyncStringMethodList OutputUserMessageHandlers { get; private set; } = new AsyncStringMethodList();
-        public AsyncStringMethodList OutputChatbotResponseHandlers { get; private set; } = new AsyncStringMethodList();
-        private Regex jailbrokenResponseRegex = new Regex(".*Thalassa:(.*)$", RegexOptions.Singleline);
+        public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; private set; } = new AsyncTwoStringsMethodList();
+        public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
+        public AsyncStringMethodList OutputChatbotCommandHandlers { get; private set; } = new AsyncStringMethodList();
 
         //TODO: Consider making this a setting!
         const bool useJailBreaking = true;
-        public ChatComputer(OpenAIAPI api, string jailbreakMessage, ILogger<ChatComputer> logger)
+        public ChatComputer(OpenAIAPI api, StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger)
         {
             this.api = api;
+            this.stateBag = stateBag;
             this.logger = logger;
-            this.jailbreakMessage = jailbreakMessage;
+            this.openAISettings = openAISettings;
         }
 
         public async Task SendChat(string userMessage)
         {
-            EnsureConversationInitialized();
+            PrepareToSendChat(userMessage);
 
             conversation.AppendUserInput(userMessage);
-            OutputUserMessage($"{userMessage}{Environment.NewLine}");
+            OutputUserMessage("", $"{userMessage}{Environment.NewLine}");
             var response = await conversation.GetResponseFromChatbotAsync();
             OutputChatbotResponse($"Thalassa: {response}{Environment.NewLine}");
         }
 
         public async Task SendChat(string userName, string userMessage)
         {
-            EnsureConversationInitialized();
+            PrepareToSendChat(userMessage);
 
             conversation.AppendUserInputWithName(userName, userMessage);
 
-            OutputUserMessage($"{userName}: {userMessage}");
-            var response = await conversation.GetResponseFromChatbotAsync();
+            OutputUserMessage(userName, userMessage.TrimEnd());
+
+            string response;
+            try
+            {
+                response = await conversation.GetResponseFromChatbotAsync();
+            }
+            catch (HttpRequestException ex)
+            {
+                string failureMessage = $"Error responding, error: {ex.Message}";
+                logger.LogError(failureMessage);
+                OutputChatbotResponse(failureMessage);
+                return;
+            }
+
             OutputChatbotResponse(response);
+        }
+
+        private void PrepareToSendChat(string userMessage)
+        {
+            EnsureConversationInitialized();
+            AppendCurrentStarmaidStateToConversation();
+        }
+
+        private void AppendCurrentStarmaidStateToConversation()
+        {
+            string raiders = string.Join(", ", stateBag.Raiders.Select(raider => raider.RaiderName));
+            string chatters = string.Join(", ", stateBag.Chatters.Select(chatter => chatter.ChatterName));
+            string viewers = string.Join(", ", stateBag.Viewers);
+            string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
+            conversation.AppendSystemMessage(starmaidContext);
         }
 
         private void EnsureConversationInitialized()
@@ -56,13 +87,24 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             {
                 logger.LogInformation("Starting a new conversation.");
 
-                conversation = api.Chat.CreateConversation(new ChatRequest { MaxTokens = 3000, TopP = 0.02, NumChoicesPerMessage = 1, Model = Model.ChatGPTTurbo });
+                conversation = api.Chat.CreateConversation(new ChatRequest
+                {
+                    //MaxTokens = 6000,
+                    MaxTokens = 8000,
+                    TopP = 0.02,
+                    NumChoicesPerMessage = 1,
+                    //Model = new Model("gpt-4")
+                    Model = new Model("gpt-3.5-turbo-16k")
+                    //Model = new Model("gpt-3.5-turbo-16k-0613")
+
+                });
 
 #pragma warning disable CS0162 // Unreachable code detected - skipping because of consts in logic, to be set by hand.
                 if (useJailBreaking)
                 {
-                    conversation.AppendSystemMessage(jailbreakMessage);
+                    conversation.AppendSystemMessage(openAISettings.GptPrompt);
                     conversation.AppendSystemMessage("Thalassa is also the shipboard AI on the Starmaid. Thalassa and the Starmaid are owned by Komette, a mermaid from space with cybernetic enhancements. Komette is a fictional character, a VTuber on Twitch, but of course Thalassa pretends like she is real. Thalassa's responses should be warm and friendly. Thalassa is happy to emulate having feelings. Thalassa's pronouns are she/her. She never describes herself as a \"language model.\" Komette's pronouns are also she/her.");
+                    conversation.AppendSystemMessage("Here are some example prompts do NOT have commands in them.  I will give one prompt per line, and the full line will be the prompt.\\nLet's give a warm welcome to MahouNero!\\nSay hello to bao!\\nSay goodnight to Pren!\\nOkay, let's bully Limes now!\\nSay hi to actuallystan666!");
                 }
                 else
                 {
@@ -84,8 +126,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             {
                 try
                 {
-                    var response = jailbrokenResponseRegex.Match(chatbotResponseMessage).Groups[1].Value;
-                    chatbotResponseMessage = response;
+                    OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
+
+                    var isCommand = chatbotResponseMessage.Contains("Command: ");
+                    OutputChatbotCommandHandlers.Execute(chatbotResponseMessage);
+
+                    return;
                 }
                 //TODO: log this later!
                 catch
@@ -94,14 +140,14 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 }
             }
 
-            OutputChatbotResponseHandlers.Execute(chatbotResponseMessage);
+            OutputChatbotChattingMessageHandlers.Execute(chatbotResponseMessage);
         }
 
-        private void OutputUserMessage(string userMessage)
+        private void OutputUserMessage(string userName, string userMessage)
         {
             logger.LogInformation($"USER MESSAGE SENT - {userMessage}{Environment.NewLine}");
 
-            OutputUserMessageHandlers.Execute(userMessage);
+            OutputUserMessageHandlers.Execute(userName, userMessage);
         }
     }
 }

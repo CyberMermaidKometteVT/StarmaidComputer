@@ -8,16 +8,74 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Config\Nonconfidential\discord-nonconfidential.json" />
+    <None Remove="Config\Nonconfidential\openai-nonconfidential.json" />
+    <None Remove="Config\Nonconfidential\thalassa-nonconfidential.json" />
+    <None Remove="Config\Nonconfidential\twitch-nonconfidential.json" />
+    <None Remove="Config\Sensitive\discord-sensitive.json" />
+    <None Remove="Config\Sensitive\discord-sensitive.local.json" />
+    <None Remove="Config\Sensitive\openai-sensitive.json" />
+    <None Remove="Config\Sensitive\openai-sensitive.local.json" />
+    <None Remove="Config\Sensitive\twitch-sensitive.json" />
+    <None Remove="Config\Sensitive\twitch-sensitive.local.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Config\Nonconfidential\discord-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Nonconfidential\openai-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Nonconfidential\thalassa-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Nonconfidential\twitch-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\discord-sensitive.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\discord-sensitive.local.json" Condition="Exists('Config\Sensitive\discord-sensitive.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\openai-sensitive.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\openai-sensitive.local.json" Condition="Exists('Config\Sensitive\openai-sensitive.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\twitch-sensitive.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\twitch-sensitive.local.json" Condition="Exists('Config\Sensitive\twitch-sensitive.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Discord.Net" Version="3.9.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.6.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+    <PackageReference Include="NAudio" Version="2.1.0" />
     <PackageReference Include="OpenAI" Version="1.7.2" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="5.0.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.RichTextBox.Wpf" Version="1.1.0" />
-    <PackageReference Include="TwitchLib" Version="3.5.3" />
+    <PackageReference Include="TwitchLib.Api" Version="3.9.0" />
+    <PackageReference Include="TwitchLib.Api.Core" Version="3.9.0" />
+    <PackageReference Include="TwitchLib.Api.Core.Enums" Version="3.9.0" />
+    <PackageReference Include="TwitchLib.Api.Core.Interfaces" Version="3.9.0" />
+    <PackageReference Include="TwitchLib.Api.Core.Models" Version="3.9.0" />
+    <PackageReference Include="TwitchLib.Api.Helix" Version="3.9.0" />
+    <PackageReference Include="TwitchLib.Api.Helix.Models" Version="3.9.0" />
+    <PackageReference Include="TwitchLib.Client" Version="3.3.1" />
+    <PackageReference Include="TwitchLib.Client.Enums" Version="3.3.1" />
+    <PackageReference Include="TwitchLib.Communication" Version="1.0.6" />
+    <PackageReference Include="TwitchLib.PubSub" Version="3.2.6" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,7 +87,7 @@
     <None Update="settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="speechReplacements.json">
+    <None Update="Config\Nonconfidential\speechReplacements.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

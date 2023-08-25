@@ -454,4 +454,5 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 settings.json
+/StarmaidIntegrationComputer/settings - Copy.json
 *.local.json

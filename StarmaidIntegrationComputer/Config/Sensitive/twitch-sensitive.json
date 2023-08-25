@@ -1,0 +1,10 @@
+{
+  "TwitchSensitiveSettings": {
+    "TwitchApiUsername": "",
+    "TwitchChatbotUsername": "",
+    "TwitchChatbotChannelName": "",
+    "TwitchClientId": "",
+    "TwitchClientSecret": "",
+    "RedirectUri": ""
+  }
+}

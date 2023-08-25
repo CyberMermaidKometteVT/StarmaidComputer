@@ -5,30 +5,66 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StarmaidIntegrationComputer.Chat"
         mc:Ignorable="d"
-        Title="ChatWindow" Height="450" Width="800">
-    <Grid Margin="5px">
+        Title="ChatWindow" Height="450" Width="800"
+        FocusManager.FocusedElement="{Binding ElementName=UserMessageTextBox}" Closed="Window_Closed" PreviewMouseWheel="Window_PreviewMouseWheel" PreviewKeyDown="Window_PreviewKeyDown">
+
+    <Grid Name="OuterGrid" Margin="5px">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition></RowDefinition>
-            <RowDefinition></RowDefinition>
-            <RowDefinition Height="30"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-            <ColumnDefinition />
-            <ColumnDefinition />
-            <ColumnDefinition />
+            <ColumnDefinition Width="198*" />
+            <ColumnDefinition Width="198*" />
+            <ColumnDefinition Width="198*" />
+            <ColumnDefinition Width="41*" />
+            <ColumnDefinition Width="156*"/>
         </Grid.ColumnDefinitions>
-        <ScrollViewer CanContentScroll="True" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="3">
-            <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" />
+        <Grid Name="ThalassaPanelGrid" Margin="0,0,19,0" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6">
+            <Grid.RowDefinitions>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Label Name="ThalassaLabel" HorizontalAlignment="Stretch" VerticalAlignment="Top" MinHeight="23" Grid.Row="0" Grid.Column="0">Thalassa</Label>
+            <Button Name="ThalassaListenToggleButton" Click="ThalassaListenToggleButton_Click" MinWidth="35" Grid.Row="0" Grid.Column="1">_Listen</Button>
+            <Button Name="ThalassaInputOverButton" Click="ThalassaInputOverButton_Click" IsEnabled="False" MinWidth="125" Margin="4px,0,0,0" Grid.Row="0" Grid.Column="2">(Not Currently Awake)</Button>
+            <Button Name="ThalassaAbortCommandButton" Margin="4px,0,0,0" IsEnabled="False" MinWidth="135" Grid.Row="0" Grid.Column="3">(No _Command Pending)</Button>
+            <Button Name="ThalassaShutUpButton" Click="ThalassaShutUpButton_Click" Margin="4px,0,0,0" IsEnabled="False" MinWidth="72" Grid.Row="0" Grid.Column="4">(Not _Talking)</Button>
+            <Label Name="SpacingLabel" Grid.Row="0" Grid.Column="5"></Label>
+            <CheckBox x:Name="AutoscrollCheckBox" Height="21" Margin="0,3,0,0" VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked" Grid.Row="0" Grid.Column="6">Auto Scroll</CheckBox>
+        </Grid>
+
+        <ScrollViewer Name="ChatbotResponsesScrollViewer" CanContentScroll="True" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" Grid.RowSpan="2">
+            <RichTextBox Name="ChatbotResponsesRichTextBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" TextChanged="ChatbotResponsesRichTextBox_TextChanged" IsReadOnly="True" />
         </ScrollViewer>
-        <StackPanel Orientation="Horizontal" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4">
-            <Button Name="ResetConversation" Click="ResetConversation_Click">RESET</Button>
-            <Label>Name</Label>
-            <TextBox Name="UserNameTextBox" Width="100" Text="Komette" />
-            <Label>Message</Label>
-            <TextBox Name="UserMessageTextBox" Width="500" TextChanged="UserMessageTextBox_TextChanged" KeyUp="UserMessageTextBox_KeyUp"/>
-            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click">Send</Button>
-        </StackPanel>
+        <Grid Name="BottomBarGrid" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="5" Margin="0,0,17,0">
+            <Grid.RowDefinitions>
+                <RowDefinition></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Name="ResetConversationButton" Click="ResetConversation_Click" Grid.Row="0" Grid.Column="0">_RESET</Button>
+            <Label Name="UserNameLabel" Target="{Binding ElementName=UserNameTextBox}" Grid.Row="0" Grid.Column="1">_Name</Label>
+            <TextBox Name="UserNameTextBox" MinWidth="100" Text="Komette" Grid.Row="0" Grid.Column="2"/>
+            <Label Name="UserMessageLabel" Target="{Binding ElementName=UserMessageTextBox}" Grid.Row="0" Grid.Column="3">_Message</Label>
+            <TextBox Name="UserMessageTextBox" TextChanged="UserMessageTextBox_TextChanged" KeyUp="UserMessageTextBox_KeyUp" Grid.Row="0" Grid.Column="4"/>
+            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click" Grid.Row="0" Grid.Column="5">Se_nd</Button>
+        </Grid>
     </Grid>
 </Window>

@@ -1,0 +1,9 @@
+{
+  "TwitchSettings": {
+    "RunOnStartup": false,
+    "ChatCommandIdentifier": "!",
+    "WhisperCommandIdentifier": "!",
+    "ForceTwitchLoginPrompt": false,
+    "LogInWithIncognitoBrowser": true
+  }
+}
