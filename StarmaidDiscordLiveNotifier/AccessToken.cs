@@ -9,7 +9,7 @@ namespace StarmaidDiscordLiveNotifier
         public string Token { get; set; }
 
         private int expiresIn;
-        [JsonPropertyName( "expires_in")]
+        [JsonPropertyName("expires_in")]
         public int ExpiresIn
         {
             get { return expiresIn; }
@@ -20,8 +20,8 @@ namespace StarmaidDiscordLiveNotifier
                 ExpiresAt = CreatedAt.AddSeconds(expiresIn);
             }
         }
-        
-        [JsonPropertyName( "token_type")]
+
+        [JsonPropertyName("token_type")]
         public string TokenType { get; set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime ExpiresAt { get; private set; }

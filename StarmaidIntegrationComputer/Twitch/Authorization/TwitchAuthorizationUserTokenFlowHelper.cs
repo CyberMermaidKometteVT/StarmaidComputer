@@ -10,13 +10,17 @@ using TwitchLib.Api;
 using Microsoft.Extensions.Logging;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Auth;
+using Microsoft.Win32;
+using System.IO;
+using Microsoft.CodeAnalysis;
+using StarmaidIntegrationComputer.Common.DataStructures;
 using StarmaidIntegrationComputer.StarmaidSettings;
 
 namespace StarmaidIntegrationComputer.Twitch.Authorization
 {
     public class TwitchAuthorizationUserTokenFlowHelper
     {
-        private readonly Settings settings;
+        private readonly TwitchSensitiveSettings twitchSensitiveSettings;
         private readonly ILogger<TwitchAuthorizationUserTokenFlowHelper> logger;
         private TwitchAuthResponseWebserver webserver;
 
@@ -27,7 +31,7 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         {
             get
             {
-                if (twitchApiConnectionOnlyUseProperty == null) twitchApiConnectionOnlyUseProperty = TwitchApiFactory.Build(settings.TwitchClientId, settings.TwitchClientSecret, scopes);
+                if (twitchApiConnectionOnlyUseProperty == null) twitchApiConnectionOnlyUseProperty = TwitchApiFactory.Build(twitchSensitiveSettings.TwitchClientId, twitchSensitiveSettings.TwitchClientSecret, scopes);
                 return twitchApiConnectionOnlyUseProperty;
             }
             set
@@ -43,19 +47,22 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         private string OauthState { get; set; } = InitializeOauthState();
 
         //Sleepy brain thoughts: what if these were put into some kind of StartInfo or ActionsToSet or some other composed class wrapper for runtime properties to set?  Would that be easier for consumers to understand?
-        public bool ForceTwitchLoginPrompt { get; set; } = false;
+        private readonly bool forceTwitchLoginPrompt;
+        private readonly bool logInWithIncognitoBrowser;
         public Action<string> OnAuthorizationProcessFailed { get; set; }
         public Action OnAuthorizationProcessUserCanceled { get; set; }
         public Action<AccessToken> OnAuthorizationProcessSuccessful { get; set; }
 
-        public TwitchAuthorizationUserTokenFlowHelper(Settings settings, ILogger<TwitchAuthorizationUserTokenFlowHelper> logger, List<AuthScopes> scopes, TwitchAuthResponseWebserver webserver, TwitchAPI? twitchApiConnection)
+        public TwitchAuthorizationUserTokenFlowHelper(TwitchAuthorizationUserTokenFlowHelperCtorArgs ctorArgs)
         {
-            this.settings = settings;
-            this.logger = logger;
-            this.webserver = webserver;
-            this.scopes = scopes;
-            TwitchApiConnection = twitchApiConnection;
+            this.twitchSensitiveSettings = ctorArgs.TwitchSensitiveSettings;
+            this.logger = ctorArgs.Logger;
+            this.webserver = ctorArgs.Webserver;
+            this.scopes = ctorArgs.Scopes;
+            TwitchApiConnection = ctorArgs.TwitchApiConnection;
 
+            forceTwitchLoginPrompt = ctorArgs.TwitchSettings.ForceTwitchLoginPrompt;
+            logInWithIncognitoBrowser = ctorArgs.TwitchSettings.LogInWithIncognitoBrowser;
 
             this.webserver.OnError = AuthorizationServer_Error;
             this.webserver.OnAuthorizationCodeSet = AuthorizationServer_CodeSet;
@@ -77,13 +84,152 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         }
         public void PromptForUserAuthorization()
         {
-            var authorizationCodeUrl = new TwitchAPI().Auth.GetAuthorizationCodeUrl(settings.RedirectUri, scopes, ForceTwitchLoginPrompt, OauthState, settings.TwitchClientId);
-
+            var authorizationCodeUrl = new TwitchAPI().Auth.GetAuthorizationCodeUrl(twitchSensitiveSettings.RedirectUri, scopes, forceTwitchLoginPrompt, OauthState, twitchSensitiveSettings.TwitchClientId);
 
             logger.LogInformation("Showing auth browser window.");
             webserver.StartListening(OauthState);
-            authorizationBrowserProcess = Process.Start(new ProcessStartInfo { FileName = authorizationCodeUrl, UseShellExecute = true });
+
+            authorizationBrowserProcess = Process.Start(GetProcessStartInfoForBrowsingPrivately(authorizationCodeUrl));
             authorizationBrowserProcess.Exited += AuthoriationProcess_Exited;
+        }
+
+        //NOTE: THIS WHOLE METHOD IS VERY OS-DEPENDENT!
+        private ProcessStartInfo GetProcessStartInfoForBrowsingPrivately(string authorizationCodeUrl)
+        {
+            //looks like "(default)" in RegEdit
+            const string defaultRegistryValueName = @"";
+
+            const string defaultBrowserRegistryKeyName = @"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice";
+            const string defaultBrowserRegistryKeyValueName = @"ProgID";
+
+            var processStartInfo = new ProcessStartInfo
+            {
+                FileName = authorizationCodeUrl,
+                UseShellExecute = true
+            };
+
+            if (!logInWithIncognitoBrowser)
+            {
+                processStartInfo.FileName = authorizationCodeUrl;
+                return processStartInfo;
+            }
+
+            var defaultBrowserProgId = GetValueOfRegistryKey(Registry.CurrentUser, defaultBrowserRegistryKeyName, defaultBrowserRegistryKeyValueName, "default browser progID");
+
+            if (defaultBrowserProgId == String.Empty)
+            {
+                return processStartInfo;
+            }
+
+            string browserExecutionPathKey = defaultBrowserProgId + @"\shell\open\command";
+
+            var browserPathKeyValue = GetValueOfRegistryKey(Registry.ClassesRoot, browserExecutionPathKey, defaultRegistryValueName, "browser path");
+
+            if (browserPathKeyValue == String.Empty)
+            {
+                return processStartInfo;
+            }
+
+            ///allArguments contains the command-line arguments, including at index 0 the full path to the executable.
+            var allArguments = GetBrowserArugments(browserPathKeyValue, authorizationCodeUrl);
+            processStartInfo.FileName = allArguments[0];
+            allArguments.RemoveAt(0);
+
+            foreach (string argument in allArguments)
+            {
+                processStartInfo.ArgumentList.Add(argument);
+            }
+
+            return processStartInfo;
+        }
+
+        /// <summary>
+        /// Note that the first item in the collection is the full path  to the file.
+        /// </summary>
+        private List<string> GetBrowserArugments(string defaultBrowserKeyValue, string url)
+        {
+            var parsedArguments = CommandLineParser.SplitCommandLineIntoArguments(defaultBrowserKeyValue, true);
+
+            List<string> arguments = new List<string>(parsedArguments);
+
+            const string windowsShellFirstArgumentPlaceholder = "%1";
+            arguments.ReplaceForAllStringsInList(windowsShellFirstArgumentPlaceholder, url, 1);
+
+            for (int argumentIndex = 1; argumentIndex < arguments.Count; argumentIndex++)
+            {
+                string argument = arguments[argumentIndex];
+                if (argument.Contains(windowsShellFirstArgumentPlaceholder))
+                {
+                    arguments[argumentIndex] = argument.Replace(windowsShellFirstArgumentPlaceholder, url);
+                }
+            }
+            
+            var executableName = Path.GetFileNameWithoutExtension(defaultBrowserKeyValue).ToLower();
+
+            switch (executableName)
+            {
+                case "firefox":
+                    arguments.ReplaceForAllStringsInList("-url", "-private-window");
+                    return arguments;
+                case "brave":
+                case "chrome":
+                    arguments.Remove("--single-argument");
+                    arguments.Add("-incognito");
+                    return arguments;
+                case "msedge":
+                    //browser = DetectedBrowser.Edge;
+                    arguments.Remove("--single-argument");
+                    arguments.Add("-inprivate");
+                    return arguments;
+                case "citrixenterprisebrowser":
+                    //I couldn't test this or find any command line arguments for it, but want to remember that this is its value just in case I decide to play with it later.
+                    return arguments;
+                case "opera":
+                case "safari":
+                    //These both use the "-private" argument, but as I don't have them installed, I can't test them or test what other arguments Windows wants to give them with the default file association stuff.
+                default:
+                    logger.LogWarning("Unable to identify default browser, unknown browser in the prog ID, we will not be authenticating with a private window.");
+                    return arguments;
+            }
+        }
+
+        private void ReplaceArgument(string v1, string v2)
+        {
+            throw new NotImplementedException();
+        }
+
+        //private string GetValueOfRegistryKey(RegistryKey topLevelKey, string keyPath, string valueName, string errorDescription)
+        //{
+        //}
+
+        //private string GetValueOfRegistryKeyFromClassesRoot(string keyPath, string valueName, string errorDescription)
+        //{
+        //    using RegistryKey registryKey = Registry.ClassesRoot.OpenSubKey(keyPath);
+        //    return GetValueOfRegistryKey(registryKey, valueName, errorDescription);
+        //}
+
+        //private string GetValueOfRegistryKeyFromCurrentUser(string keyPath, string valueName, string errorDescription)
+        //{
+        //    using RegistryKey registryKey = Registry.CurrentUser.OpenSubKey(keyPath);
+        //    return GetValueOfRegistryKey(registryKey, valueName, errorDescription);
+        //}
+
+
+        private string GetValueOfRegistryKey(RegistryKey topLevelRegistryKey, string keyPath, string valueName, string errorDescription)
+        {
+            using RegistryKey? registryKey = topLevelRegistryKey.OpenSubKey(keyPath);
+            if (registryKey == null)
+            {
+                logger.LogWarning($"Unable to identify default browser, no {errorDescription} registry KEY found, we will not be authenticating with a private window.");
+                return String.Empty;
+            }
+            object deaultBrowserKeyDefaultValue = registryKey.GetValue(valueName);
+            if (deaultBrowserKeyDefaultValue == null)
+            {
+                logger.LogWarning("Unable to identify default browser, no {errorDescription} registry VALUE, we will not be authenticating with a private window.");
+                return String.Empty;
+            }
+            return deaultBrowserKeyDefaultValue.ToString();
         }
 
         #region Authorization event handlers
@@ -123,7 +269,7 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
         private void FinishAuthenticatingThenStartListening(AuthorizationCode authorizationCode)
         {
 
-            Task<AuthCodeResponse> getAccessTokenApiCallTask = TwitchApiConnection.Auth.GetAccessTokenFromCodeAsync(authorizationCode.Code, settings.TwitchClientSecret, settings.RedirectUri, settings.TwitchClientId);
+            Task<AuthCodeResponse> getAccessTokenApiCallTask = TwitchApiConnection.Auth.GetAccessTokenFromCodeAsync(authorizationCode.Code, twitchSensitiveSettings.TwitchClientSecret, twitchSensitiveSettings.RedirectUri, twitchSensitiveSettings.TwitchClientId);
 
 
             getAccessTokenApiCallTask.ContinueWith(SetAccessTokenOnGetAccessTokenContinue);

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using StarmaidIntegrationComputer.Twitch.Authorization.Models;
 
 using TwitchLib.Api;
-using TwitchLib.Api.Core.Enums;
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
@@ -16,9 +15,19 @@ using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Thalassa.Chat;
+using System.Text.RegularExpressions;
+using StarmaidIntegrationComputer.Commands;
+using StarmaidIntegrationComputer.Helpers;
+using StarmaidIntegrationComputer.Twitch;
+using TwitchLib.Client.Events;
+using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+
+//#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
+//#error This might be a major PITA!
 
 namespace StarmaidIntegrationComputer
 {
+    //TODO: THIS IS A SUPERCLASS THAT SHOULD PROBABLY GET BROKEN OUT FURTHER!
     public class IntegrationComputerCore
     {
         private bool isRunningUsePropertyOnly;
@@ -32,12 +41,11 @@ namespace StarmaidIntegrationComputer
             }
         }
 
-        private readonly List<AuthScopes> Scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions };
-        private readonly Dictionary<string, ulong> roleIds = new Dictionary<string, ulong>();
-        private Settings settings;
+        private readonly TwitchSensitiveSettings twitchSensitiveSettings;
+        private readonly TwitchSettings twitchSettings;
+
         public TwitchAuthorizationUserTokenFlowHelper AuthorizationHelper { get; }
 
-        private readonly bool ForceTwitchLoginPrompt = false;
 
         private TwitchAPI twitchConnection;
         private TwitchPubSub pubSub;
@@ -47,6 +55,9 @@ namespace StarmaidIntegrationComputer
         private readonly ILogger<TwitchPubSub> pubSubLogger;
         private readonly ILogger<TwitchClient> chatbotLogger;
         private readonly SpeechComputer speechComputer;
+        private readonly CommandFactory commandFactory;
+
+        private readonly StarmaidStateBag commandStateBag;
         private ChatComputer activeChatComputerUsePropertyOnly;
         public ChatComputer ActiveChatComputer
         {
@@ -55,46 +66,45 @@ namespace StarmaidIntegrationComputer
             {
                 activeChatComputerUsePropertyOnly = value;
 
-                if (!ActiveChatComputer.OutputChatbotResponseHandlers.Contains(speechComputer.SpeakFakeAsync))
+                if (!ActiveChatComputer.OutputChatbotChattingMessageHandlers.Contains(speechComputer.SpeakFakeAsync))
                 {
-                    ActiveChatComputer.OutputChatbotResponseHandlers.Add(speechComputer.SpeakFakeAsync);
+                    ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(speechComputer.SpeakFakeAsync);
+                }
+
+                if (!ActiveChatComputer.OutputChatbotCommandHandlers.Contains(ConsiderThalassaResponseAsACommand))
+                {
+                    ActiveChatComputer.OutputChatbotCommandHandlers.Add(ConsiderThalassaResponseAsACommand);
                 }
             }
         }
 
-
-        string? broadcasterId;
-        AccessToken accessToken;  // THIS IS THE LONG-TERM ONE!
+        private LiveAuthorizationInfo liveTwitchAuthorizationInfo;
 
         public Action<string> Output { get; set; }
         public Action UpdateIsRunningVisuals { get; set; }
 
 
-        /// <summary>
-        /// This is used to prevent CSRF attacks, by having a string that's state-specific
-        /// included in the application, so that if we see a response, we can verify
-        /// that it was sent in response to our current session.  This must be different
-        /// for each session to ensure this.
-        /// </summary>
-        /// <remarks>TODO: Mix this up between calls, just not per session.  (If Twitch likes that.)</remarks>
-
-        public IntegrationComputerCore(ILogger<IntegrationComputerCore> logger, ILogger<TwitchPubSub> pubSubLogger, ILogger<TwitchClient> clientLogger, Settings settings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer)
+        public IntegrationComputerCore(IntegrationComputerCoreCtorArgs ctorArgs)
         {
-            this.settings = settings;
-            this.logger = logger;
-            this.pubSubLogger = pubSubLogger;
-            this.AuthorizationHelper = authorizationHelper;
-            this.twitchConnection = twitchConnection;
-            this.chatbotLogger = clientLogger;
-            this.speechComputer = speechComputer;
+            this.twitchSensitiveSettings = ctorArgs.TwitchSensitiveSettings;
+            this.twitchSettings = ctorArgs.TwitchSettings;
+            this.logger = ctorArgs.LoggerFactory.CreateLogger<IntegrationComputerCore>();
+            this.pubSubLogger = ctorArgs.LoggerFactory.CreateLogger<TwitchPubSub>();
+            this.AuthorizationHelper = ctorArgs.AuthorizationHelper;
+            this.twitchConnection = ctorArgs.TwitchConnection;
+            this.chatbotLogger = ctorArgs.LoggerFactory.CreateLogger<TwitchClient>();
+            this.speechComputer = ctorArgs.SpeechComputer;
+            this.commandStateBag = ctorArgs.StateBag;
+            this.liveTwitchAuthorizationInfo = ctorArgs.LiveTwitchAuthorizationInfo;
 
-            authorizationHelper.ForceTwitchLoginPrompt = ForceTwitchLoginPrompt;
-            authorizationHelper.OnAuthorizationProcessSuccessful = SetAccessTokenOnGetAccessTokenContinue;
-            authorizationHelper.OnAuthorizationProcessFailed = AuthorizationProcessFailed;
-            authorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
+            ILogger<CommandBase> commandBaseLogger = ctorArgs.LoggerFactory.CreateLogger<CommandBase>();
 
-            IsRunning = settings.RunOnStartup;
+            ctorArgs.AuthorizationHelper.OnAuthorizationProcessSuccessful = SetAccessTokenOnGetAccessTokenContinue;
+            ctorArgs.AuthorizationHelper.OnAuthorizationProcessFailed = AuthorizationProcessFailed;
+            ctorArgs.AuthorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
 
+            IsRunning = twitchSettings.RunOnStartup;
+            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
         }
 
         private void AuthorizationProcessUserCanceled()
@@ -114,18 +124,64 @@ namespace StarmaidIntegrationComputer
 
         private async Task SetAccessTokenOnGetAccessTokenContinueAsync(AccessToken accessToken)
         {
-            this.accessToken = accessToken ?? throw new ArgumentNullException(nameof(accessToken));
+            liveTwitchAuthorizationInfo.AccessToken = accessToken ?? throw new ArgumentNullException(nameof(accessToken));
 
 
             pubSubLogger.LogInformation("Instantiating pub sub");
             pubSub = new TwitchPubSub(pubSubLogger);
 
             User broadcastingTwitchUser = (await twitchConnection.Helix.Users
-                .GetUsersAsync(logins: new List<string> { settings.TwitchApiUsername })).Users.Single();
-            broadcasterId = broadcastingTwitchUser.Id;
+                .GetUsersAsync(logins: new List<string> { twitchSensitiveSettings.TwitchApiUsername })).Users.Single();
+            liveTwitchAuthorizationInfo.BroadcasterId = broadcastingTwitchUser.Id;
 
             StartListeningToTwitchApi();
             ConnectChatbot();
+        }
+
+        internal Task ConsiderThalassaResponseAsACommand(string thalassaResponse)
+        {
+            Regex commandRegex = new Regex(@"(?:Command: )(?<command>.*)\n(?:Target: )?(?<target>.*)?", RegexOptions.Compiled);
+            var matches = commandRegex.Matches(thalassaResponse);
+
+            logger.LogInformation($"Considering if the speech {thalassaResponse} is a command");
+            string? commandText = null;
+            string? target = null;
+            if (matches.Count > 0)
+            {
+                var match = matches.First();
+                if (match.Groups.ContainsKey("command"))
+                {
+                    commandText = match.Groups["command"].Value;
+
+                    if (match.Groups.ContainsKey("target"))
+                    {
+                        target = match.Groups["target"].Value;
+                    }
+                }
+            }
+
+            if (commandText != null)
+            {
+                logger.LogInformation($"The speech {thalassaResponse} was a command: command {commandText}, with target {target}.");
+
+#pragma warning disable CS8604 // Possible null reference argument.
+                var command = commandFactory.Parse(commandText, target);
+
+                if (command == null)
+                {
+                    logger.LogError($"Unknown command, not executing it: command \"{commandText}\" with target \"{target}\"");
+                }
+                else
+                {
+                    command.Execute();
+                }
+#pragma warning restore CS8604 // Possible null reference argument.
+            }
+            else
+            {
+                logger.LogInformation($"The speech {thalassaResponse} was not a command.");
+            }
+            return Task.CompletedTask;
         }
 
         private void StartListeningToTwitchApi()
@@ -145,11 +201,11 @@ namespace StarmaidIntegrationComputer
             //TODO: If I decide I don't need all the permissions, specify which I do here!
             var chatbotCapabilities = new Capabilities(true, true, true);
 
-            var chatbotConnectionCredentials = new ConnectionCredentials(settings.TwitchChatbotUsername, accessToken.Token, capabilities: chatbotCapabilities);
+            var chatbotConnectionCredentials = new ConnectionCredentials(twitchSensitiveSettings.TwitchChatbotUsername, liveTwitchAuthorizationInfo.AccessToken.Token, capabilities: chatbotCapabilities);
 
             chatbot.WillReplaceEmotes = true; //No idea what the default is here
             chatbot.AutoReListenOnException = true;
-            chatbot.Initialize(chatbotConnectionCredentials, settings.TwitchChatbotChannelName, settings.ChatCommandIdentifier, settings.WhisperCommandIdentifier);
+            chatbot.Initialize(chatbotConnectionCredentials, twitchSensitiveSettings.TwitchChatbotChannelName, twitchSettings.ChatCommandIdentifier, twitchSettings.WhisperCommandIdentifier);
 
             chatbot.OnConnected += Chatbot_OnConnected;
             chatbot.OnConnectionError += Chatbot_OnConnectionError;
@@ -158,6 +214,12 @@ namespace StarmaidIntegrationComputer
             chatbot.OnNoPermissionError += Chatbot_OnNoPermissionError;
             chatbot.OnSelfRaidError += Chatbot_OnSelfRaidError;
             chatbot.OnMessageReceived += Chatbot_OnMessageReceived;
+            chatbot.OnLeftChannel += Chatbot_OnLeftChannel;
+            chatbot.OnRaidNotification += Chatbot_OnRaidNotification;
+            chatbot.OnUserJoined += Chatbot_OnUserJoined;
+            chatbot.OnUserLeft += Chatbot_OnUserLeft;
+            chatbot.OnExistingUsersDetected += Chatbot_OnExistingUsersDetected;
+            //chatbot.OnUserTimedout += Chatbot_OnUserTimedout; //Do we want a timed-out user list?  This is the Twitch temporary chat ban, not a leave event!
 
             chatbotLogger.LogInformation("Connecting to chat bot!");
             bool success = chatbot.Connect();
@@ -167,10 +229,59 @@ namespace StarmaidIntegrationComputer
             }
             else
             {
-                chatbot.JoinChannel(settings.TwitchChatbotChannelName);
-                chatbotJoinedChannel = chatbot.GetJoinedChannel(settings.TwitchChatbotChannelName);
+                chatbot.JoinChannel(twitchSensitiveSettings.TwitchChatbotChannelName);
+                chatbotJoinedChannel = chatbot.GetJoinedChannel(twitchSensitiveSettings.TwitchChatbotChannelName);
                 logger.LogInformation("Chatbot connecting... successfully!");
             }
+        }
+
+        private void Chatbot_OnExistingUsersDetected(object? sender, OnExistingUsersDetectedArgs e)
+        {
+            commandStateBag.Viewers.AddRange(e.Users);
+        }
+
+        private void Chatbot_OnUserLeft(object? sender, TwitchLib.Client.Events.OnUserLeftArgs e)
+        {
+            commandStateBag.Viewers.Remove(e.Username);
+        }
+
+        private void Chatbot_OnUserJoined(object? sender, TwitchLib.Client.Events.OnUserJoinedArgs e)
+        {
+            if (!commandStateBag.Viewers.Contains(e.Username))
+            {
+                commandStateBag.Viewers.Add(e.Username);
+            }
+        }
+
+        private void Chatbot_OnRaidNotification(object? sender, TwitchLib.Client.Events.OnRaidNotificationArgs e)
+        {
+            chatbotLogger.LogInformation($"Raid notification - {e.RaidNotification.DisplayName}");
+
+            DateTime raidTimestamp = TmiSentTsHelpers.ParseOrNow(e.RaidNotification.TmiSentTs);
+
+            RaiderInfo? previousRaider = commandStateBag.Raiders.SingleOrDefault(previousRaider => previousRaider.RaiderName == e.RaidNotification.DisplayName);
+
+
+            if (previousRaider == null)
+            {
+                RaiderInfo raider = new RaiderInfo
+                {
+                    RaiderName = e.RaidNotification.DisplayName,
+                    RaidTime = raidTimestamp,
+                    LastShoutedOut = null
+                };
+
+                commandStateBag.Raiders.Add(raider);
+            }
+            else
+            {
+                previousRaider.RaidTime = raidTimestamp;
+            }
+        }
+
+        private void Chatbot_OnLeftChannel(object? sender, TwitchLib.Client.Events.OnLeftChannelArgs e)
+        {
+            logger.LogInformation($"Thalassa has just left the {e.Channel} channel.");
         }
 
         private void Chatbot_OnLog(object? sender, TwitchLib.Client.Events.OnLogArgs e)
@@ -182,6 +293,19 @@ namespace StarmaidIntegrationComputer
         {
             //TODO: Change the log level of this action
             chatbotLogger.LogInformation($"Message received - {e.ChatMessage.DisplayName}: {e.ChatMessage.Message}");
+
+            if (!commandStateBag.Chatters.Any(chatter => chatter.ChatterName == e.ChatMessage.DisplayName))
+            {
+                DateTime sentTimestamp = TmiSentTsHelpers.ParseOrNow(e.ChatMessage.TmiSentTs);
+
+                //Have a breakpoint here to see if the timestamp is a reasonable number - it might be a FromUnixTimeMilliseconds instead of a FromUnixTimeSeconds.
+
+                var messageInfo = new ChatterMessageInfo { Message = e.ChatMessage.Message, Timestamp = sentTimestamp };
+
+                Chatter newChatter = new Chatter(e.ChatMessage.DisplayName, messageInfo);
+
+                commandStateBag.Chatters.Add(newChatter);
+            }
         }
 
         private void Chatbot_OnSelfRaidError(object? sender, EventArgs e)
@@ -209,14 +333,14 @@ namespace StarmaidIntegrationComputer
         {
             chatbotLogger.LogInformation($"Chatbot {e.BotUsername} connected successfully to {e.AutoJoinChannel}!");
 
-            chatbot.SendMessage(settings.TwitchChatbotChannelName, "Thalassa connected successfully!");
+            chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, "Thalassa connected successfully!");
         }
 
         private void pubSub_ServiceConnected(object? sender, EventArgs e)
         {
-            pubSub.ListenToChannelPoints(broadcasterId);
-            pubSub.ListenToRaid(broadcasterId);
-            pubSub.SendTopics(accessToken.Token);
+            pubSub.ListenToChannelPoints(liveTwitchAuthorizationInfo.BroadcasterId);
+            pubSub.ListenToRaid(liveTwitchAuthorizationInfo.BroadcasterId);
+            pubSub.SendTopics(liveTwitchAuthorizationInfo.AccessToken.Token);
         }
 
         #region pubSub listener event handlers
@@ -242,20 +366,20 @@ namespace StarmaidIntegrationComputer
                         return;
                     }
                     RefreshAuthToken();
-
                 }
             }
         }
 
         private void RefreshAuthToken()
         {
-            var refreshResponseTask = twitchConnection.Auth.RefreshAuthTokenAsync(accessToken.RefreshToken, settings.TwitchClientSecret, settings.TwitchClientId);
+            var refreshResponseTask = twitchConnection.Auth.RefreshAuthTokenAsync(liveTwitchAuthorizationInfo.AccessToken.RefreshToken, twitchSensitiveSettings.TwitchClientSecret, twitchSensitiveSettings.TwitchClientId);
+
             refreshResponseTask.ContinueWith(async responseTask =>
             {
-            //TODO: Consider further error handling
-            var response = await responseTask;
+                //TODO: Consider further error handling
+                var response = await responseTask;
                 var accessToken = AuthorizationHelper.GetAccessToken(response);
-                this.accessToken = accessToken;
+                this.liveTwitchAuthorizationInfo.AccessToken = accessToken;
                 logger.LogInformation("Token refreshed.");
                 pubSub.SendTopics(accessToken.Token);
             });
@@ -270,7 +394,6 @@ namespace StarmaidIntegrationComputer
         {
             Output($"Raid update - raiding {e.TargetDisplayName}!");
         }
-
 
         private void PubSub_OnChannelPointsRewardRedeemed(object? sender, OnChannelPointsRewardRedeemedArgs e)
         {
@@ -308,11 +431,11 @@ namespace StarmaidIntegrationComputer
             {
                 if (IsRunning)
                 {
-                    if (accessToken == null || accessToken.ExpiresAt >= DateTime.Now)
+                    if (liveTwitchAuthorizationInfo.AccessToken == null || liveTwitchAuthorizationInfo.AccessToken.ExpiresAt >= DateTime.Now)
                     {
                         AuthorizationHelper.PromptForUserAuthorization();
-                    //An event in the prompt will move us on to StartListeningToTwitch() when the time is right.
-                }
+                        //An event in the prompt will move us on to StartListeningToTwitch() when the time is right.
+                    }
                     else
                     {
                         StartListeningToTwitchApi();
@@ -320,7 +443,7 @@ namespace StarmaidIntegrationComputer
 
                 }
                 else //!isRunning
-            {
+                {
                     pubSub?.Disconnect();
                     if (chatbot.IsConnected)
                     {
