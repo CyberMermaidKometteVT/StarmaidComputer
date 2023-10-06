@@ -88,7 +88,7 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             return session.Start();
         }
 
-        internal void AbortCurrentListening()
+        public void AbortCurrentListening()
         {
             foreach (IVoiceSession session in runningSessions)
             {

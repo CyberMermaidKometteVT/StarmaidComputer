@@ -93,12 +93,12 @@ namespace StarmaidIntegrationComputer.Chat
             InitializeComponent();
 
 
-            this.controlsForResize = new List<Control> { ChatbotResponsesRichTextBox, ThalassaLabel, ThalassaListenToggleButton, ThalassaInputOverButton, ThalassaAbortCommandButton, ThalassaShutUpButton, /*AutoscrollCheckBox,*/ ResetConversationButton, UserNameLabel, UserNameTextBox, UserMessageLabel, UserMessageTextBox, SendMessageButton }
+            this.controlsForResize = new List<Control> { ChatbotResponsesRichTextBox, ThalassaLabel, ThalassaListenToggleButton, ThalassaInputOverButton, ThalassaAbortCommandButton, ThalassaShutUpButton, /*AutoscrollCheckBox,*/ ResetConversationButton, UserNameLabel, UserNameTextBox, UserMessageLabel, UserMessageTextBox, SendMessageButton, WasNotTalkingToYouButton }
             .AsReadOnly();
 
             CreateNewChatComputer();
 
-            SetAllButtonStates(speechComputer);
+            SetAllButtonStates();
 
             UserNameTextBox.Text = streamerProfileSettings.StreamerName;
 
@@ -120,10 +120,10 @@ namespace StarmaidIntegrationComputer.Chat
             speechComputer.SpeechCompletedHandlers.Add(OnThalassaSpeechOver);
 
             thalassaCore.StartingListeningHandlers.Add(PlayStartingListening);
-            thalassaCore.StoppingListeningHandlers.Add(PlayStoppingListening);
+            thalassaCore.StoppingListeningHandlers.Add(OnStoppingListening);
 
             voiceListener.SessionStartingHandlers.Add(OnSpeechInterpretationBegun);
-            voiceListener.SessionCompleteHandlers.Add(OnSpeechInterpretationOver);
+            //voiceListener.SessionCompleteHandlers.Add(OnSpeechInterpretationOver);
         }
 
         private void CreateNewChatComputer()
@@ -138,7 +138,7 @@ namespace StarmaidIntegrationComputer.Chat
             }
         }
 
-        private void SetAllButtonStates(SpeechComputer speechComputer)
+        private void SetAllButtonStates()
         {
             if (speechComputer.IsSpeaking)
             {
@@ -170,6 +170,13 @@ namespace StarmaidIntegrationComputer.Chat
             Dispatcher.Invoke(soundEffectPlayer.PlayStartingListeningFile);
         }
 
+        private void OnStoppingListening()
+        {
+            PlayStoppingListening();
+
+            OnSpeechInterpretationOver();
+        }
+
         private void PlayStoppingListening()
         {
             Dispatcher.Invoke(soundEffectPlayer.PlayStoppingListeningFile);
@@ -182,6 +189,9 @@ namespace StarmaidIntegrationComputer.Chat
             {
                 ThalassaInputOverButton.IsEnabled = true;
                 ThalassaInputOverButton.Content = "_Input Over";
+
+                WasNotTalkingToYouButton.IsEnabled = true;
+                WasNotTalkingToYouButton.Content = "Not _Talking To You";
             });
         }
 
@@ -189,15 +199,19 @@ namespace StarmaidIntegrationComputer.Chat
         {
             Dispatcher.Invoke(() =>
             {
+                const string notCurrentlyAwakeText = "(Not Currently Awake)";
                 ThalassaInputOverButton.IsEnabled = false;
-                ThalassaInputOverButton.Content = "(Not Currently Awake)";
+                ThalassaInputOverButton.Content = notCurrentlyAwakeText;
+
+                WasNotTalkingToYouButton.IsEnabled = false;
+                WasNotTalkingToYouButton.Content = notCurrentlyAwakeText;
             });
         }
 
         private void OnThalassaSpeechBegun()
         {
             ThalassaShutUpButton.IsEnabled = true;
-            ThalassaShutUpButton.Content = "Shut up!";
+            ThalassaShutUpButton.Content = "Shu_t up!";
         }
 
         private void OnThalassaSpeechOver()
@@ -349,7 +363,7 @@ namespace StarmaidIntegrationComputer.Chat
         private void Window_Closed(object sender, EventArgs e)
         {
             this.thalassaCore.StartingListeningHandlers.Remove(PlayStartingListening);
-            this.thalassaCore.StoppingListeningHandlers.Remove(PlayStoppingListening);
+            this.thalassaCore.StoppingListeningHandlers.Remove(OnStoppingListening);
         }
 
         private void ThalassaShutUpButton_Click(object sender, RoutedEventArgs e)
@@ -407,6 +421,14 @@ namespace StarmaidIntegrationComputer.Chat
             }
             AutoscrollCheckBox.RenderTransform = new ScaleTransform(1.0, 1.0, 0.5, 0.5);
 
+        }
+
+        private void ThalassaWasNotTalkingToYouButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (voiceListener.IsRunning)
+            {
+                voiceListener.AbortCurrentListening();
+            }
         }
     }
 }

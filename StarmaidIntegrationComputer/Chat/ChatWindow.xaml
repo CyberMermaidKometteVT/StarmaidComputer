@@ -32,6 +32,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
@@ -40,8 +41,9 @@
             <Button Name="ThalassaInputOverButton" Click="ThalassaInputOverButton_Click" IsEnabled="False" MinWidth="125" Margin="4px,0,0,0" Grid.Row="0" Grid.Column="2">(Not Currently Awake)</Button>
             <Button Name="ThalassaAbortCommandButton" Margin="4px,0,0,0" IsEnabled="False" MinWidth="135" Grid.Row="0" Grid.Column="3">(No _Command Pending)</Button>
             <Button Name="ThalassaShutUpButton" Click="ThalassaShutUpButton_Click" Margin="4px,0,0,0" IsEnabled="False" MinWidth="72" Grid.Row="0" Grid.Column="4">(Not _Talking)</Button>
-            <Label Name="SpacingLabel" Grid.Row="0" Grid.Column="5"></Label>
-            <CheckBox x:Name="AutoscrollCheckBox" Height="21" Margin="0,3,0,0" VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked" Grid.Row="0" Grid.Column="6">Auto Scroll</CheckBox>
+            <Button x:Name="WasNotTalkingToYouButton" Click="ThalassaWasNotTalkingToYouButton_Click" Margin="5,0,0,1" IsEnabled="False" MinWidth="72" Grid.Row="0" Grid.Column="5" Content="(Not Currently Awake)"/>
+            <Label Name="SpacingLabel" Grid.Row="0" Grid.Column="6" MinWidth="0px"></Label>
+            <CheckBox x:Name="AutoscrollCheckBox" Height="21" Margin="0,3,0,0" VerticalAlignment="Top" IsChecked="True" Checked="Autoscroll_Checked" Grid.Row="0" Grid.Column="7">Auto Scroll</CheckBox>
         </Grid>
 
         <ScrollViewer Name="ChatbotResponsesScrollViewer" CanContentScroll="True" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" Grid.RowSpan="2">
@@ -64,7 +66,7 @@
             <TextBox Name="UserNameTextBox" MinWidth="100" Text="(streamer)" Grid.Row="0" Grid.Column="2"/>
             <Label Name="UserMessageLabel" Target="{Binding ElementName=UserMessageTextBox}" Grid.Row="0" Grid.Column="3">_Message</Label>
             <TextBox Name="UserMessageTextBox" TextChanged="UserMessageTextBox_TextChanged" KeyUp="UserMessageTextBox_KeyUp" Grid.Row="0" Grid.Column="4"/>
-            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click" Grid.Row="0" Grid.Column="5">Se_nd</Button>
+            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click" Grid.Row="0" Grid.Column="5">Se_n_d</Button>
         </Grid>
     </Grid>
 </Window>
