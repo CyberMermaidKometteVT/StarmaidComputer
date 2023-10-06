@@ -9,6 +9,7 @@ using OpenAI.ObjectModels.ResponseModels;
 using OpenAI.ObjectModels.SharedModels;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.Settings;
 
@@ -17,6 +18,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
     public class ChatComputer
     {
         private readonly OpenAIService openAIService;
+        private readonly StreamerProfileSettings streamerProfileSettings;
         private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
         private readonly OpenAISettings openAISettings;
@@ -27,33 +29,20 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
         private readonly List<FunctionDefinition> streamerAccessibleThalassaFunctions;
 
-        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAIService openAIService, ThalassaFunctionBuilder thalassaFunctionBuilder)
+        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAIService openAIService, ThalassaFunctionBuilder thalassaFunctionBuilder, StreamerProfileSettings streamerProfileSettings)
         {
             this.stateBag = stateBag;
             this.logger = logger;
             this.openAISettings = openAISettings;
             this.openAIService = openAIService;
-
+            this.streamerProfileSettings = streamerProfileSettings;
             streamerAccessibleThalassaFunctions = thalassaFunctionBuilder.BuildStreamerAccessibleFunctions();
         }
 
-        public async Task SendChat(string userMessage)
-        {
-            PrepareToSendChat();
-
-            request.Messages.Add(new ChatMessage("user", userMessage));
-            OutputUserMessage("", $"{userMessage}{Environment.NewLine}");
-            ChatCompletionCreateResponse? response = await openAIService.CreateCompletion(request);
-            var firstResponseChoice = response.Choices.First();
-            var responseText = firstResponseChoice.Message.Content;
-            OutputChatbotResponse($"Thalassa: {responseText}{Environment.NewLine}");
-            OutputChatbotFunctionCall(firstResponseChoice);
-        }
-
-
         public async Task SendChat(string userName, string userMessage)
         {
-            PrepareToSendChat();
+            bool isCommand = GetIsCommand(userName, userMessage);
+            PrepareToSendChat(isCommand);
 
             request.Messages.Add(new ChatMessage("user", userMessage, userName));
 
@@ -94,6 +83,28 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             }
         }
 
+        private bool GetIsCommand(string userName, string userMessage)
+        {
+            if (userName != streamerProfileSettings.StreamerName)
+            {
+                return false;
+            }
+
+            string[] fillerText = new string[] { "(", ")", "-", "spoken", " " };
+
+            string userMessageWithoutFiller = userMessage;
+            foreach (string filler in fillerText)
+            {
+                userMessageWithoutFiller = userMessageWithoutFiller.Replace(filler, "");
+            }
+
+
+            userMessageWithoutFiller = userMessageWithoutFiller.ToLower();
+            bool isCommand = openAISettings.CommandPrefixPhrases.Any(phrase => userMessageWithoutFiller.StartsWith(phrase.ToLower()));
+
+            return isCommand;
+        }
+
         private void OutputChatbotFunctionCall(ChatChoiceResponse firstResponseChoice)
         {
             var functionCall = firstResponseChoice.Message.FunctionCall;
@@ -129,9 +140,9 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         }
 
 
-        private void PrepareToSendChat()
+        private void PrepareToSendChat(bool isCommand)
         {
-            EnsureConversationInitialized();
+            InitializeConversationForMessage(isCommand);
             AppendCurrentStarmaidStateToConversation();
         }
 
@@ -144,7 +155,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             request.Messages.Add(new ChatMessage("system", starmaidContext));
         }
 
-        private void EnsureConversationInitialized()
+        private void InitializeConversationForMessage(bool isCommand)
         {
             if (request == null)
             {
@@ -155,18 +166,40 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                     Messages = new List<ChatMessage>(),
                     MaxTokens = 8000,
                     TopP = 0.02f,
+                    //Temperature = 0.1f,
                     N = 1,
                 };
 
-                //TODO: Add multiple initial prompt functionality to the json
-                request.Messages.Add(new ChatMessage("system", openAISettings.GptPrompt));
-                //request.Messages.Add(new ChatMessage("system", initialSystemMessage2));
-                //request.Messages.Add(new ChatMessage("system", initialSystemMessage3));
-
-                request.Functions = streamerAccessibleThalassaFunctions;
+                if (isCommand)
+                {
+                    request.Messages.Add(new ChatMessage("system", openAISettings.GptCommandPrompt));
+                    request.Functions = streamerAccessibleThalassaFunctions;
+                }
+                else
+                {
+                    //TODO: Add multiple initial prompt functionality to the json
+                    request.Messages.Add(new ChatMessage("system", openAISettings.GptChatPrompt));
+                }
             }
             else
             {
+                string initialPromptContent;
+                if (isCommand)
+                {
+                    initialPromptContent = openAISettings.GptCommandPrompt;
+                    request.Functions = streamerAccessibleThalassaFunctions;
+                }
+                else // not a command
+                {
+                    initialPromptContent = openAISettings.GptChatPrompt;
+                    request.Functions = null;
+                }
+
+                request.Messages.RemoveAt(0);
+                request.Messages.Insert(0, new ChatMessage("system", initialPromptContent));
+
+                request.Messages.Add(new ChatMessage("user", "The next message will be a command."));
+
                 logger.LogInformation("Continuing existing conversation.");
             }
         }

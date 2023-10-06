@@ -21,12 +21,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             .Build();
 
         private FunctionDefinition GetShoutoutDefinition() => new FunctionDefinitionBuilder("Shoutout", $"Encourages viewers to follow the target, iff the phrase \"shout out\" is seen. Twitch command.")
-            .AddParameter("target", PropertyDefinition.DefineString("The username of target Twitch channel."))
+            .AddParameter("target", PropertyDefinition.DefineString("The username of target Twitch channel, or the special phrase, \"the last raider\"."))
             .Validate()
             .Build();
 
         private FunctionDefinition GetTimeoutDefinition() => new FunctionDefinitionBuilder("Timeout", "Blocks the target user from chatting. Only used if \"time out\" is explicitly called for, not for teasing or bullying. Twitch command.")
-            .AddParameter("target", PropertyDefinition.DefineString("The target Twitch username, or the special phrase, \"the last raider\"."))
+            .AddParameter("target", PropertyDefinition.DefineString("The target Twitch username."))
             .AddParameter("duration", PropertyDefinition.DefineInteger("Duration of timeout, in seconds. Should default to 300, unless target is actuallystan666 being timed out; default for him is 60."))
             .Validate()
             .Build();

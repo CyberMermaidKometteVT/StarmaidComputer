@@ -128,7 +128,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void CreateNewChatComputer()
         {
-            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAIService, thalassaFunctionBuilder);
+            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAIService, thalassaFunctionBuilder, streamerProfileSettings);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 
@@ -244,7 +244,7 @@ namespace StarmaidIntegrationComputer.Chat
 
             if (String.IsNullOrWhiteSpace(UserNameTextBox.Text))
             {
-                ActiveChatComputer.SendChat(UserMessageTextBox.Text);
+                ActiveChatComputer.SendChat(streamerProfileSettings.StreamerName, UserMessageTextBox.Text);
             }
             else
             {
