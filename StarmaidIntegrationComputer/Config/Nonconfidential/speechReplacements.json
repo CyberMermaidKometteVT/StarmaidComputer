@@ -28,6 +28,14 @@
       {
         "Phrase": "rgood1999",
         "Replacement": "R good"
+      },
+      {
+        "Phrase": "okilodioki",
+        "Replacement": "oak ee load ee oak ee"
+      },
+      {
+        "Phrase": "CassTheComputer",
+        "Replacement": "Cass"
       }
     ]
   }

@@ -23,6 +23,7 @@ using TwitchLib.Client.Events;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using OpenAI.ObjectModels.RequestModels;
 using System.Text.Json;
+using StarmaidIntegrationComputer.Common;
 
 //#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
 //#error This might be a major PITA!
@@ -261,13 +262,15 @@ namespace StarmaidIntegrationComputer
 
         private void Chatbot_OnLog(object? sender, TwitchLib.Client.Events.OnLogArgs e)
         {
-            chatbotLogger.LogInformation($"Chatbot logs: Chatbot {e.BotUsername} logs {e.Data}");
+            string sanitizedlogData = StringManipulation.SanitizeForRichTextBox(e.Data);
+            chatbotLogger.LogInformation($"Chatbot logs: Chatbot {e.BotUsername} logs {sanitizedlogData}");
         }
 
         private void Chatbot_OnMessageReceived(object? sender, TwitchLib.Client.Events.OnMessageReceivedArgs e)
         {
             //TODO: Change the log level of this action
-            chatbotLogger.LogInformation($"Message received - {e.ChatMessage.DisplayName}: {e.ChatMessage.Message}");
+            string sanitizedMessageReceived = StringManipulation.SanitizeForRichTextBox(e.ChatMessage.Message);
+            chatbotLogger.LogInformation($"Message received - {e.ChatMessage.DisplayName}: {sanitizedMessageReceived}");
 
             if (!commandStateBag.Chatters.Any(chatter => chatter.ChatterName == e.ChatMessage.DisplayName))
             {
@@ -275,7 +278,7 @@ namespace StarmaidIntegrationComputer
 
                 //Have a breakpoint here to see if the timestamp is a reasonable number - it might be a FromUnixTimeMilliseconds instead of a FromUnixTimeSeconds.
 
-                var messageInfo = new ChatterMessageInfo { Message = e.ChatMessage.Message, Timestamp = sentTimestamp };
+                var messageInfo = new ChatterMessageInfo { Message = sanitizedMessageReceived, Timestamp = sentTimestamp };
 
                 Chatter newChatter = new Chatter(e.ChatMessage.DisplayName, messageInfo);
 
