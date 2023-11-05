@@ -58,6 +58,8 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly ThalassaFunctionBuilder thalassaFunctionBuilder;
         private Action onNewChatComputerUsePropertyOnly = null;
 
+        public Action OnAbortingRunningCommand = null;
+
         /// <summary>
         /// Needs to be assigned before creating a new chat computer!
         /// </summary>
@@ -72,6 +74,22 @@ namespace StarmaidIntegrationComputer.Chat
                     value();
                 }
             }
+        }
+        public void RunningCommandCountChanged(int executingCommandCount)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (executingCommandCount == 0)
+                {
+                    ThalassaAbortCommandButton.IsEnabled = false;
+                    ThalassaAbortCommandButton.Content = "(No _Command Pending)";
+                }
+                else
+                {
+                    ThalassaAbortCommandButton.IsEnabled = true;
+                    ThalassaAbortCommandButton.Content = $"Abort {executingCommandCount} _Commands)";
+                }
+            });
         }
 
         //TODO: Consider ripping logic out into a custom control, and/or a controller for the Thalassa command strip.
@@ -91,7 +109,6 @@ namespace StarmaidIntegrationComputer.Chat
             AddButtonStateEventHandlers();
 
             InitializeComponent();
-
 
             this.controlsForResize = new List<Control> { ChatbotResponsesRichTextBox, ThalassaLabel, ThalassaListenToggleButton, ThalassaInputOverButton, ThalassaAbortCommandButton, ThalassaShutUpButton, /*AutoscrollCheckBox,*/ ResetConversationButton, UserNameLabel, UserNameTextBox, UserMessageLabel, UserMessageTextBox, SendMessageButton, WasNotTalkingToYouButton }
             .AsReadOnly();
@@ -428,6 +445,14 @@ namespace StarmaidIntegrationComputer.Chat
             if (voiceListener.IsRunning)
             {
                 voiceListener.AbortCurrentListening();
+            }
+        }
+
+        private void ThalassaAbortCommandButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (OnAbortingRunningCommand != null)
+            {
+                OnAbortingRunningCommand();
             }
         }
     }

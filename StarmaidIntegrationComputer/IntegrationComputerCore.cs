@@ -15,18 +15,13 @@ using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Thalassa.Chat;
-using System.Text.RegularExpressions;
 using StarmaidIntegrationComputer.Commands;
 using StarmaidIntegrationComputer.Helpers;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Client.Events;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using OpenAI.ObjectModels.RequestModels;
-using System.Text.Json;
 using StarmaidIntegrationComputer.Common;
-
-//#error Just finished hardening the wake word - pick up with adding interruptability before continuing on Twitch commands
-//#error This might be a major PITA!
 
 namespace StarmaidIntegrationComputer
 {
@@ -53,7 +48,6 @@ namespace StarmaidIntegrationComputer
         private TwitchAPI twitchConnection;
         private TwitchPubSub pubSub;
         private TwitchClient chatbot = new TwitchClient();
-        private JoinedChannel chatbotJoinedChannel;
         public readonly ILogger<IntegrationComputerCore> logger;
         private readonly ILogger<TwitchPubSub> pubSubLogger;
         private readonly ILogger<TwitchClient> chatbotLogger;
@@ -86,6 +80,7 @@ namespace StarmaidIntegrationComputer
         public Action<string> Output { get; set; }
         public Action UpdateIsRunningVisuals { get; set; }
 
+        public List<CommandBase> ExecutingCommands { get; } = new List<CommandBase> { };
 
         public IntegrationComputerCore(IntegrationComputerCoreCtorArgs ctorArgs)
         {
@@ -147,7 +142,6 @@ namespace StarmaidIntegrationComputer
 
             object targetArgumentBoxed = null;
             arguments.TryGetValue("target", out targetArgumentBoxed);
-            JsonElement targetArgumentJson = default(JsonElement);
             string targetArgument = null;
             if (targetArgumentBoxed != null)
             {
@@ -155,9 +149,21 @@ namespace StarmaidIntegrationComputer
             }
 
             var command = commandFactory.Parse(thalassaResponse.Name, targetArgument);
+            ExecutingCommands.Add(command);
+            OnCommandListChanged(ExecutingCommands.Count);
+
+            command.OnCompleteActions.Add(ClearCommandFromExecutionList);
+            command.OnAbortActions.Add(ClearCommandFromExecutionList);
+
             command.Execute();
 
             return Task.CompletedTask;
+        }
+
+        private void ClearCommandFromExecutionList(CommandBase command)
+        {
+            ExecutingCommands.Remove(command);
+            OnCommandListChanged(ExecutingCommands.Count);
         }
 
         private void StartListeningToTwitchApi()
@@ -206,7 +212,6 @@ namespace StarmaidIntegrationComputer
             else
             {
                 chatbot.JoinChannel(twitchSensitiveSettings.TwitchChatbotChannelName);
-                chatbotJoinedChannel = chatbot.GetJoinedChannel(twitchSensitiveSettings.TwitchChatbotChannelName);
                 logger.LogInformation("Chatbot connecting... successfully!");
             }
         }
@@ -323,6 +328,8 @@ namespace StarmaidIntegrationComputer
 
         #region pubSub listener event handlers
         private int consecutiveFailedListenResponseCount = 0;
+        public Action<int> OnCommandListChanged = null;
+
         private void pubSub_OnListenResponse(object? sender, OnListenResponseArgs e)
         {
             var logMessageText = $"On Listen Response firing for topic {e.Topic}, Success: {e.Response.Successful}, Channel ID: {e.ChannelId}, Error: {e.Response.Error}";

@@ -1,7 +1,8 @@
 {
   "ThalassaSettings": {
     "WakeWordConfidenceThreshold": 0.85,
-      "AbortWordConfidenceThreshold": 0.80
+    "CancelListeningConfidenceThreshold": 0.80,
+    "AbortCommandConfidenceThreshold": 0.80
   },
   "SoundPathSettings": {
     "StartingListeningSoundPath": "Assets\\Sounds\\Thalassa_Listening.mp3",
@@ -14,7 +15,8 @@
     "AiName": "Thalassa",
     "AiDescription": "Komette's shipboard AI",
     "WakeWords": [ "Thalassa" ],
-    "AbortPhrases": [ "Abort Cancel" ],
+    "CancelListeningPhrases": [ "Cancel Listening", "Stop Listening" ],
+    "AbortCommandPhrases": [ "Abort Execution", "Stop Execution" ],
     //Find sound-alike words at https://www.rhymezone.com/r/rhyme.cgi?org1=syl&org2=l&typeofrhyme=sim
     //It might be better to leave the soundalike list empty though
     "WakeWordSoundalikes": [

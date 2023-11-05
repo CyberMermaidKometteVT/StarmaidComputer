@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Speech.Recognition;
+﻿using System.Speech.Recognition;
 
 using Microsoft.Extensions.Logging;
 
@@ -22,6 +21,7 @@ namespace StarmaidIntegrationComputer.Thalassa
         public bool Listening { get; private set; }
         public Action<string>? DisplayInput { get; set; }
         public Action<string>? SpeechInterpreted { get; set; }
+        public Action? AbortCommandIssued { get; set; }
 
         private ILogger<ThalassaCore> Logger { get; set; }
 
@@ -52,8 +52,10 @@ namespace StarmaidIntegrationComputer.Thalassa
 
             IEnumerable<string> wakeWordSystemVocabulary = new List<string>(commonEnglishWords)
                 .Union(streamerProfileSettings.WakeWordSoundalikes)
-                .Union(streamerProfileSettings.WakeWords);
-
+                .Union(streamerProfileSettings.WakeWords)
+                .Union(streamerProfileSettings.CancelListeningPhrases)
+                .Union(streamerProfileSettings.AbortCommandPhrases)
+                ;
 
             #endregion All the words the wake word interpreter should know
             Choices choices = new Choices(wakeWordSystemVocabulary.ToArray());
@@ -121,11 +123,25 @@ namespace StarmaidIntegrationComputer.Thalassa
                 StartingListeningHandlers.Invoke();
             }
 
-            if (e.Result.Confidence > settings.AbortWordConfidenceThreshold && streamerProfileSettings.AbortPhrases.Contains(e.Result.Text))
+            if (e.Result.Confidence > settings.CancelListeningConfidenceThreshold && streamerProfileSettings.CancelListeningPhrases.Contains(e.Result.Text))
             {
-                Logger.LogInformation($"Abort phrase identified! Interrupting action!");
+                Logger.LogInformation($"Cancel listening phrase identified! Stopping listening!");
 
                 voiceToTextManager.AbortCurrentListening();
+            }
+
+            if (e.Result.Confidence > settings.AbortCommandConfidenceThreshold && streamerProfileSettings.AbortCommandPhrases.Contains(e.Result.Text))
+            {
+
+                if (AbortCommandIssued != null)
+                {
+                    Logger.LogInformation($"Abort command phrase identified! Aborting command!");
+                    AbortCommandIssued();
+                }
+                else
+                {
+                    Logger.LogInformation($"Abort command phrase identified, but its behavior has not been wired up!");
+                }
             }
         }
 

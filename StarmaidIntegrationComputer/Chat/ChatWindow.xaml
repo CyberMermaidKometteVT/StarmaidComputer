@@ -39,7 +39,7 @@
             <Label Name="ThalassaLabel" HorizontalAlignment="Stretch" VerticalAlignment="Top" MinHeight="23" Grid.Row="0" Grid.Column="0">Thalassa</Label>
             <Button Name="ThalassaListenToggleButton" Click="ThalassaListenToggleButton_Click" MinWidth="35" Grid.Row="0" Grid.Column="1">_Listen</Button>
             <Button Name="ThalassaInputOverButton" Click="ThalassaInputOverButton_Click" IsEnabled="False" MinWidth="125" Margin="4px,0,0,0" Grid.Row="0" Grid.Column="2">(Not Currently Awake)</Button>
-            <Button Name="ThalassaAbortCommandButton" Margin="4px,0,0,0" IsEnabled="False" MinWidth="135" Grid.Row="0" Grid.Column="3">(No _Command Pending)</Button>
+            <Button Name="ThalassaAbortCommandButton" Click="ThalassaAbortCommandButton_Click" Margin="4px,0,0,0" IsEnabled="False" MinWidth="135" Grid.Row="0" Grid.Column="3">(No _Command Pending)</Button>
             <Button Name="ThalassaShutUpButton" Click="ThalassaShutUpButton_Click" Margin="4px,0,0,0" IsEnabled="False" MinWidth="72" Grid.Row="0" Grid.Column="4">(Not _Talking)</Button>
             <Button x:Name="WasNotTalkingToYouButton" Click="ThalassaWasNotTalkingToYouButton_Click" Margin="5,0,0,1" IsEnabled="False" MinWidth="72" Grid.Row="0" Grid.Column="5" Content="(Not Currently Awake)"/>
             <Label Name="SpacingLabel" Grid.Row="0" Grid.Column="6" MinWidth="0px"></Label>
@@ -66,7 +66,7 @@
             <TextBox Name="UserNameTextBox" MinWidth="100" Text="(streamer)" Grid.Row="0" Grid.Column="2"/>
             <Label Name="UserMessageLabel" Target="{Binding ElementName=UserMessageTextBox}" Grid.Row="0" Grid.Column="3">_Message</Label>
             <TextBox Name="UserMessageTextBox" TextChanged="UserMessageTextBox_TextChanged" KeyUp="UserMessageTextBox_KeyUp" Grid.Row="0" Grid.Column="4"/>
-            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click" Grid.Row="0" Grid.Column="5">Se_n_d</Button>
+            <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click" Grid.Row="0" Grid.Column="5">Sen_d</Button>
         </Grid>
     </Grid>
 </Window>
