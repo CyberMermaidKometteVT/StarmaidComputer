@@ -2,7 +2,6 @@
 
 using Microsoft.Extensions.Logging;
 
-using OpenAI.Builders;
 using OpenAI.Managers;
 using OpenAI.ObjectModels.RequestModels;
 using OpenAI.ObjectModels.ResponseModels;

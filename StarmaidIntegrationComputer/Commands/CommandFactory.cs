@@ -41,7 +41,7 @@ namespace StarmaidIntegrationComputer.Commands
             command = command.ToLower();
             if (command == "shoutout")
             {
-                InterpretShoutoutTarget(target);
+                target = InterpretShoutoutTarget(target);
 
                 return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target);
             }

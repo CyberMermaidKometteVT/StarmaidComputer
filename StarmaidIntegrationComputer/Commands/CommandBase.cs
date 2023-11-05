@@ -19,6 +19,8 @@ namespace StarmaidIntegrationComputer.Commands
 
         public List<Action<CommandBase>> OnCompleteActions { get; private set; } = new List<Action<CommandBase>>();
 
+        public List<Action<CommandBase>> OnAbortActions { get; private set; } = new List<Action<CommandBase>>();
+
 
         private readonly Timer executionTimer;
         private readonly ILogger<CommandBase> logger;
@@ -56,6 +58,7 @@ namespace StarmaidIntegrationComputer.Commands
             }
             IsRunning = false;
 
+            OnAbortActions.Invoke(this);
         }
 
 #warning Async event handlers might not be great, do further research
@@ -85,7 +88,5 @@ namespace StarmaidIntegrationComputer.Commands
         }
 
         protected abstract Task PerformCommand();
-
-
     }
 }

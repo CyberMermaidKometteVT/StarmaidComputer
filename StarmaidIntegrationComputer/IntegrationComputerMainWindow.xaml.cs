@@ -10,8 +10,10 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 
 using StarmaidIntegrationComputer.Chat;
+using StarmaidIntegrationComputer.Commands;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Thalassa;
+using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 
 namespace StarmaidIntegrationComputer
 {
@@ -25,14 +27,14 @@ namespace StarmaidIntegrationComputer
         private readonly ChatWindowFactory chatWindowFactory;
         private readonly ThalassaCore thalassaCore;
         private readonly StreamerProfileSettings streamerProfileSettings;
+        private readonly SpeechComputer speechComputer;
         LoggerConfiguration loggerConfiguration;
         public List<ChatWindow> chatWindows { get; private set; } = new List<ChatWindow>();
 
         ScrollViewer outputScrollViewer;
 
 
-
-        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore, StreamerProfileSettings streamerProfileSettings)
+        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore, StreamerProfileSettings streamerProfileSettings, SpeechComputer speechComputer)
         {
             this.loggerFactory = loggerFactory;
             this.core = core;
@@ -40,6 +42,7 @@ namespace StarmaidIntegrationComputer
             this.chatWindowFactory = chatWindowFactory;
             this.thalassaCore = thalassaCore;
             this.streamerProfileSettings = streamerProfileSettings;
+            this.speechComputer = speechComputer;
             this.core.Output = AppendOutput;
             this.core.UpdateIsRunningVisuals = SetToggleButtonContent;
 
@@ -73,6 +76,7 @@ namespace StarmaidIntegrationComputer
         private async void IntegrationComputerMainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             thalassaCore.DisplayInput = DispatchAppendText;
+            thalassaCore.AbortCommandIssued = AbortAllExecutingCommands;
             await core.EnactIsRunning();
             outputScrollViewer = (ScrollViewer)FindName("OutputScrollViewer");
         }
@@ -145,6 +149,9 @@ namespace StarmaidIntegrationComputer
             {
                 core.ActiveChatComputer = activeChatWindow.ActiveChatComputer;
                 activeChatWindow.Closed += (sender, args) => { chatWindows.Remove(activeChatWindow); };
+                activeChatWindow.OnAbortingRunningCommand = AbortAllExecutingCommands;
+
+                core.OnCommandListChanged = commandListCount => activeChatWindow.RunningCommandCountChanged(commandListCount);
             };
 
             chatWindows.Add(activeChatWindow);
@@ -152,6 +159,26 @@ namespace StarmaidIntegrationComputer
             activeChatWindow.Show();
         }
 
+        private void AbortAllExecutingCommands()
+        {
+            CommandBase[] removalQueue = new CommandBase[core.ExecutingCommands.Count()];
+            core.ExecutingCommands.CopyTo(removalQueue);
+
+            foreach (CommandBase command in removalQueue)
+            {
+                command.Abort();
+                core.ExecutingCommands.Remove(command);
+            }
+
+            if (removalQueue.Length > 0)
+            {
+                speechComputer.Speak($"Aborted {removalQueue.Length} commands.");
+            }
+            else
+            {
+                speechComputer.Speak($"No commands to abort.");
+            }
+        }
 
         private void OnSpeechInterpreted(string interpretedSpeech)
         {

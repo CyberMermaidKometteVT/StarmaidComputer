@@ -8,7 +8,8 @@
         public string AiName { get; set; }
         public string AiDescription { get; set; }
         public List<string> WakeWords { get; set; }
-        public List<string> AbortPhrases { get; set; }
+        public List<string> CancelListeningPhrases { get; set; }
         public List<string> WakeWordSoundalikes { get; set; }
+        public List<string> AbortCommandPhrases { get; set; }
     }
 }
