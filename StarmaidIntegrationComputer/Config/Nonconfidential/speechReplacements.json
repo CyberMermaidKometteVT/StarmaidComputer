@@ -36,6 +36,26 @@
       {
         "Phrase": "CassTheComputer",
         "Replacement": "Cass"
+      },
+      {
+        "Phrase": "AllTheWaifuReferences",
+        "Replacement": "All The Why Foo References"
+      },
+      {
+        "Phrase": "waifu",
+        "Replacement": "Why Foo"
+      },
+      {
+        "Phrase": "Thalassa",
+        "Replacement": "Thuh lass sah"
+      },
+      {
+        "Phrase": "MechaRaptorOmega",
+        "Replacement": "Mech uh Raptor Omega"
+      },
+      {
+        "Phrase": "CAI_TAn",
+        "Replacement": "Kay tan"
       }
     ]
   }
