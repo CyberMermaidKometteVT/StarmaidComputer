@@ -128,9 +128,15 @@ namespace StarmaidIntegrationComputer
             pubSubLogger.LogInformation("Instantiating pub sub");
             pubSub = new TwitchPubSub(pubSubLogger);
 
-            User broadcastingTwitchUser = (await twitchConnection.Helix.Users
+            User thalassaUserId = (await twitchConnection.Helix.Users
                 .GetUsersAsync(logins: new List<string> { twitchSensitiveSettings.TwitchApiUsername })).Users.Single();
-            liveTwitchAuthorizationInfo.BroadcasterId = broadcastingTwitchUser.Id;
+            liveTwitchAuthorizationInfo.ThalassaUserId = thalassaUserId.Id;
+
+
+
+            User broadcastingTwitchUser = (await twitchConnection.Helix.Users
+                .GetUsersAsync(logins: new List<string> { twitchSensitiveSettings.TwitchChatbotChannelName })).Users.Single();
+            liveTwitchAuthorizationInfo.StreamerBroadcasterId = broadcastingTwitchUser.Id;
 
             StartListeningToTwitchApi();
             ConnectChatbot();
@@ -140,15 +146,8 @@ namespace StarmaidIntegrationComputer
         {
             Dictionary<string, object>? arguments = thalassaResponse.ParseArguments();
 
-            object targetArgumentBoxed = null;
-            arguments.TryGetValue("target", out targetArgumentBoxed);
-            string targetArgument = null;
-            if (targetArgumentBoxed != null)
-            {
-                targetArgument= ((System.Text.Json.JsonElement)targetArgumentBoxed).ToString();
-            }
 
-            var command = commandFactory.Parse(thalassaResponse.Name, targetArgument);
+            var command = commandFactory.Parse(thalassaResponse.Name, arguments);
             ExecutingCommands.Add(command);
             OnCommandListChanged(ExecutingCommands.Count);
 
@@ -321,8 +320,8 @@ namespace StarmaidIntegrationComputer
 
         private void pubSub_ServiceConnected(object? sender, EventArgs e)
         {
-            pubSub.ListenToChannelPoints(liveTwitchAuthorizationInfo.BroadcasterId);
-            pubSub.ListenToRaid(liveTwitchAuthorizationInfo.BroadcasterId);
+            pubSub.ListenToChannelPoints(liveTwitchAuthorizationInfo.ThalassaUserId);
+            pubSub.ListenToRaid(liveTwitchAuthorizationInfo.ThalassaUserId);
             pubSub.SendTopics(liveTwitchAuthorizationInfo.AccessToken.Token);
         }
 

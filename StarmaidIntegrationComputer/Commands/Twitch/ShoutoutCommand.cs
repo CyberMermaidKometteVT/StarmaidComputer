@@ -21,13 +21,13 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 
         public string ShoutoutTarget { get; private set; }
 
-        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target) : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchApi, chatbot)
+        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target)
+            : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi, chatbot)
         {
-            this.twitchSensitiveSettings = twitchSensitiveSettings;
             this.ShoutoutTarget = target;
         }
 
-        protected override async Task PerformCommand()
+        protected override async Task PerformCommandAsync()
         {
             //TODO: Consider replacing the "flies by {ShoutoutTarget}" with a nickname, if one is set later!
 
@@ -38,12 +38,6 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             if (!categoriesThatAreVerbs.Contains(state.LastCategoryName))
             {
                 state.LastCategoryName = $"playing {state.LastCategoryName}";
-            }
-
-            //TODO: ??? why does the chatbot's Joined Channels list empty??  It's clearly still in there!
-            if (chatbot.JoinedChannels.Count() == 0)
-            {
-                chatbot.JoinChannel(twitchSensitiveSettings.TwitchChatbotChannelName);
             }
 
             chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}");

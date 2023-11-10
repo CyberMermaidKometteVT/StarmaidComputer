@@ -4,7 +4,10 @@ namespace StarmaidIntegrationComputer.Twitch
 {
     public class LiveAuthorizationInfo
     {
-        public string BroadcasterId { get; set; }
+        //Also a "broadcaster ID"
+        public string ThalassaUserId { get; set; }
+        
+        public string StreamerBroadcasterId { get; set; }
         public AccessToken AccessToken { get; set; }
     }
 }

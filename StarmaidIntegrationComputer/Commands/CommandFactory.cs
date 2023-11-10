@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 using Microsoft.Extensions.Logging;
 
@@ -24,6 +25,7 @@ namespace StarmaidIntegrationComputer.Commands
         private readonly LiveAuthorizationInfo liveTwitchAuthorizationInfo;
 
         public const string LAST_RAIDER_VERBIAGE = "the last raider";
+        public const int DEFAULT_TIMEOUT_DURATION_IN_SECONDS = 300;
 
         public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag)
         {
@@ -36,17 +38,59 @@ namespace StarmaidIntegrationComputer.Commands
             this.liveTwitchAuthorizationInfo = liveTwitchAuthorizationInfo;
         }
 
-        public CommandBase? Parse(string command, string target)
+        public CommandBase? Parse(string command, Dictionary<string, object>? arguments)
         {
+
             command = command.ToLower();
             if (command == "shoutout")
             {
+                var target = GetTargetFromArguments(arguments);
                 target = InterpretShoutoutTarget(target);
 
                 return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target);
             }
+            if (command == "timeout")
+            {
+                var target = GetTargetFromArguments(arguments);
+                var durationInSeconds = GetDurationFromArguments(arguments) ?? DEFAULT_TIMEOUT_DURATION_IN_SECONDS;
+
+                return new TimeoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target, durationInSeconds);
+            }
 
             return null;
+        }
+
+        private int? GetDurationFromArguments(Dictionary<string, object>? arguments, int? defaultValue = null)
+        {
+            string argumentAsString = ParseArgumentAsString(arguments, "duration");
+            if (!string.IsNullOrWhiteSpace(argumentAsString))
+            {
+                if (int.TryParse(argumentAsString, out var durationInSeconds))
+                {
+                    return durationInSeconds;
+                }
+            }
+            return null;
+        }
+
+        private string GetTargetFromArguments(Dictionary<string, object>? arguments)
+        {
+            return ParseArgumentAsString(arguments, "target");
+        }
+
+        //This is probably more JSON parsing than I really need to do, but at time of development I am tired!
+        private string? ParseArgumentAsString(Dictionary<string, object>? arguments, string argumentName)
+        {
+            object? argumentBoxed = null;
+            arguments.TryGetValue(argumentName, out argumentBoxed);
+            string? argumentAsString = null;
+            if (argumentBoxed != null)
+            {
+                argumentAsString = ((System.Text.Json.JsonElement)argumentBoxed).ToString();
+            }
+
+            return argumentAsString;
+
         }
 
         private string InterpretShoutoutTarget(string target)

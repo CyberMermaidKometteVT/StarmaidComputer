@@ -193,27 +193,6 @@ namespace StarmaidIntegrationComputer.Twitch.Authorization
             }
         }
 
-        private void ReplaceArgument(string v1, string v2)
-        {
-            throw new NotImplementedException();
-        }
-
-        //private string GetValueOfRegistryKey(RegistryKey topLevelKey, string keyPath, string valueName, string errorDescription)
-        //{
-        //}
-
-        //private string GetValueOfRegistryKeyFromClassesRoot(string keyPath, string valueName, string errorDescription)
-        //{
-        //    using RegistryKey registryKey = Registry.ClassesRoot.OpenSubKey(keyPath);
-        //    return GetValueOfRegistryKey(registryKey, valueName, errorDescription);
-        //}
-
-        //private string GetValueOfRegistryKeyFromCurrentUser(string keyPath, string valueName, string errorDescription)
-        //{
-        //    using RegistryKey registryKey = Registry.CurrentUser.OpenSubKey(keyPath);
-        //    return GetValueOfRegistryKey(registryKey, valueName, errorDescription);
-        //}
-
 
         private string GetValueOfRegistryKey(RegistryKey topLevelRegistryKey, string keyPath, string valueName, string errorDescription)
         {
