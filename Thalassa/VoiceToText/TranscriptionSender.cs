@@ -65,13 +65,14 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
 
             var interpretingResponseWithoutWhitespace = Regex.Replace(interpretingResponse, "s*", "");
+            ParsedTranscriptionText parsedText = JsonSerializer.Deserialize<ParsedTranscriptionText>(interpretingResponse);
+            ParsedOpenAiError parsedError = JsonSerializer.Deserialize<ParsedOpenAiError>(interpretingResponse);
 
             //This is the good response!
-            if (interpretingResponseWithoutWhitespace.StartsWith("{\"text\":\""))
+            if (!String.IsNullOrWhiteSpace(parsedText.text))
             {
                 try
                 {
-                    ParsedTranscriptionText parsedText = JsonSerializer.Deserialize<ParsedTranscriptionText>(interpretingResponse);
 
                     return parsedText.text;
                 }
@@ -80,15 +81,13 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
                     //TODO: Consider logging this?  But we'll catch that something weird happened when we fall through and we log the state, tbf.
                 }
             }
-
             //That wasn't the expected good response, maybe it was an error in the known error format?
-            if (interpretingResponseWithoutWhitespace.StartsWith("{\"error\":{\"message\":\""))
+            else if (interpretingResponseWithoutWhitespace.StartsWith("{\"error\":{\"message\":\""))
             {
                 try
                 {
-                    ParsedOpenAiError error = JsonSerializer.Deserialize<ParsedOpenAiError>(interpretingResponse);
 
-                    throw new TranscriptionSenderException($"Error interpreting speech - {error.error.message}", interpretingResponse);
+                    throw new TranscriptionSenderException($"Error interpreting speech - {parsedError.error.message}", interpretingResponse);
                 }
                 catch
                 {
