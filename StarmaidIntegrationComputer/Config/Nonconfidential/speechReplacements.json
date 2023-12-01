@@ -36,8 +36,6 @@
       {
         "Phrase": "CassTheComputer",
         "Replacement": "Cass"
-<<<<<<< Updated upstream
-=======
       },
       {
         "Phrase": "AllTheWaifuReferences",
@@ -58,7 +56,10 @@
       {
         "Phrase": "CAI_TAn",
         "Replacement": "Kay tan"
->>>>>>> Stashed changes
+      },
+      {
+        "Phrase": "AstraNomiCH",
+        "Replacement": "Astra Nomi"
       }
     ]
   }
