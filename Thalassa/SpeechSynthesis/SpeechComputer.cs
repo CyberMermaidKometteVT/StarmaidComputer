@@ -90,7 +90,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
             foreach (SpeechReplacement speechReplacement in speechReplacements.Replacements)
             {
-                text = text.Replace(speechReplacement.Phrase, speechReplacement.Replacement);
+                text = text.Replace(speechReplacement.Phrase, speechReplacement.Replacement, StringComparison.CurrentCultureIgnoreCase);
             }
 
             return text;
