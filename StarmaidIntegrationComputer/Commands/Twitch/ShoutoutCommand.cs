@@ -17,14 +17,13 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 {
     internal class ShoutoutCommand : TwitchCommandBase
     {
-        private readonly TwitchSensitiveSettings twitchSensitiveSettings;
-
         public string ShoutoutTarget { get; private set; }
+        private TwitchSensitiveSettings twitchSensitiveSettings;
 
         public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target) : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchApi, chatbot)
         {
-            this.twitchSensitiveSettings = twitchSensitiveSettings;
             this.ShoutoutTarget = target;
+            this.twitchSensitiveSettings = twitchSensitiveSettings;
         }
 
         protected override async Task PerformCommand()

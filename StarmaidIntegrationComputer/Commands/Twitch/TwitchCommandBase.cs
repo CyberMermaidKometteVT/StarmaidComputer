@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 
 using StarmaidIntegrationComputer.Commands.Twitch.Enums;
+using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Twitch;
 
@@ -14,6 +15,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
         protected readonly TwitchAPI? twitchApi;
         protected readonly TwitchClient? chatbot;
         protected readonly LiveAuthorizationInfo liveAuthorizationInfo;
+
         public TwitchStateToValidate stateToValidate;
         protected TwitchCommandBase(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchStateToValidate stateToValidate, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI? twitchApi = null, TwitchClient? chatbot = null) : base(logger, speechComputer)
         {
