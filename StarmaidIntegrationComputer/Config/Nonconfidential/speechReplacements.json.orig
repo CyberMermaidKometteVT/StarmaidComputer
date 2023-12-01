@@ -1,0 +1,75 @@
+{
+  "SpeechReplacements": {
+    "Replacements": [
+      {
+        "Phrase": "Komette",
+        "Replacement": "Comet"
+      },
+      {
+        "Phrase": "WelcomeToJupiter",
+        "Replacement": "Jupiter"
+      },
+      {
+        "Phrase": "actualystan666",
+        "Replacement": "Stan"
+      },
+      {
+        "Phrase": "Damien_Verde_ch",
+        "Replacement": "Damien"
+      },
+      {
+        "Phrase": "TerraTheEnby",
+        "Replacement": "Terra"
+      },
+      {
+        "Phrase": "SpoonLoeffel",
+        "Replacement": "Spoon"
+      },
+      {
+        "Phrase": "rgood1999",
+        "Replacement": "R good"
+      },
+      {
+        "Phrase": "okilodioki",
+        "Replacement": "oak ee load ee oak ee"
+      },
+      {
+        "Phrase": "CassTheComputer",
+        "Replacement": "Cass"
+<<<<<<< HEAD
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> main
+      },
+      {
+        "Phrase": "AllTheWaifuReferences",
+        "Replacement": "All The Why Foo References"
+      },
+      {
+        "Phrase": "waifu",
+        "Replacement": "Why Foo"
+      },
+      {
+        "Phrase": "Thalassa",
+<<<<<<< HEAD
+        "Replacement": "Thuh lass sah"
+=======
+        "Replacement": "Thuh lass uh"
+>>>>>>> main
+      },
+      {
+        "Phrase": "MechaRaptorOmega",
+        "Replacement": "Mech uh Raptor Omega"
+      },
+      {
+        "Phrase": "CAI_TAn",
+        "Replacement": "Kay tan"
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
+>>>>>>> main
+      }
+    ]
+  }
+}
