@@ -20,7 +20,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
         protected readonly TwitchAPI? twitchApi;
         protected readonly TwitchClient? chatbot;
         protected readonly LiveAuthorizationInfo liveAuthorizationInfo;
-        private readonly TwitchSensitiveSettings twitchSensitiveSettings;
+        protected readonly TwitchSensitiveSettings twitchSensitiveSettings;
         public TwitchStateToValidate stateToValidate;
         protected TwitchCommandBase(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchStateToValidate stateToValidate, LiveAuthorizationInfo liveAuthorizationInfo, TwitchSensitiveSettings twitchSensitiveSettings, TwitchAPI? twitchApi = null, TwitchClient? chatbot = null) : base(logger, speechComputer)
         {

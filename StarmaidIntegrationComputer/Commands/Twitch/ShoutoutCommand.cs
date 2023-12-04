@@ -17,8 +17,6 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 {
     internal class ShoutoutCommand : TwitchCommandBase
     {
-        private readonly TwitchSensitiveSettings twitchSensitiveSettings;
-
         public string ShoutoutTarget { get; private set; }
 
         public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target)

@@ -56,6 +56,10 @@
       {
         "Phrase": "CAI_TAn",
         "Replacement": "Kay tan"
+      },
+      {
+        "Phrase": "AstraNomiCH",
+        "Replacement": "Astra Nomi"
       }
     ]
   }
