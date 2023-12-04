@@ -60,6 +60,10 @@
       {
         "Phrase": "AstraNomiCH",
         "Replacement": "Astra Nomi"
+      },
+      {
+        "Phrase": "sparkeplays",
+        "Replacement": "Sparky Plays"
       }
     ]
   }

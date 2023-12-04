@@ -47,7 +47,7 @@ namespace StarmaidIntegrationComputer.Commands
                 var target = GetTargetFromArguments(arguments);
                 target = InterpretShoutoutTarget(target);
 
-                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target);
+                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, stateBag, target);
             }
             if (command == "timeout")
             {
@@ -55,6 +55,14 @@ namespace StarmaidIntegrationComputer.Commands
                 var durationInSeconds = GetDurationFromArguments(arguments) ?? DEFAULT_TIMEOUT_DURATION_IN_SECONDS;
 
                 return new TimeoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target, durationInSeconds);
+            }
+            if (command == "saylastraider")
+            {
+                return new SayLastRaiderCommand(commandLogger, speechComputer, stateBag);
+            }
+            if (command == "sayraiderlist")
+            {
+                return new SayRaiderListCommand(commandLogger, speechComputer, stateBag);
             }
 
             return null;

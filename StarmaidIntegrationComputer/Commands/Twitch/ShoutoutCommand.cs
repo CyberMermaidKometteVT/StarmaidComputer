@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 using StarmaidIntegrationComputer.Commands.State;
 using StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers;
+using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Twitch;
@@ -20,10 +21,12 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 {
     internal class ShoutoutCommand : TwitchCommandBase
     {
-        public string ShoutoutTarget { get; private set; }
-        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target)
+        public StarmaidStateBag StateBag { get; }
+        public string ShoutoutTarget { get; }
+        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag, string target)
             : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi, chatbot)
         {
+            this.StateBag = stateBag;
             this.ShoutoutTarget = target;
         }
 
@@ -58,6 +61,15 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 
 
             chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}. \"{state.LastTitle}\"{state.InterestingTagCommentary} (Currently {(!state.IsLive ? "not " : "")}live.)");
+
+            var firstRaidInstance = this.StateBag.Raiders.Where(raider => raider.RaiderName == ShoutoutTarget).FirstOrDefault();
+            if (firstRaidInstance == null)
+            {
+                return;
+            }
+
+            firstRaidInstance.LastShoutedOut = DateTime.Now;
+
 
             //TODO: Once the enum list for the scopes includes the right scope for this, this is how
             //  we do a /shoutout! :D

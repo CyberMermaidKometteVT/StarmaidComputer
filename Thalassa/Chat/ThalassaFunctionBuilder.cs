@@ -15,6 +15,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             this.streamerProfileSettings = streamerProfileSettings;
         }
 
+        //Twitch
         private FunctionDefinition GetRaidDefinition() => new FunctionDefinitionBuilder("Raid", $"Raids, sending {streamerProfileSettings.StreamerName}'s community to target channel. Twitch function.")
             .AddParameter("target", PropertyDefinition.DefineString($"The username of target Twitch channel. Very rarely be a viewer or chatter, almost always from favorite streamers list, or an unknown entity. Ask for confirmation before executing if not on favorite streamers list."))
             .Validate()
@@ -31,6 +32,15 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             .Validate()
             .Build();
 
+        private FunctionDefinition GetTurnOnShieldModeDefinition() => new FunctionDefinitionBuilder("TurnOnShieldMode", $"Activates Shield Mode, locking down chat in the event that people are misbehaving badly or there is a bad actor present. Twitch command.")
+            .Validate()
+            .Build();
+
+        private FunctionDefinition GetTurnOffShieldModeDefinition() => new FunctionDefinitionBuilder("TurnOffShieldMode", $"This will exit Shield Mode, resuming normal chat features. Twitch command.")
+            .Validate()
+            .Build();
+
+        //Discord
         private FunctionDefinition GetMuteDefinition() => new FunctionDefinitionBuilder("Mute", $"Mutes streamer's mic. Discord command.")
             .Validate()
             .Build();
@@ -43,31 +53,42 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             .Validate()
             .Build();
 
+
+        //Informational
         private FunctionDefinition GetIsShieldModeOnDefinition() => new FunctionDefinitionBuilder("IsShieldModeOn", $"Tells whether or not shield mode is on. Twitch command.")
             .Validate()
             .Build();
 
-        private FunctionDefinition GetTurnOnShieldModeDefinition() => new FunctionDefinitionBuilder("TurnOnShieldMode", $"Activates Shield Mode, locking down chat in the event that people are misbehaving badly or there is a bad actor present. Twitch command.")
+        private FunctionDefinition GetSayRaiderListDefinition() => new FunctionDefinitionBuilder("SayRaiderList", $"Tells who has raided her Twitch stream since the chatbot was connected to Twitch. Internal chatbot command.")
             .Validate()
             .Build();
 
-        private FunctionDefinition GetTurnOffShieldModeDefinition() => new FunctionDefinitionBuilder("TurnOffShieldMode", $"This will exit Shield Mode, resuming normal chat features. Twitch command.")
+        private FunctionDefinition GetSayLastRaiderDefinition() => new FunctionDefinitionBuilder("SayLastRaider", $"Describes the most recent raider since the chatbot was connected to Twitch. Internal chatbot command.")
             .Validate()
             .Build();
+
+
 
         public List<FunctionDefinition> BuildStreamerAccessibleFunctions()
         {
             return new List<FunctionDefinition>
             {
+                //Twitch
                 GetRaidDefinition(),
                 GetShoutoutDefinition(),
                 GetTimeoutDefinition(),
+                GetTurnOnShieldModeDefinition(),
+                GetTurnOffShieldModeDefinition(),
+
+                //Discord
                 GetMuteDefinition(),
                 GetUnmuteDefinition(),
                 GetDeafenDefinition(),
+
+                //Informational
                 GetIsShieldModeOnDefinition(),
-                GetTurnOnShieldModeDefinition(),
-                GetTurnOffShieldModeDefinition()
+                GetSayRaiderListDefinition(),
+                GetSayLastRaiderDefinition()
             };
         }
     }

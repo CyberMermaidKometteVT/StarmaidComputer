@@ -71,7 +71,10 @@ namespace StarmaidIntegrationComputer
                 AuthScopes.Chat_Read,
                 AuthScopes.Chat_Edit,
                 AuthScopes.Helix_Moderator_Manage_Banned_Users,
-                AuthScopes.Shield
+                ////Not yet needed:
+                //AuthScopes.Helix_Channel_Read_Redemptions,
+                //AuthScopes.Helix_Channel_Manage_Redemptions,
+                ////Doesn't exist in current version of TwitchLib:
                 //, AuthScopes.Helix_Moderator_Manage_Shoutouts
                 };
             services.AddSingleton<IntegrationComputerMainWindow>();
