@@ -43,6 +43,10 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             .Validate()
             .Build();
 
+        private FunctionDefinition GetIsShieldModeOnDefinition() => new FunctionDefinitionBuilder("IsShieldModeOn", $"Tells whether or not shield mode is on. Twitch command.")
+            .Validate()
+            .Build();
+
         private FunctionDefinition GetTurnOnShieldModeDefinition() => new FunctionDefinitionBuilder("TurnOnShieldMode", $"Activates Shield Mode, locking down chat in the event that people are misbehaving badly or there is a bad actor present. Twitch command.")
             .Validate()
             .Build();
@@ -61,6 +65,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 GetMuteDefinition(),
                 GetUnmuteDefinition(),
                 GetDeafenDefinition(),
+                GetIsShieldModeOnDefinition(),
                 GetTurnOnShieldModeDefinition(),
                 GetTurnOffShieldModeDefinition()
             };

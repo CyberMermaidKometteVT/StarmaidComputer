@@ -200,6 +200,7 @@ namespace StarmaidIntegrationComputer
             chatbot.OnUserJoined += Chatbot_OnUserJoined;
             chatbot.OnUserLeft += Chatbot_OnUserLeft;
             chatbot.OnExistingUsersDetected += Chatbot_OnExistingUsersDetected;
+            chatbot.OnJoinedChannel += Chatbot_OnJoinedChannel;
             //chatbot.OnUserTimedout += Chatbot_OnUserTimedout; //Do we want a timed-out user list?  This is the Twitch temporary chat ban, not a leave event!
 
             chatbotLogger.LogInformation("Connecting to chat bot!");
@@ -214,6 +215,17 @@ namespace StarmaidIntegrationComputer
                 logger.LogInformation("Chatbot connecting... successfully!");
             }
         }
+
+        private void Chatbot_OnJoinedChannel(object? sender, OnJoinedChannelArgs e)
+        {
+            chatbotLogger.LogInformation($"Chatbot succesfully joined channel: {e.Channel}");
+        }
+
+        private void Chatbot_OnLeftChannel(object? sender, TwitchLib.Client.Events.OnLeftChannelArgs e)
+        {
+            logger.LogInformation($"Thalassa has just left the {e.Channel} channel.");
+        }
+
 
         private void Chatbot_OnExistingUsersDetected(object? sender, OnExistingUsersDetectedArgs e)
         {
@@ -258,12 +270,6 @@ namespace StarmaidIntegrationComputer
                 previousRaider.RaidTime = raidTimestamp;
             }
         }
-
-        private void Chatbot_OnLeftChannel(object? sender, TwitchLib.Client.Events.OnLeftChannelArgs e)
-        {
-            logger.LogInformation($"Thalassa has just left the {e.Channel} channel.");
-        }
-
         private void Chatbot_OnLog(object? sender, TwitchLib.Client.Events.OnLogArgs e)
         {
             string sanitizedlogData = StringManipulation.SanitizeForRichTextBox(e.Data);

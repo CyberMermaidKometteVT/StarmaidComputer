@@ -70,7 +70,8 @@ namespace StarmaidIntegrationComputer
             var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions, 
                 AuthScopes.Chat_Read,
                 AuthScopes.Chat_Edit,
-                AuthScopes.Helix_Moderator_Manage_Banned_Users
+                AuthScopes.Helix_Moderator_Manage_Banned_Users,
+                AuthScopes.Shield
                 //, AuthScopes.Helix_Moderator_Manage_Shoutouts
                 };
             services.AddSingleton<IntegrationComputerMainWindow>();
