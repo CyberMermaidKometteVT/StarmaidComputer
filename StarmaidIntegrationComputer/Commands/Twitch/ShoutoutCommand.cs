@@ -57,7 +57,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             }
 
 
-            chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}.  \"{state.LastTitle}\"{state.InterestingTagCommentary}");
+            chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}. \"{state.LastTitle}\"{state.InterestingTagCommentary} (Currently {(!state.IsLive ? "not " : "")}live.)");
 
             //TODO: Once the enum list for the scopes includes the right scope for this, this is how
             //  we do a /shoutout! :D
@@ -78,8 +78,10 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             }
 
             state.RecipientBroadcasterId = targets.Users.First().Id;
+            List<string> recipientBroadcasterIdList = new List<string> { state.RecipientBroadcasterId };
 
             var channelInformationResponse = await twitchApi.Helix.Channels.GetChannelInformationAsync(state.RecipientBroadcasterId);
+            var streams = (await twitchApi.Helix.Streams.GetStreamsAsync(first: 1, userIds: recipientBroadcasterIdList)).Streams;
 
             if (channelInformationResponse.Data.Length == 0)
             {
@@ -88,6 +90,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
                 return state;
             }
 
+            state.IsLive = streams.Any();
             state.LastCategoryName = channelInformationResponse.Data.First().GameName;
             state.LastTitle = channelInformationResponse.Data.First().Title;
             state.InterestingTagCommentary = TwitchTagDescriber.GetInterestingTagCommentary(channelInformationResponse.Data.First().Tags);
