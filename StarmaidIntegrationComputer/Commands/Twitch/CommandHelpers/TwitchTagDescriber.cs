@@ -14,9 +14,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers
         private static IReadOnlyList<string> exactArtistLabels = new List<string> { "ART", "ARTIST", "PAINTER", "PAINTING", "MINIATUREPAINTING", "DIGITALARTIST" }.AsReadOnly();
         private static IReadOnlyList<string> musicianLabels = new List<string> { "SONGWRIT", "MUSICIAN", "UKELELE", "GUITAR", "PIANO", "VIOLIN", "FLUTE", "FLOUTIST",  }.AsReadOnly();
         private static IReadOnlyList<string> eighteenPlusLabels = new List<string> { "18PLUS", "NOMINORS", "ADULT", "LEWDTUBER" }.AsReadOnly();
-
-        //Neurospicy labels: ADHD, AUTISTIC, AUDHD, ANXIETY, ANXIOUS, DEPRESSED, DEPRESSIVE, DYSLEXIA, MENTALHEALTH
-
+        private static IReadOnlyList<string> neurodivergentLabels = new List<string> { "ADHD", "ASPERGER", "ASPERGERS", "ASPERGER'S", "AUTISTIC", "AUTISM", "AUDHD", "ANXIETY", "ANXIOUS", "BIPOLAR", "BPD", "BORDERLINE", "DEPRESSED", "DEPRESSIVE", "DEPRESSION", "DID", "DISASSOCIATIVE", "DISASSOCIATIVEIDENTITY", "DISASSOCIATIVEIDENTITYDISORDER", "DOWNSYNDROME", "DYSCALCULIA", "DYSLEXIA", "EPILEPSY", "EPILEPTIC", "MENTALHEALTH", "MISOPHONIA", "OBSESSIVECOMPULSIVEDISORDER", "OCD", "PTSD", "CPTSD", "C-PTSD", "PARKINSON", "PARKINSONS", "PARKINSON'S", "SCHIZOPHRENIA", "SYNESTHESIA", "TOURETTE", "TOURETTES", "TOURETTE'S" }.AsReadOnly();
 
         private static IReadOnlyList<char> vowels = new List<char> ("aeiou").AsReadOnly();
 
@@ -35,8 +33,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers
             bool isArtist = tags.Any(DoesTagListPerfectlyMatchAnyLabels(exactArtistLabels)) && !tags.Any(tag => tag == "AIARIST");
             bool isMusician = tags.Any(DoesTagListContainAnyLabelsAsSubstrings(musicianLabels));
             bool isEighteenPlus = tags.Any(DoesTagListContainAnyLabelsAsSubstrings(eighteenPlusLabels));
-
-            //After poll: consider neurospicy
+            bool isNeurodivergent = tags.Any(DoesTagListContainAnyLabelsAsSubstrings(neurodivergentLabels));
 
             //adjectives
             if (isEighteenPlus)
@@ -46,6 +43,11 @@ namespace StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers
             if (isCozy)
             {
                 interestingTagCommentary.Append("cozy ");
+            }
+
+            if (isNeurodivergent)
+            {
+                interestingTagCommentary.Append("neurodivergent ");
             }
 
             if (isLGBTQ)
