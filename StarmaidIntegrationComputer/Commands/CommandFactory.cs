@@ -57,8 +57,9 @@ namespace StarmaidIntegrationComputer.Commands
             {
                 var target = GetTargetFromArguments(arguments);
                 var durationInSeconds = GetDurationFromArguments(arguments) ?? DEFAULT_TIMEOUT_DURATION_IN_SECONDS;
+                string? timeoutReason = ParseArgumentAsString(arguments, "reason");
 
-                return new TimeoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target, durationInSeconds);
+                return new TimeoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, target, durationInSeconds, timeoutReason);
             }
             if (command == CommandNames.SAY_LAST_RAIDER.ToLower())
             {
@@ -71,6 +72,11 @@ namespace StarmaidIntegrationComputer.Commands
             if (command == CommandNames.SEND_CANNED_MESSAGE_TO_CHAT.ToLower())
             {
                 return new SendCannedMessageToChatCommand(commandLogger, thalassaSettings, twitchSensitiveSettings, speechComputer, TwitchStateToValidate.Chatbot, liveTwitchAuthorizationInfo, chatbot);
+            }
+            if (command == CommandNames.SAY_LAST_FOLLWERS.ToLower())
+            {
+                int count = ParseArgumentAsInt(arguments, "count") ?? 5;
+                return new SayLastFollwersCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, count);
             }
 
             return null;
@@ -106,7 +112,23 @@ namespace StarmaidIntegrationComputer.Commands
             }
 
             return argumentAsString;
+        }
+        private int? ParseArgumentAsInt(Dictionary<string, object>? arguments, string argumentName)
+        {
+            object? argumentBoxed = null;
+            arguments.TryGetValue(argumentName, out argumentBoxed);
+            string? argumentAsString = null;
+            if (argumentBoxed != null)
+            {
+                argumentAsString = ((System.Text.Json.JsonElement)argumentBoxed).ToString();
+            }
+            int argumentAsInt;
+            if (!int.TryParse(argumentAsString, out argumentAsInt))
+            {
+                return null;
+            }
 
+            return argumentAsInt;
         }
 
         private string InterpretShoutoutTarget(string target)

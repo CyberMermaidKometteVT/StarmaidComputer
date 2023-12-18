@@ -7,7 +7,10 @@
     //The message for her to send in a canned message.
     "CannedMessageText": "Follow along at home! | Planning: https://fish-brain.com/ThalassaPlanning | Github: https://fish-brain.com/ThalassaGithub,",
     //The description she will use to identify if you are asking her to send the canned message.
-    "CannedMessageDescription": "Sends a chat message containing Komette's programming links, when working on Thalassa's code."
+    "CannedMessageDescription": "Sends a chat message containing Komette's programming links, when working on Thalassa's code.",
+    //Add instructions here to tell the AI to time different people out differently.
+    "TimeoutDurationExtraDescription": "If target is actuallystan666, the default for him is 60 instead of 300."
+
   },
   "SoundPathSettings": {
     "StartingListeningSoundPath": "Assets\\Sounds\\Thalassa_Listening.mp3",

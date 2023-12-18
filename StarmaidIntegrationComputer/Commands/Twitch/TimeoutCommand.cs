@@ -10,7 +10,6 @@ using StarmaidIntegrationComputer.Twitch;
 
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Moderation.BanUser;
-using TwitchLib.Client;
 
 namespace StarmaidIntegrationComputer.Commands.Twitch
 {
@@ -19,18 +18,23 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
         private string timeoutTarget;
 
         private readonly int durationInSeconds;
+        private string timeoutReason;
 
-        const string timeoutReason = "Because Komette said so, and Thalassa obeyed";
-
-        public TimeoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target, int durationInSeconds) : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi, chatbot)
+        public TimeoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target, int durationInSeconds, string timeoutReason = null) : base(logger, speechComputer, Enums.TwitchStateToValidate.Api, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi)
         {
             this.timeoutTarget = target;
             this.durationInSeconds = durationInSeconds;
+            this.timeoutReason = timeoutReason;
         }
 
 
         protected override async Task PerformCommandAsync()
         {
+            if (String.IsNullOrWhiteSpace(timeoutReason))
+            {
+                timeoutReason = $"Because {twitchSensitiveSettings.TwitchChatbotChannelName} said so, and {twitchSensitiveSettings.TwitchChatbotUsername} obeyed";
+            }
+
             string userId = await GetUserId(timeoutTarget);
 
             if (String.IsNullOrWhiteSpace(userId))

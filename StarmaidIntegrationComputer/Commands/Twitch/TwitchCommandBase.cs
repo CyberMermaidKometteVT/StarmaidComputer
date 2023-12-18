@@ -49,9 +49,10 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
                     speechComputer.Speak($"Twitch chatbot not yet running!  Unable to execute command {this.GetType().Name}");
                     return false;
                 }
+
+                ValidateInChannel();
             }
 
-            ValidateInChannel();
 
             return base.ValidateState();
         }

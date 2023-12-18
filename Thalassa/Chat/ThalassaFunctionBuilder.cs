@@ -25,9 +25,10 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             .Validate()
             .Build();
 
-        private FunctionDefinition GetTimeoutDefinition() => new FunctionDefinitionBuilder(CommandNames.TIMEOUT, "Blocks the target user from chatting. Only used if \"time out\" is explicitly called for, not for teasing or bullying. Twitch command.")
+        private FunctionDefinition GetTimeoutDefinition() => new FunctionDefinitionBuilder(CommandNames.TIMEOUT, "Blocks the target user from chatting. Only used if \"time out\" is explicitly called for. Twitch command.")
             .AddParameter("target", PropertyDefinition.DefineString("The target Twitch username."))
-            .AddParameter("duration", PropertyDefinition.DefineInteger("Duration of timeout, in seconds. Should default to 300, unless target is actuallystan666 being timed out; default for him is 60."))
+            .AddParameter("duration", PropertyDefinition.DefineInteger($"Duration of timeout, in seconds. Should default to 300.{thalassaSettings.TimeoutDurationExtraDescription}"))
+            .AddParameter("reason", PropertyDefinition.DefineString("Why they're being timed out. This is optional, if no reason has been given, don't make one up."))
             .Validate()
             .Build();
 
@@ -71,6 +72,12 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         private FunctionDefinition GetSendCannedMessageToChatDefinition() => new FunctionDefinitionBuilder(CommandNames.SEND_CANNED_MESSAGE_TO_CHAT, thalassaSettings.CannedMessageDescription)
             .Validate()
             .Build();
+
+        private FunctionDefinition GetSayLastFollowersDefinition() => new FunctionDefinitionBuilder(CommandNames.SAY_LAST_FOLLWERS, $"Describes the most recent followers, optionally specifying how many.")
+            .AddParameter("count", PropertyDefinition.DefineInteger("The number of followers to show, which should default to 5."))
+    .Validate()
+    .Build();
+
         #endregion
 
         public List<FunctionDefinition> BuildStreamerAccessibleFunctions()
@@ -92,7 +99,8 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 GetIsShieldModeOnDefinition(),
                 GetSayRaiderListDefinition(),
                 GetSayLastRaiderDefinition(),
-                GetSendCannedMessageToChatDefinition()
+                GetSendCannedMessageToChatDefinition(),
+                GetSayLastFollowersDefinition()
             };
         }
     }
