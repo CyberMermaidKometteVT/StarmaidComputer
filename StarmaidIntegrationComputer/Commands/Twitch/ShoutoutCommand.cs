@@ -23,7 +23,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
     {
         public StarmaidStateBag StateBag { get; }
         public string ShoutoutTarget { get; }
-        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, TwitchClient chatbot, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag, string target)
+        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, TwitchClient chatbot, StarmaidStateBag stateBag, string target)
             : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi, chatbot)
         {
             this.StateBag = stateBag;
@@ -69,7 +69,6 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             }
 
             firstRaidInstance.LastShoutedOut = DateTime.Now;
-
 
             //TODO: Once the enum list for the scopes includes the right scope for this, this is how
             //  we do a /shoutout! :D

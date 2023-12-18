@@ -64,6 +64,26 @@
       {
         "Phrase": "sparkeplays",
         "Replacement": "Sparky Plays"
+      },
+      {
+        "Phrase": "Pacha",
+        "Replacement": "Paw cha"
+      },
+      {
+        "Phrase": "GigglesGal0re",
+        "Replacement": "Giggles Galore"
+      },
+      {
+        "Phrase": "TroahSaysHi",
+        "Replacement": "Troah Says Hi"
+      },
+      {
+        "Phrase": "NoiseTheSilent",
+        "Replacement": "Noise The Silent"
+      },
+      {
+        "Phrase": "Xion_Thot",
+        "Replacement": "She On Thought"
       }
     ]
   }

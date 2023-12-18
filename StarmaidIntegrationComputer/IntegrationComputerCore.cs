@@ -22,6 +22,7 @@ using TwitchLib.Client.Events;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using OpenAI.ObjectModels.RequestModels;
 using StarmaidIntegrationComputer.Common;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 
 namespace StarmaidIntegrationComputer
 {
@@ -76,6 +77,7 @@ namespace StarmaidIntegrationComputer
         }
 
         private LiveAuthorizationInfo liveTwitchAuthorizationInfo;
+        private ThalassaSettings thalassaSettings;
 
         public Action<string> Output { get; set; }
         public Action UpdateIsRunningVisuals { get; set; }
@@ -94,6 +96,7 @@ namespace StarmaidIntegrationComputer
             this.speechComputer = ctorArgs.SpeechComputer;
             this.commandStateBag = ctorArgs.StateBag;
             this.liveTwitchAuthorizationInfo = ctorArgs.LiveTwitchAuthorizationInfo;
+            this.thalassaSettings = ctorArgs.ThalassaSettings;
 
             ILogger<CommandBase> commandBaseLogger = ctorArgs.LoggerFactory.CreateLogger<CommandBase>();
 
@@ -102,7 +105,7 @@ namespace StarmaidIntegrationComputer
             ctorArgs.AuthorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
 
             IsRunning = twitchSettings.RunOnStartup;
-            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
+            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
         }
 
         private void AuthorizationProcessUserCanceled()

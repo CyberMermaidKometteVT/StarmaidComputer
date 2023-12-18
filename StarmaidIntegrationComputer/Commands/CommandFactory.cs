@@ -4,8 +4,10 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 
 using StarmaidIntegrationComputer.Commands.Twitch;
+using StarmaidIntegrationComputer.Commands.Twitch.Enums;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.StarmaidSettings;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Twitch;
 
@@ -18,6 +20,7 @@ namespace StarmaidIntegrationComputer.Commands
     {
         private readonly ILogger<CommandBase> commandLogger;
         private readonly TwitchSensitiveSettings twitchSensitiveSettings;
+        private readonly ThalassaSettings thalassaSettings;
         private readonly SpeechComputer speechComputer;
         private readonly TwitchClient chatbot;
         private readonly TwitchAPI twitchApi;
@@ -27,10 +30,11 @@ namespace StarmaidIntegrationComputer.Commands
         public const string LAST_RAIDER_VERBIAGE = "the last raider";
         public const int DEFAULT_TIMEOUT_DURATION_IN_SECONDS = 300;
 
-        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag)
+        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, ThalassaSettings thalassaSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag)
         {
             this.commandLogger = logger;
             this.twitchSensitiveSettings = twitchSensitiveSettings;
+            this.thalassaSettings = thalassaSettings;
             this.speechComputer = speechComputer;
             this.chatbot = chatbot;
             this.twitchApi = twitchApi;
@@ -42,27 +46,31 @@ namespace StarmaidIntegrationComputer.Commands
         {
 
             command = command.ToLower();
-            if (command == "shoutout")
+            if (command == CommandNames.SHOUTOUT.ToLower())
             {
                 var target = GetTargetFromArguments(arguments);
                 target = InterpretShoutoutTarget(target);
 
-                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, stateBag, target);
+                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, chatbot, stateBag, target);
             }
-            if (command == "timeout")
+            if (command == CommandNames.TIMEOUT.ToLower())
             {
                 var target = GetTargetFromArguments(arguments);
                 var durationInSeconds = GetDurationFromArguments(arguments) ?? DEFAULT_TIMEOUT_DURATION_IN_SECONDS;
 
                 return new TimeoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, chatbot, liveTwitchAuthorizationInfo, twitchApi, target, durationInSeconds);
             }
-            if (command == "saylastraider")
+            if (command == CommandNames.SAY_LAST_RAIDER.ToLower())
             {
                 return new SayLastRaiderCommand(commandLogger, speechComputer, stateBag);
             }
-            if (command == "sayraiderlist")
+            if (command == CommandNames.SAY_RAIDER_LIST.ToLower())
             {
                 return new SayRaiderListCommand(commandLogger, speechComputer, stateBag);
+            }
+            if (command == CommandNames.SEND_CANNED_MESSAGE_TO_CHAT.ToLower())
+            {
+                return new SendCannedMessageToChatCommand(commandLogger, thalassaSettings, twitchSensitiveSettings, speechComputer, TwitchStateToValidate.Chatbot, liveTwitchAuthorizationInfo, chatbot);
             }
 
             return null;

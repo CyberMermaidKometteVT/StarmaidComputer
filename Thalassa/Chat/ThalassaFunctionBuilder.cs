@@ -2,79 +2,82 @@
 using OpenAI.ObjectModels.RequestModels;
 using OpenAI.ObjectModels.SharedModels;
 
+using StarmaidIntegrationComputer.Commands.Twitch.Enums;
 using StarmaidIntegrationComputer.Common.Settings;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 
 namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
     public class ThalassaFunctionBuilder
     {
         private readonly StreamerProfileSettings streamerProfileSettings;
+        private readonly ThalassaSettings thalassaSettings;
 
-        public ThalassaFunctionBuilder(StreamerProfileSettings streamerProfileSettings)
+        public ThalassaFunctionBuilder(StreamerProfileSettings streamerProfileSettings, ThalassaSettings thalassaSettings)
         {
             this.streamerProfileSettings = streamerProfileSettings;
+            this.thalassaSettings = thalassaSettings;
         }
 
-        //Twitch
-        private FunctionDefinition GetRaidDefinition() => new FunctionDefinitionBuilder("Raid", $"Raids, sending {streamerProfileSettings.StreamerName}'s community to target channel. Twitch function.")
-            .AddParameter("target", PropertyDefinition.DefineString($"The username of target Twitch channel. Very rarely be a viewer or chatter, almost always from favorite streamers list, or an unknown entity. Ask for confirmation before executing if not on favorite streamers list."))
-            .Validate()
-            .Build();
-
-        private FunctionDefinition GetShoutoutDefinition() => new FunctionDefinitionBuilder("Shoutout", $"Encourages viewers to follow the target, iff the phrase \"shout out\" is seen. Twitch command.")
+        #region Twitch Administrative
+        private FunctionDefinition GetShoutoutDefinition() => new FunctionDefinitionBuilder(CommandNames.SHOUTOUT, $"Encourages viewers to follow the target, iff the phrase \"shout out\" is seen. Twitch command.")
             .AddParameter("target", PropertyDefinition.DefineString("The username of target Twitch channel, or the special phrase, \"the last raider\"."))
             .Validate()
             .Build();
 
-        private FunctionDefinition GetTimeoutDefinition() => new FunctionDefinitionBuilder("Timeout", "Blocks the target user from chatting. Only used if \"time out\" is explicitly called for, not for teasing or bullying. Twitch command.")
+        private FunctionDefinition GetTimeoutDefinition() => new FunctionDefinitionBuilder(CommandNames.TIMEOUT, "Blocks the target user from chatting. Only used if \"time out\" is explicitly called for, not for teasing or bullying. Twitch command.")
             .AddParameter("target", PropertyDefinition.DefineString("The target Twitch username."))
             .AddParameter("duration", PropertyDefinition.DefineInteger("Duration of timeout, in seconds. Should default to 300, unless target is actuallystan666 being timed out; default for him is 60."))
             .Validate()
             .Build();
 
-        private FunctionDefinition GetTurnOnShieldModeDefinition() => new FunctionDefinitionBuilder("TurnOnShieldMode", $"Activates Shield Mode, locking down chat in the event that people are misbehaving badly or there is a bad actor present. Twitch command.")
+        private FunctionDefinition GetTurnOnShieldModeDefinition() => new FunctionDefinitionBuilder(CommandNames.TURN_ON_SHIELD_MODE, $"Activates Shield Mode, locking down chat in the event that people are misbehaving badly or there is a bad actor present. Twitch command.")
             .Validate()
             .Build();
 
-        private FunctionDefinition GetTurnOffShieldModeDefinition() => new FunctionDefinitionBuilder("TurnOffShieldMode", $"This will exit Shield Mode, resuming normal chat features. Twitch command.")
+        private FunctionDefinition GetTurnOffShieldModeDefinition() => new FunctionDefinitionBuilder(CommandNames.TURN_OFF_SHIELD_MODE, $"This will exit Shield Mode, resuming normal chat features. Twitch command.")
+            .Validate()
+            .Build();
+        #endregion Twitch Administrative
+
+        #region Discord
+        private FunctionDefinition GetMuteDefinition() => new FunctionDefinitionBuilder(CommandNames.MUTE, $"Mutes streamer's mic. Discord command.")
             .Validate()
             .Build();
 
-        //Discord
-        private FunctionDefinition GetMuteDefinition() => new FunctionDefinitionBuilder("Mute", $"Mutes streamer's mic. Discord command.")
+        private FunctionDefinition GetUnmuteDefinition() => new FunctionDefinitionBuilder(CommandNames.UNMUTE, $"Unmutes streamer's mic. Discord command.")
             .Validate()
             .Build();
 
-        private FunctionDefinition GetUnmuteDefinition() => new FunctionDefinitionBuilder("Unmute", $"Unmutes streamer's mic. Discord command.")
+        private FunctionDefinition GetDeafenDefinition() => new FunctionDefinitionBuilder(CommandNames.DEAFEN, $"Deafens streamer, silencing their mic and also their output. Discord command.")
             .Validate()
             .Build();
 
-        private FunctionDefinition GetDeafenDefinition() => new FunctionDefinitionBuilder("Deafen", $"Deafens streamer, silencing their mic and also their output. Discord command.")
+        #endregion
+
+        #region Informational
+        private FunctionDefinition GetIsShieldModeOnDefinition() => new FunctionDefinitionBuilder(CommandNames.IS_SHIELD_MODE_ON, $"Tells whether or not shield mode is on. Twitch command.")
             .Validate()
             .Build();
 
-
-        //Informational
-        private FunctionDefinition GetIsShieldModeOnDefinition() => new FunctionDefinitionBuilder("IsShieldModeOn", $"Tells whether or not shield mode is on. Twitch command.")
+        private FunctionDefinition GetSayRaiderListDefinition() => new FunctionDefinitionBuilder(CommandNames.SAY_RAIDER_LIST, $"Tells who has raided her Twitch stream since the chatbot was connected to Twitch. Internal chatbot command.")
             .Validate()
             .Build();
 
-        private FunctionDefinition GetSayRaiderListDefinition() => new FunctionDefinitionBuilder("SayRaiderList", $"Tells who has raided her Twitch stream since the chatbot was connected to Twitch. Internal chatbot command.")
+        private FunctionDefinition GetSayLastRaiderDefinition() => new FunctionDefinitionBuilder(CommandNames.SAY_LAST_RAIDER, $"Describes the most recent raider since the chatbot was connected to Twitch. Internal chatbot command.")
             .Validate()
             .Build();
 
-        private FunctionDefinition GetSayLastRaiderDefinition() => new FunctionDefinitionBuilder("SayLastRaider", $"Describes the most recent raider since the chatbot was connected to Twitch. Internal chatbot command.")
+        private FunctionDefinition GetSendCannedMessageToChatDefinition() => new FunctionDefinitionBuilder(CommandNames.SEND_CANNED_MESSAGE_TO_CHAT, thalassaSettings.CannedMessageDescription)
             .Validate()
             .Build();
-
-
+        #endregion
 
         public List<FunctionDefinition> BuildStreamerAccessibleFunctions()
         {
             return new List<FunctionDefinition>
             {
                 //Twitch
-                GetRaidDefinition(),
                 GetShoutoutDefinition(),
                 GetTimeoutDefinition(),
                 GetTurnOnShieldModeDefinition(),
@@ -88,7 +91,8 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 //Informational
                 GetIsShieldModeOnDefinition(),
                 GetSayRaiderListDefinition(),
-                GetSayLastRaiderDefinition()
+                GetSayLastRaiderDefinition(),
+                GetSendCannedMessageToChatDefinition()
             };
         }
     }

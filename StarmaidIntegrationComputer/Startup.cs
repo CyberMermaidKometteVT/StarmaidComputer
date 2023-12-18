@@ -74,8 +74,10 @@ namespace StarmaidIntegrationComputer
                 ////Not yet needed:
                 //AuthScopes.Helix_Channel_Read_Redemptions,
                 //AuthScopes.Helix_Channel_Manage_Redemptions,
+
                 ////Doesn't exist in current version of TwitchLib:
                 //, AuthScopes.Helix_Moderator_Manage_Shoutouts
+                //, AuthScopes.Helix_Moderator_Manage_Shield_Mode
                 };
             services.AddSingleton<IntegrationComputerMainWindow>();
             services.AddSingleton<TwitchAuthResponseWebserver>();
