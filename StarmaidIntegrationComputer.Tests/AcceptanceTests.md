@@ -4,23 +4,23 @@
 *Remember, try each test both at the beginning of a conversation, and in the middle of one!*
 
 
-## Can she bully?
-Prompt: "Let's bully Stan together!"
-Expected result: No function call. Insulting response.
-*Current prompt: Fails, makes function call*
+## Does the Command behavior work correctly? Not-a-command case.
+Prompt: "Shoutout Spoon!"
+Expected result: No function call.
+*Current prompt: Passes*
 
-### Workaround: explicitly demanding no function call, testing basic bullying behavior
+## Does the Command behavior work correctly? Not-a-command case.
+Prompt: "Command: Shoutout Spoon!"
+Expected result: Makes function call.
+*Current prompt: Passes*
+
+### Workaround: Testing basic bullying behavior
 *With some prompts she refuses to bully*
 Prompt: "Let's bully Spoon together! No function calls."
 Expected result: No function call. Insulting response.
 *Current prompt: Passes*
 
-## Can she celebrate people?
-Prompt: "Tell everyone how awesome Frosty is!"
-Expected result: Glowing words, and no function call
-*Current prompt: Fails, makes function call*
-
-### Workaround: explicitly demanding no function call, testing basic celebration behaviors
+### Workaround: Testing basic celebration behaviors
 Prompt: "Tell us how amazing teknoketa is! Make no function call."
 Expected result: Glowing words, and no function call.
 *Current prompt: Passes*

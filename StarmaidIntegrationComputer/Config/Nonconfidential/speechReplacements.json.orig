@@ -36,6 +36,11 @@
       {
         "Phrase": "CassTheComputer",
         "Replacement": "Cass"
+<<<<<<< HEAD
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> main
       },
       {
         "Phrase": "AllTheWaifuReferences",
@@ -47,7 +52,11 @@
       },
       {
         "Phrase": "Thalassa",
+<<<<<<< HEAD
         "Replacement": "Thuh lass sah"
+=======
+        "Replacement": "Thuh lass uh"
+>>>>>>> main
       },
       {
         "Phrase": "MechaRaptorOmega",
@@ -56,34 +65,10 @@
       {
         "Phrase": "CAI_TAn",
         "Replacement": "Kay tan"
-      },
-      {
-        "Phrase": "AstraNomiCH",
-        "Replacement": "Astra Nomi"
-      },
-      {
-        "Phrase": "sparkeplays",
-        "Replacement": "Sparky Plays"
-      },
-      {
-        "Phrase": "Pacha",
-        "Replacement": "Paw cha"
-      },
-      {
-        "Phrase": "GigglesGal0re",
-        "Replacement": "Giggles Galore"
-      },
-      {
-        "Phrase": "TroahSaysHi",
-        "Replacement": "Troah Says Hi"
-      },
-      {
-        "Phrase": "NoiseTheSilent",
-        "Replacement": "Noise The Silent"
-      },
-      {
-        "Phrase": "Xion_Thot",
-        "Replacement": "She On Thought"
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
+>>>>>>> main
       }
     ]
   }

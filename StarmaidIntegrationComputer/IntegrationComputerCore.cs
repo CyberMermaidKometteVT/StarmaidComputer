@@ -22,6 +22,7 @@ using TwitchLib.Client.Events;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using OpenAI.ObjectModels.RequestModels;
 using StarmaidIntegrationComputer.Common;
+using StarmaidIntegrationComputer.Thalassa.Settings;
 
 namespace StarmaidIntegrationComputer
 {
@@ -76,6 +77,7 @@ namespace StarmaidIntegrationComputer
         }
 
         private LiveAuthorizationInfo liveTwitchAuthorizationInfo;
+        private ThalassaSettings thalassaSettings;
 
         public Action<string> Output { get; set; }
         public Action UpdateIsRunningVisuals { get; set; }
@@ -94,6 +96,7 @@ namespace StarmaidIntegrationComputer
             this.speechComputer = ctorArgs.SpeechComputer;
             this.commandStateBag = ctorArgs.StateBag;
             this.liveTwitchAuthorizationInfo = ctorArgs.LiveTwitchAuthorizationInfo;
+            this.thalassaSettings = ctorArgs.ThalassaSettings;
 
             ILogger<CommandBase> commandBaseLogger = ctorArgs.LoggerFactory.CreateLogger<CommandBase>();
 
@@ -102,7 +105,7 @@ namespace StarmaidIntegrationComputer
             ctorArgs.AuthorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
 
             IsRunning = twitchSettings.RunOnStartup;
-            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
+            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
         }
 
         private void AuthorizationProcessUserCanceled()
@@ -128,9 +131,15 @@ namespace StarmaidIntegrationComputer
             pubSubLogger.LogInformation("Instantiating pub sub");
             pubSub = new TwitchPubSub(pubSubLogger);
 
-            User broadcastingTwitchUser = (await twitchConnection.Helix.Users
+            User thalassaUserId = (await twitchConnection.Helix.Users
                 .GetUsersAsync(logins: new List<string> { twitchSensitiveSettings.TwitchApiUsername })).Users.Single();
-            liveTwitchAuthorizationInfo.BroadcasterId = broadcastingTwitchUser.Id;
+            liveTwitchAuthorizationInfo.ThalassaUserId = thalassaUserId.Id;
+
+
+
+            User broadcastingTwitchUser = (await twitchConnection.Helix.Users
+                .GetUsersAsync(logins: new List<string> { twitchSensitiveSettings.TwitchChatbotChannelName })).Users.Single();
+            liveTwitchAuthorizationInfo.StreamerBroadcasterId = broadcastingTwitchUser.Id;
 
             StartListeningToTwitchApi();
             ConnectChatbot();
@@ -140,15 +149,8 @@ namespace StarmaidIntegrationComputer
         {
             Dictionary<string, object>? arguments = thalassaResponse.ParseArguments();
 
-            object targetArgumentBoxed = null;
-            arguments.TryGetValue("target", out targetArgumentBoxed);
-            string targetArgument = null;
-            if (targetArgumentBoxed != null)
-            {
-                targetArgument= ((System.Text.Json.JsonElement)targetArgumentBoxed).ToString();
-            }
 
-            var command = commandFactory.Parse(thalassaResponse.Name, targetArgument);
+            var command = commandFactory.Parse(thalassaResponse.Name, arguments);
             ExecutingCommands.Add(command);
             OnCommandListChanged(ExecutingCommands.Count);
 
@@ -201,6 +203,7 @@ namespace StarmaidIntegrationComputer
             chatbot.OnUserJoined += Chatbot_OnUserJoined;
             chatbot.OnUserLeft += Chatbot_OnUserLeft;
             chatbot.OnExistingUsersDetected += Chatbot_OnExistingUsersDetected;
+            chatbot.OnJoinedChannel += Chatbot_OnJoinedChannel;
             //chatbot.OnUserTimedout += Chatbot_OnUserTimedout; //Do we want a timed-out user list?  This is the Twitch temporary chat ban, not a leave event!
 
             chatbotLogger.LogInformation("Connecting to chat bot!");
@@ -215,6 +218,17 @@ namespace StarmaidIntegrationComputer
                 logger.LogInformation("Chatbot connecting... successfully!");
             }
         }
+
+        private void Chatbot_OnJoinedChannel(object? sender, OnJoinedChannelArgs e)
+        {
+            chatbotLogger.LogInformation($"Chatbot succesfully joined channel: {e.Channel}");
+        }
+
+        private void Chatbot_OnLeftChannel(object? sender, TwitchLib.Client.Events.OnLeftChannelArgs e)
+        {
+            logger.LogInformation($"Thalassa has just left the {e.Channel} channel.");
+        }
+
 
         private void Chatbot_OnExistingUsersDetected(object? sender, OnExistingUsersDetectedArgs e)
         {
@@ -259,12 +273,6 @@ namespace StarmaidIntegrationComputer
                 previousRaider.RaidTime = raidTimestamp;
             }
         }
-
-        private void Chatbot_OnLeftChannel(object? sender, TwitchLib.Client.Events.OnLeftChannelArgs e)
-        {
-            logger.LogInformation($"Thalassa has just left the {e.Channel} channel.");
-        }
-
         private void Chatbot_OnLog(object? sender, TwitchLib.Client.Events.OnLogArgs e)
         {
             string sanitizedlogData = StringManipulation.SanitizeForRichTextBox(e.Data);
@@ -321,8 +329,8 @@ namespace StarmaidIntegrationComputer
 
         private void pubSub_ServiceConnected(object? sender, EventArgs e)
         {
-            pubSub.ListenToChannelPoints(liveTwitchAuthorizationInfo.BroadcasterId);
-            pubSub.ListenToRaid(liveTwitchAuthorizationInfo.BroadcasterId);
+            pubSub.ListenToChannelPoints(liveTwitchAuthorizationInfo.ThalassaUserId);
+            pubSub.ListenToRaid(liveTwitchAuthorizationInfo.ThalassaUserId);
             pubSub.SendTopics(liveTwitchAuthorizationInfo.AccessToken.Token);
         }
 

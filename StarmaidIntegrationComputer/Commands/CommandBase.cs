@@ -71,7 +71,7 @@ namespace StarmaidIntegrationComputer.Commands
 
             try
             {
-                await PerformCommand();
+                await PerformCommandAsync();
                 OnCompleteActions.Invoke(this);
             }
             catch (Exception ex)
@@ -87,6 +87,6 @@ namespace StarmaidIntegrationComputer.Commands
             }
         }
 
-        protected abstract Task PerformCommand();
+        protected abstract Task PerformCommandAsync();
     }
 }
