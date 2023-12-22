@@ -62,12 +62,13 @@ namespace StarmaidIntegrationComputer
             InjectSetting<DiscordSensitiveSettings>(services, configuration);
             InjectSetting<DiscordSettings>(services, configuration);
             InjectSetting<StreamerProfileSettings>(services, configuration);
+            InjectSetting<WebSocketSettings>(services, configuration);
 
             //TODO: Pretty sure awake brain knows a better way to load settings than what's in this method.  Sleepy brain does not.
             services.AddScoped<IntegrationComputerCoreCtorArgs>();
             services.AddScoped<TwitchAuthorizationUserTokenFlowHelperCtorArgs>();
 
-            var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions, 
+            var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions,
                 AuthScopes.Chat_Read,
                 AuthScopes.Chat_Edit,
                 AuthScopes.Helix_Moderator_Manage_Banned_Users,
@@ -138,7 +139,7 @@ namespace StarmaidIntegrationComputer
         }
 
         private bool IsCurrentEnvironment(string fileName)
-{
+        {
             return fileName.EndsWith($".{currentEnvironmentName}.json");
         }
 

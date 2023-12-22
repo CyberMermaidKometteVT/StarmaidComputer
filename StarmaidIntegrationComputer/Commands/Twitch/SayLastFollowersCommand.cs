@@ -54,7 +54,10 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 
         private async Task GetStateFromTargetChannel()
         {
-            GetChannelFollowersResponse? getFollowersResponse = await twitchApi.Helix.Channels.GetChannelFollowersAsync(liveAuthorizationInfo.StreamerBroadcasterId);
+            GetChannelFollowersResponse? getFollowersResponse = await twitchApi.Helix.Channels.GetChannelFollowersAsync(liveAuthorizationInfo.StreamerBroadcasterId, accessToken: liveAuthorizationInfo.AccessToken.Token);
+
+
+            var testGetChannelInformationResponse = await twitchApi.Helix.Channels.GetChannelInformationAsync(liveAuthorizationInfo.StreamerBroadcasterId, accessToken: liveAuthorizationInfo.AccessToken.Token);
 
             if (getFollowersResponse == null)
             {

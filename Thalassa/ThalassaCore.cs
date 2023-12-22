@@ -161,7 +161,6 @@ namespace StarmaidIntegrationComputer.Thalassa
             //Bypassing case: Abort issued
             if (completeInterpretationTask.Status == TaskStatus.Canceled)
             {
-
                 string abortMessage = $"ABORT ISSUED, NOT INTERPRETING SPEECH";
                 Logger.LogInformation(abortMessage);
                 DisplayIfAble(abortMessage);
