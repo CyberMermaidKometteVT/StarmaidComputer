@@ -65,8 +65,8 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
 
             var interpretingResponseWithoutWhitespace = Regex.Replace(interpretingResponse, "s*", "");
-            ParsedTranscriptionText parsedText = JsonSerializer.Deserialize<ParsedTranscriptionText>(interpretingResponse);
-            ParsedOpenAiError parsedError = JsonSerializer.Deserialize<ParsedOpenAiError>(interpretingResponse);
+            ParsedTranscriptionText? parsedText = JsonSerializer.Deserialize<ParsedTranscriptionText>(interpretingResponse);
+            ParsedOpenAiError? parsedError = JsonSerializer.Deserialize<ParsedOpenAiError>(interpretingResponse);
 
             //This is the good response!
             if (!String.IsNullOrWhiteSpace(parsedText.text))

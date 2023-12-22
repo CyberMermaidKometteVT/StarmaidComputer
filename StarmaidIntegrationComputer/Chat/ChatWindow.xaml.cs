@@ -56,9 +56,9 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly OpenAIService openAIService;
         private readonly StreamerProfileSettings streamerProfileSettings;
         private readonly ThalassaFunctionBuilder thalassaFunctionBuilder;
-        private Action onNewChatComputerUsePropertyOnly = null;
+        private Action? onNewChatComputerUsePropertyOnly = null;
 
-        public Action OnAbortingRunningCommand = null;
+        public Action? OnAbortingRunningCommand = null;
 
         /// <summary>
         /// Needs to be assigned before creating a new chat computer!
@@ -138,9 +138,10 @@ namespace StarmaidIntegrationComputer.Chat
 
             thalassaCore.StartingListeningHandlers.Add(PlayStartingListening);
             thalassaCore.StoppingListeningHandlers.Add(OnStoppingListening);
+            thalassaCore.IsListeningChangedHandlers.Add(UpdateStartListeningLabel);
 
             voiceListener.SessionStartingHandlers.Add(OnSpeechInterpretationBegun);
-            //voiceListener.SessionCompleteHandlers.Add(OnSpeechInterpretationOver);
+            voiceListener.SessionCompleteHandlers.Add(OnSpeechInterpretationOver);
         }
 
         private void CreateNewChatComputer()
@@ -172,14 +173,18 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void UpdateStartListeningLabel()
         {
-            if (thalassaCore.Listening)
+            ExecuteOnDispatcherThread(() =>
             {
-                ThalassaListenToggleButton.Content = "S_leep";
-            }
-            else
-            {
-                ThalassaListenToggleButton.Content = "_Listen";
-            }
+
+                if (thalassaCore.IsListening)
+                {
+                    ThalassaListenToggleButton.Content = "S_leep";
+                }
+                else
+                {
+                    ThalassaListenToggleButton.Content = "_Listen";
+                }
+            });
         }
 
         private void PlayStartingListening()
@@ -241,7 +246,7 @@ namespace StarmaidIntegrationComputer.Chat
         private void ThalassaListenToggleButton_Click(object sender, RoutedEventArgs e)
         {
 
-            if (thalassaCore.Listening)
+            if (thalassaCore.IsListening)
             {
                 thalassaCore.StopListening();
             }
@@ -249,8 +254,6 @@ namespace StarmaidIntegrationComputer.Chat
             {
                 thalassaCore.StartListening();
             }
-
-            UpdateStartListeningLabel();
         }
 
 
@@ -385,12 +388,13 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void ThalassaShutUpButton_Click(object sender, RoutedEventArgs e)
         {
-            speechComputer.CancelSpeech();
+            thalassaCore.CancelSpeech();
         }
 
         private void ThalassaInputOverButton_Click(object sender, RoutedEventArgs e)
         {
-            voiceListener.StopListening();
+            thalassaCore.ConcludeCurrentListening();
+
         }
 
         private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -442,10 +446,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void ThalassaWasNotTalkingToYouButton_Click(object sender, RoutedEventArgs e)
         {
-            if (voiceListener.IsRunning)
-            {
-                voiceListener.AbortCurrentListening();
-            }
+            thalassaCore.AbortCurrentListening();
         }
 
         private void ThalassaAbortCommandButton_Click(object sender, RoutedEventArgs e)

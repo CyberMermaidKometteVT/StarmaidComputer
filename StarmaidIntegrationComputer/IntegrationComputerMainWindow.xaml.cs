@@ -79,6 +79,8 @@ namespace StarmaidIntegrationComputer
             thalassaCore.AbortCommandIssued = AbortAllExecutingCommands;
             await core.EnactIsRunning();
             outputScrollViewer = (ScrollViewer)FindName("OutputScrollViewer");
+
+            core.OnLoaded();
         }
 
         private void DispatchAppendText(string text)

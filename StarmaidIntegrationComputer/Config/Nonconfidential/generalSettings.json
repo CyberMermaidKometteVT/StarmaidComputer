@@ -1,7 +1,7 @@
 {
-  "WebSocketSettings": {
-    "useWebSockets": true,
-    "port": 56969,
-    "ipAddress":  "127.0.0.1"
+  "UdpCommandSettings": {
+    "useUdp": true,
+    "port": 59669,
+    "ipAddress": "127.0.0.1"
   }
   }

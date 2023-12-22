@@ -5,15 +5,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Twitch;
 
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Channels.GetChannelFollowers;
-using TwitchLib.Api.Helix.Models.Users.GetUserFollows;
-using TwitchLib.Client;
 
 namespace StarmaidIntegrationComputer.Commands.Twitch
 {

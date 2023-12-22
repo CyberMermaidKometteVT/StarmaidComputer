@@ -6,6 +6,7 @@ using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.Settings;
+using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 
 namespace StarmaidIntegrationComputer.Thalassa
@@ -16,17 +17,29 @@ namespace StarmaidIntegrationComputer.Thalassa
         private readonly ThalassaSettings settings;
         private readonly StarmaidStateBag stateBag;
         private readonly StreamerProfileSettings streamerProfileSettings;
+        private readonly SpeechComputer speechComputer;
         SpeechRecognitionEngine recognitionEngine = new SpeechRecognitionEngine();
 
-        public bool Listening { get; private set; }
+        private bool isListening = false;
+
+        public bool IsListening
+        {
+            get { return isListening; }
+            set
+            {
+                isListening = value;
+                IsListeningChangedHandlers.Invoke();
+            }
+        }
+
         public Action<string>? DisplayInput { get; set; }
         public Action<string>? SpeechInterpreted { get; set; }
         public Action? AbortCommandIssued { get; set; }
 
-        private ILogger<ThalassaCore> Logger { get; set; }
+        private ILogger<ThalassaCore>? Logger { get; set; }
 
-        private ILoggerFactory loggerFactory;
-        public ILoggerFactory LoggerFactory
+        private ILoggerFactory? loggerFactory;
+        public ILoggerFactory? LoggerFactory
         {
             get { return loggerFactory; }
             set
@@ -38,13 +51,15 @@ namespace StarmaidIntegrationComputer.Thalassa
 
         public List<Action> StartingListeningHandlers { get; } = new List<Action>();
         public List<Action> StoppingListeningHandlers { get; } = new List<Action>();
+        public List<Action> IsListeningChangedHandlers { get; } = new List<Action>();
 
-        public ThalassaCore(VoiceToTextManager voiceToTextManager, ThalassaSettings settings, StarmaidStateBag stateBag, StreamerProfileSettings streamerProfileSettings)
+        public ThalassaCore(VoiceToTextManager voiceToTextManager, ThalassaSettings settings, StarmaidStateBag stateBag, StreamerProfileSettings streamerProfileSettings, SpeechComputer speechComputer)
         {
             this.voiceToTextManager = voiceToTextManager;
             this.settings = settings;
             this.stateBag = stateBag;
             this.streamerProfileSettings = streamerProfileSettings;
+            this.speechComputer = speechComputer;
 
             //Find sound-alike words at https://www.rhymezone.com/r/rhyme.cgi?org1=syl&org2=l&typeofrhyme=sim&Word=Thalassa
             #region All the words the wake word interpreter should know
@@ -81,8 +96,13 @@ namespace StarmaidIntegrationComputer.Thalassa
                 throw new InvalidOperationException($"Error - trying to use a disposed {GetType().Name}!  Get a new one!");
             }
 
+            if (IsListening)
+            {
+                return;
+            }
+
             recognitionEngine.RecognizeAsync(RecognizeMode.Multiple);
-            Listening = true;
+            IsListening = true;
 
             Logger.LogInformation($"{streamerProfileSettings.AiName} is listening...");
         }
@@ -94,11 +114,32 @@ namespace StarmaidIntegrationComputer.Thalassa
                 return;
             }
 
+            if (!IsListening)
+            {
+                return;
+            }
+
             recognitionEngine.RecognizeAsyncStop();
-            Listening = false;
+            IsListening = false;
 
             Logger.LogInformation($"{streamerProfileSettings.AiName} is sleeping...");
         }
+
+        public void AbortCurrentListening()
+        {
+            voiceToTextManager.AbortCurrentListening();
+        }
+
+        public void ConcludeCurrentListening()
+        {
+            voiceToTextManager.ConcludeCurrentListening();
+        }
+
+        public void CancelSpeech()
+        {
+            speechComputer.CancelSpeech();
+        }
+
 
         private void Recognizer_SpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
         {
@@ -114,7 +155,7 @@ namespace StarmaidIntegrationComputer.Thalassa
                 string raidersAsString = string.Join(", ", stateBag.Raiders.Select(raider => raider.RaiderName));
                 string chattersAsString = string.Join(", ", stateBag.Chatters.Select(chatter => chatter.ChatterName));
                 string viewersAsString = string.Join(", ", stateBag.Viewers);
-                string context = $"This transcript is interpreting the spoken communication between {streamerProfileSettings.StreamerName}, {streamerProfileSettings.StreamerDescription}. They will be talking to {streamerProfileSettings.AiName}, their {streamerProfileSettings.AiDescription}. {streamerProfileSettings.StreamerName} is {streamerProfileSettings.StreamerMetaDescription}. It is important that the transcription correctly identify usernames, which might have weird capitalization, numbers, and special characters.  Those special characters might sound like the word describing those character like \"ampersand\" for &, they might sound like other letters they're meant to represent like \"L\" for \"1\", or might be entirely silent, like an \"_\"!  Also, consider raiders before chatters, and chatters before viewrs.\r\nRecent raiders: {raidersAsString}\r\nRecent chatters: {chattersAsString}\r\nCurrent viewers: {viewersAsString}\r\n\r\nHere are some examples, which will be in the format: \"PROMPT: (prompt) | INPUT: (speech that's been interpreted to text) | OUTPUT: (the expected response)\r\nPROMPT: Current viewers: CyberMermaidKomette_VT | INPUT: Cyber Mermaid Komette VT | OUTPUT: CyberMermaidKomette_VT\r\nPROMPT: Recent chatters: damien_verde_ch | INPUT: Damien Verde C H | damien_verde_ch";
+                string context = $"This transcript is interpreting the spoken communication between {streamerProfileSettings.StreamerName}, {streamerProfileSettings.StreamerDescription}. They will be talking to {streamerProfileSettings.AiName}, their {streamerProfileSettings.AiDescription}. {streamerProfileSettings.StreamerName} is {streamerProfileSettings.StreamerMetaDescription}. It is important that the transcription correctly identify usernames, which might have weird capitalization, numbers, and special characters.  Those special characters might sound like the word describing those character like \"ampersand\" for &, they might sound like other letters they're meant to represent like \"L\" for \"1\", or might be entirely silent, like an \"_\"!  Also, consider raiders before chatters, and chatters before viewers.\r\nRecent raiders: {raidersAsString}\r\nRecent chatters: {chattersAsString}\r\nCurrent viewers: {viewersAsString}\r\n\r\nHere are some examples, which will be in the format: \"PROMPT: (prompt) | INPUT: (speech that's been interpreted to text) | OUTPUT: (the expected response)\r\nPROMPT: Current viewers: CyberMermaidKomette_VT | INPUT: Cyber Mermaid Komette VT | OUTPUT: CyberMermaidKomette_VT\r\nPROMPT: Recent chatters: damien_verde_ch | INPUT: Damien Verde C H | damien_verde_ch";
 
 
                 Logger.LogInformation($"Passing in to our voice to text manager the following context: \r\n{context}");
@@ -127,7 +168,7 @@ namespace StarmaidIntegrationComputer.Thalassa
             {
                 Logger.LogInformation($"Cancel listening phrase identified! Stopping listening!");
 
-                voiceToTextManager.AbortCurrentListening();
+                AbortCurrentListening();
             }
 
             if (e.Result.Confidence > settings.AbortCommandConfidenceThreshold && streamerProfileSettings.AbortCommandPhrases.Contains(e.Result.Text))

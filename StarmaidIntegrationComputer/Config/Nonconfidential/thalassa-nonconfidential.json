@@ -23,7 +23,7 @@
     "AiName": "Thalassa",
     "AiDescription": "Komette's shipboard AI",
     "WakeWords": [ "Thalassa" ],
-    "CancelListeningPhrases": [ "Cancel Listening", "Stop Listening" ],
+    "CancelListeningPhrases": [ "Cancel Listening", "Stop Listening", "Abort Listening" ],
     "AbortCommandPhrases": [ "Abort Execution", "Stop Execution", "Belay That" ],
     //Find sound-alike words at https://www.rhymezone.com/r/rhyme.cgi?org1=syl&org2=l&typeofrhyme=sim
     //It might be better to leave the soundalike list empty though

@@ -20,6 +20,8 @@ using System.Linq;
 using OpenAI.Managers;
 using OpenAI.Extensions;
 using StarmaidIntegrationComputer.Common.Settings;
+using StarmaidIntegrationComputer.UdpThalassaControl;
+using StarmaidIntegrationComputer.Common.TasksAndExecution;
 
 namespace StarmaidIntegrationComputer
 {
@@ -62,7 +64,7 @@ namespace StarmaidIntegrationComputer
             InjectSetting<DiscordSensitiveSettings>(services, configuration);
             InjectSetting<DiscordSettings>(services, configuration);
             InjectSetting<StreamerProfileSettings>(services, configuration);
-            InjectSetting<WebSocketSettings>(services, configuration);
+            InjectSetting<UdpCommandSettings>(services, configuration);
 
             //TODO: Pretty sure awake brain knows a better way to load settings than what's in this method.  Sleepy brain does not.
             services.AddScoped<IntegrationComputerCoreCtorArgs>();
@@ -99,6 +101,9 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<LiveAuthorizationInfo>();
             services.AddSingleton<SoundEffectPlayer>();
             services.AddSingleton<ThalassaFunctionBuilder>();
+            services.AddSingleton<UdpCommandListener>();
+            services.AddSingleton<RemoteThalassaControlInterpreter>();
+            services.AddSingleton<IUiThreadDispatcher, UiThreadDispatcher>();
             services.AddScoped<OpenAIService>();
             services.AddOpenAIService(options => options.ApiKey = openAiSensitiveSettings.OpenAIBearerToken);
 
