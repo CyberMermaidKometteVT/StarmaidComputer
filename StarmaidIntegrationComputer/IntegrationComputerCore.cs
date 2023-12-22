@@ -23,6 +23,7 @@ using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using OpenAI.ObjectModels.RequestModels;
 using StarmaidIntegrationComputer.Common;
 using StarmaidIntegrationComputer.Thalassa.Settings;
+using StarmaidIntegrationComputer.UdpThalassaControl;
 
 namespace StarmaidIntegrationComputer
 {
@@ -78,8 +79,11 @@ namespace StarmaidIntegrationComputer
 
         private LiveAuthorizationInfo liveTwitchAuthorizationInfo;
         private ThalassaSettings thalassaSettings;
+        private readonly UdpCommandSettings udpSettings;
+        private readonly UdpCommandListener udpListener;
 
         public Action<string> Output { get; set; }
+
         public Action UpdateIsRunningVisuals { get; set; }
 
         public List<CommandBase> ExecutingCommands { get; } = new List<CommandBase> { };
@@ -97,6 +101,8 @@ namespace StarmaidIntegrationComputer
             this.commandStateBag = ctorArgs.StateBag;
             this.liveTwitchAuthorizationInfo = ctorArgs.LiveTwitchAuthorizationInfo;
             this.thalassaSettings = ctorArgs.ThalassaSettings;
+            this.udpSettings = ctorArgs.UdpCommandSettings;
+            this.udpListener = ctorArgs.UdpCommandListener;
 
             ILogger<CommandBase> commandBaseLogger = ctorArgs.LoggerFactory.CreateLogger<CommandBase>();
 
@@ -106,6 +112,14 @@ namespace StarmaidIntegrationComputer
 
             IsRunning = twitchSettings.RunOnStartup;
             commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
+        }
+
+        public void OnLoaded()
+        {
+            if (udpSettings.UseUdp)
+            {
+                udpListener.Start();
+            }
         }
 
         private void AuthorizationProcessUserCanceled()

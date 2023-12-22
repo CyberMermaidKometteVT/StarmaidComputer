@@ -10,15 +10,17 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
         private readonly Queue<VoiceSession> runningSessions = new();
         private readonly ILogger<VoiceListener> logger;
         private readonly ILogger<IVoiceSession> sessionLogger;
+        private readonly IUiThreadDispatcher dispatcher;
 
         public bool IsRunning { get { return runningSessions.Count > 0; } }
         public List<Action> SessionStartingHandlers { get; } = new List<Action>();
         public List<Action> SessionCompleteHandlers { get; } = new List<Action>();
 
-        public VoiceListener(ILogger<VoiceListener> logger, ILogger<IVoiceSession> sessionLogger)
+        public VoiceListener(ILogger<VoiceListener> logger, ILogger<IVoiceSession> sessionLogger, IUiThreadDispatcher dispatcher)
         {
             this.logger = logger;
             this.sessionLogger = sessionLogger;
+            this.dispatcher = dispatcher;
         }
 
         public Task<byte[]> StartListening()
@@ -28,7 +30,7 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
                 return Task.FromResult(new byte[0]);
             }
 
-            VoiceSession session = new VoiceSession(sessionLogger);
+            VoiceSession session = new VoiceSession(sessionLogger, dispatcher);
             runningSessions.Enqueue(session);
 
             //This code is deprecated and is currently unreachable.

@@ -7,6 +7,7 @@ using TwitchLib.Api;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Thalassa.Settings;
+using StarmaidIntegrationComputer.UdpThalassaControl;
 
 namespace StarmaidIntegrationComputer
 {
@@ -21,8 +22,10 @@ namespace StarmaidIntegrationComputer
         public SpeechComputer SpeechComputer { get; }
         public StarmaidStateBag StateBag { get; }
         public LiveAuthorizationInfo LiveTwitchAuthorizationInfo { get; }
+        public UdpCommandSettings UdpCommandSettings { get; }
+        public UdpCommandListener UdpCommandListener { get; }
 
-        public IntegrationComputerCoreCtorArgs(ILoggerFactory loggerFactory, TwitchSensitiveSettings twitchSensitiveSettings, TwitchSettings twitchSettings, ThalassaSettings thalassaSettings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer, StarmaidStateBag stateBag, LiveAuthorizationInfo liveTwitchAuthorizationInfo)
+        public IntegrationComputerCoreCtorArgs(ILoggerFactory loggerFactory, TwitchSensitiveSettings twitchSensitiveSettings, TwitchSettings twitchSettings, ThalassaSettings thalassaSettings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer, StarmaidStateBag stateBag, LiveAuthorizationInfo liveTwitchAuthorizationInfo, UdpCommandSettings udpCommandSettings, UdpCommandListener udpCommandListener)
         {
             LoggerFactory = loggerFactory;
             TwitchSensitiveSettings = twitchSensitiveSettings;
@@ -33,6 +36,8 @@ namespace StarmaidIntegrationComputer
             SpeechComputer = speechComputer;
             StateBag = stateBag;
             LiveTwitchAuthorizationInfo = liveTwitchAuthorizationInfo;
+            UdpCommandSettings = udpCommandSettings;
+            UdpCommandListener = udpCommandListener;
         }
     }
 }

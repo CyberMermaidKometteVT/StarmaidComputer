@@ -5,15 +5,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Twitch;
 
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Channels.GetChannelFollowers;
-using TwitchLib.Api.Helix.Models.Users.GetUserFollows;
-using TwitchLib.Client;
 
 namespace StarmaidIntegrationComputer.Commands.Twitch
 {
@@ -54,7 +51,10 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 
         private async Task GetStateFromTargetChannel()
         {
-            GetChannelFollowersResponse? getFollowersResponse = await twitchApi.Helix.Channels.GetChannelFollowersAsync(liveAuthorizationInfo.StreamerBroadcasterId);
+            GetChannelFollowersResponse? getFollowersResponse = await twitchApi.Helix.Channels.GetChannelFollowersAsync(liveAuthorizationInfo.StreamerBroadcasterId, accessToken: liveAuthorizationInfo.AccessToken.Token);
+
+
+            var testGetChannelInformationResponse = await twitchApi.Helix.Channels.GetChannelInformationAsync(liveAuthorizationInfo.StreamerBroadcasterId, accessToken: liveAuthorizationInfo.AccessToken.Token);
 
             if (getFollowersResponse == null)
             {

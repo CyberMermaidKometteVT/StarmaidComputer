@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 
 using NAudio.Wave;
 
+using StarmaidIntegrationComputer.Common.TasksAndExecution;
+
 namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 {
     internal class VoiceSession : IVoiceSession
@@ -13,6 +15,7 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
         public Task<byte[]> ListeningTask { get; private set; }
 
         private readonly ILogger<IVoiceSession> sessionLogger;
+        private readonly IUiThreadDispatcher dispatcher;
         private readonly WaveIn? waveIn = new WaveIn();
         private WaveFileWriter waveFileWriter;
 
@@ -26,10 +29,10 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
         private object locker = new object();
 
-        public VoiceSession(ILogger<IVoiceSession> sessionLogger)
+        public VoiceSession(ILogger<IVoiceSession> sessionLogger, IUiThreadDispatcher dispatcher)
         {
             this.sessionLogger = sessionLogger;
-
+            this.dispatcher = dispatcher;
             waveIn.WaveFormat = new WaveFormat(16000, 16, 1);
             waveFileWriter = new WaveFileWriter(resultStream, waveIn.WaveFormat);
 
@@ -147,7 +150,7 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             {
                 taskCompletionSource.SetResult(resultStream.ToArray());
             }
-            waveIn.Dispose();
+            dispatcher.ExecuteOnUiThread(waveIn.Dispose);
             resultStream.Dispose();
         }
 

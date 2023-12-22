@@ -47,7 +47,18 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
         public void AbortCurrentListening()
         {
-            voiceListener.AbortCurrentListening();
+            if (voiceListener.IsRunning)
+            {
+                voiceListener.AbortCurrentListening();
+            }
+        }
+
+        public void ConcludeCurrentListening()
+        {
+            if (voiceListener.IsRunning)
+            {
+                voiceListener.StopListening();
+            }
         }
     }
 }
