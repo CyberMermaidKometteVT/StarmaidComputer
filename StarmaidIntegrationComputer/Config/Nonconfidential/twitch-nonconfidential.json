@@ -3,7 +3,7 @@
     "RunOnStartup": false,
     "ChatCommandIdentifier": "!",
     "WhisperCommandIdentifier": "!",
-    "ForceTwitchLoginPrompt": true,
+    "ForceTwitchLoginPrompt": false,
     "LogInWithIncognitoBrowser": true
   }
 }

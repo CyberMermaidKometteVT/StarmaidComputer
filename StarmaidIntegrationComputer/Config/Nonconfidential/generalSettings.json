@@ -1,7 +1,7 @@
 {
   "UdpCommandSettings": {
     "useUdp": true,
-    "port": 59669,
+    "port": 59668,
     "ipAddress": "127.0.0.1"
   }
-  }
+}
