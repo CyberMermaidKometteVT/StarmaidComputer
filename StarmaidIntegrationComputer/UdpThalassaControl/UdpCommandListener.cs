@@ -59,7 +59,7 @@ namespace StarmaidIntegrationComputer.UdpThalassaControl
                     byte result;
                     if (!byte.TryParse(octet, out result))
                     {
-                        throw new InvalidOperationException("Invalid IP address in the General Settings UDP Listener confit - it should be in the format xxx.xxx.xxx.xxx");
+                        throw new InvalidOperationException("Invalid IP address in the General Settings UDP Listener config - it should be in the format xxx.xxx.xxx.xxx");
                     }
                     return result;
                 });
