@@ -4,15 +4,21 @@ using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.Logging;
 
+using OpenAI.Audio;
+using OpenAI;
+
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.OpenAiCommon.JsonParsing;
 using StarmaidIntegrationComputer.Thalassa.Settings;
+using NAudio.Wave;
 
 namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 {
     public class SpeechComputer
     {
         private readonly ILogger<SpeechComputer> logger;
+        private readonly ThalassaSettings thalassaSettings;
+        private readonly OpenAISensitiveSettings openAISensitiveSettings;
         private readonly SpeechSynthesizer speechSynthesizer;
         private readonly SpeechReplacements speechReplacements;
 
@@ -29,9 +35,13 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         public List<Action> SpeechStartingHandlers { get; } = new List<Action>();
         public List<Action> SpeechCompletedHandlers { get; } = new List<Action>();
 
-        public SpeechComputer(ILogger<SpeechComputer> logger, SpeechReplacements speechReplacements)
+        private object locker = new object();
+
+        public SpeechComputer(ILogger<SpeechComputer> logger, ThalassaSettings thalassaSettings, OpenAISensitiveSettings openAISensitiveSettings, SpeechReplacements speechReplacements)
         {
             this.logger = logger;
+            this.thalassaSettings = thalassaSettings;
+            this.openAISensitiveSettings = openAISensitiveSettings;
             this.speechReplacements = speechReplacements;
 
             speechSynthesizer = new SpeechSynthesizer();
@@ -61,7 +71,44 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
             text = CleanUpScript(text);
 
-            LastSpeech = speechSynthesizer.SpeakAsync(text);
+
+            //Add a toggle that will switch between speech systems
+#warning 
+            if (thalassaSettings.UseOpenAiTts)
+            {
+
+
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+
+                    OpenAIClient aiClient = new OpenAIClient(openAISensitiveSettings.OpenAIBearerToken);
+                    OpenAI.Audio.AudioClient audioClient = aiClient.GetAudioClient("tts-1");
+                    var speechResult = audioClient.GenerateSpeech(text, GeneratedSpeechVoice.Nova);
+
+
+                    using var memoryStream = new MemoryStream(speechResult.Value.ToArray());
+                    using var mp3FileReader = new Mp3FileReader(memoryStream);
+                    using var waveOut = new WaveOutEvent();
+                    waveOut.Init(mp3FileReader);
+                    waveOut.Volume = 1f;
+
+                    lock (locker)
+                    {
+                        waveOut.Play();
+
+                        while (waveOut.PlaybackState == PlaybackState.Playing)
+                        {
+                            Thread.Sleep(100);
+                        }
+                    }
+                });
+
+            }
+            else
+            {
+                LastSpeech = speechSynthesizer.SpeakAsync(text);
+            }
+
         }
 
         public Task SpeakFakeAsync(string text)

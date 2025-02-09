@@ -20,10 +20,11 @@ using StarmaidIntegrationComputer.Helpers;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Client.Events;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
-using OpenAI.ObjectModels.RequestModels;
 using StarmaidIntegrationComputer.Common;
 using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
+using StarmaidIntegrationComputer.Common.Settings;
+using StarmaidIntegrationComputer.Common.TasksAndExecution;
 
 namespace StarmaidIntegrationComputer
 {
@@ -81,6 +82,7 @@ namespace StarmaidIntegrationComputer
         private ThalassaSettings thalassaSettings;
         private readonly UdpCommandSettings udpSettings;
         private readonly UdpCommandListener udpListener;
+        private readonly StreamerProfileSettings profileSettings;
 
         public Action<string> Output { get; set; }
 
@@ -103,6 +105,7 @@ namespace StarmaidIntegrationComputer
             this.thalassaSettings = ctorArgs.ThalassaSettings;
             this.udpSettings = ctorArgs.UdpCommandSettings;
             this.udpListener = ctorArgs.UdpCommandListener;
+            this.profileSettings = ctorArgs.StreamerProfileSettings;
 
             ILogger<CommandBase> commandBaseLogger = ctorArgs.LoggerFactory.CreateLogger<CommandBase>();
 
@@ -111,7 +114,7 @@ namespace StarmaidIntegrationComputer
             ctorArgs.AuthorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
 
             IsRunning = twitchSettings.RunOnStartup;
-            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
+            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, profileSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
         }
 
         public void OnLoaded()
@@ -143,7 +146,7 @@ namespace StarmaidIntegrationComputer
 
 
             pubSubLogger.LogInformation("Instantiating pub sub");
-            pubSub = new TwitchPubSub(pubSubLogger);
+            pubSub = new TwitchPubSub(pubSubLogger); 
 
             User thalassaUserId = (await twitchConnection.Helix.Users
                 .GetUsersAsync(logins: new List<string> { twitchSensitiveSettings.TwitchApiUsername })).Users.Single();
@@ -159,19 +162,19 @@ namespace StarmaidIntegrationComputer
             ConnectChatbot();
         }
 
-        internal Task ConsiderThalassaResponseAsACommand(FunctionCall thalassaResponse)
+        internal Task ConsiderThalassaResponseAsACommand(IList<ThalassaCommandCallModel> thalassaCommandCalls)
         {
-            Dictionary<string, object>? arguments = thalassaResponse.ParseArguments();
+            foreach (ThalassaCommandCallModel commandCall in thalassaCommandCalls)
+            {
+                var command = commandFactory.Parse(commandCall.Name, commandCall.Arguments);
+                ExecutingCommands.Add(command);
+                OnCommandListChanged(ExecutingCommands.Count);
 
+                command.OnCompleteActions.Add(ClearCommandFromExecutionList);
+                command.OnAbortActions.Add(ClearCommandFromExecutionList);
 
-            var command = commandFactory.Parse(thalassaResponse.Name, arguments);
-            ExecutingCommands.Add(command);
-            OnCommandListChanged(ExecutingCommands.Count);
-
-            command.OnCompleteActions.Add(ClearCommandFromExecutionList);
-            command.OnAbortActions.Add(ClearCommandFromExecutionList);
-
-            command.Execute();
+                command.Execute();
+            }
 
             return Task.CompletedTask;
         }

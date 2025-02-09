@@ -18,9 +18,9 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
         private string timeoutTarget;
 
         private readonly int durationInSeconds;
-        private string timeoutReason;
+        private string? timeoutReason;
 
-        public TimeoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target, int durationInSeconds, string timeoutReason = null) : base(logger, speechComputer, Enums.TwitchStateToValidate.Api, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi)
+        public TimeoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, string target, int durationInSeconds, string? timeoutReason = null) : base(logger, speechComputer, Enums.TwitchStateToValidate.Api, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi)
         {
             this.timeoutTarget = target;
             this.durationInSeconds = durationInSeconds;
@@ -46,7 +46,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             var request = new BanUserRequest { Duration = durationInSeconds, Reason = timeoutReason, UserId = userId };
             var response = await twitchApi.Helix.Moderation.BanUserAsync(liveAuthorizationInfo.StreamerBroadcasterId, liveAuthorizationInfo.ThalassaUserId, request, liveAuthorizationInfo.AccessToken.Token);
 
-            speechComputer.Speak($"Banned {response.Data.Count()} users.");
+            speechComputer.Speak($"Timed out {response.Data.Count()} users.");
         }
     }
 }

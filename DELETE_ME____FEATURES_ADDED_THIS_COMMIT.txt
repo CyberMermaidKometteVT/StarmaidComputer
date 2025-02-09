@@ -1,0 +1,7 @@
+* Switching to OpenAI TTS instead of Microsoft Speech Synthesizer (which is garbo)
+	-	Need to do better threading so it's interruptable, and also make sure it continues to only say one thing at once.
+* Changing OpenAI library
+* Updating a few packages
+* Adding Send To Chat command
+* Fixing SayLastFollwers command not honoring the count of followers to say
+* Text box is fucky

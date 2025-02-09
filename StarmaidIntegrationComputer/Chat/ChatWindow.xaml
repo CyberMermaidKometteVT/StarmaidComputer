@@ -65,7 +65,7 @@
             <Label Name="UserNameLabel" Target="{Binding ElementName=UserNameTextBox}" Grid.Row="0" Grid.Column="1">_Name</Label>
             <TextBox Name="UserNameTextBox" MinWidth="100" Text="(streamer)" Grid.Row="0" Grid.Column="2"/>
             <Label Name="UserMessageLabel" Target="{Binding ElementName=UserMessageTextBox}" Grid.Row="0" Grid.Column="3">_Message</Label>
-            <TextBox Name="UserMessageTextBox" TextChanged="UserMessageTextBox_TextChanged" KeyUp="UserMessageTextBox_KeyUp" Grid.Row="0" Grid.Column="4"/>
+            <TextBox Name="UserMessageTextBox" TextChanged="UserMessageTextBox_TextChanged" KeyUp="UserMessageTextBox_KeyUp" Grid.Row="0" Grid.Column="4" AcceptsReturn="True" />
             <Button Name="SendMessageButton" IsEnabled="False" Click="SendMessageButton_Click" Grid.Row="0" Grid.Column="5">Sen_d</Button>
         </Grid>
     </Grid>

@@ -12,8 +12,6 @@ using System.Windows.Threading;
 
 using Microsoft.Extensions.Logging;
 
-using OpenAI.Managers;
-
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Thalassa;
@@ -53,9 +51,9 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly ThalassaCore thalassaCore;
         private readonly SpeechComputer speechComputer;
         private readonly VoiceListener voiceListener;
-        private readonly OpenAIService openAIService;
+        private readonly OpenAISensitiveSettings openAISensitiveSettings;
         private readonly StreamerProfileSettings streamerProfileSettings;
-        private readonly ThalassaFunctionBuilder thalassaFunctionBuilder;
+        private readonly ThalassaToolBuilder thalassaFunctionBuilder;
         private Action? onNewChatComputerUsePropertyOnly = null;
 
         public Action? OnAbortingRunningCommand = null;
@@ -102,7 +100,7 @@ namespace StarmaidIntegrationComputer.Chat
             this.thalassaCore = args.ThalassaCore;
             this.speechComputer = args.SpeechComputer;
             this.voiceListener = args.VoiceListener;
-            this.openAIService = args.OpenAIService;
+            this.openAISensitiveSettings = args.OpenAISensitiveSettings;
             this.streamerProfileSettings = args.StreamerProfileSettings;
             this.thalassaFunctionBuilder = args.ThalassaFunctionBuilder;
 
@@ -146,7 +144,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void CreateNewChatComputer()
         {
-            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAIService, thalassaFunctionBuilder, streamerProfileSettings);
+            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAISensitiveSettings, thalassaFunctionBuilder, streamerProfileSettings);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 
