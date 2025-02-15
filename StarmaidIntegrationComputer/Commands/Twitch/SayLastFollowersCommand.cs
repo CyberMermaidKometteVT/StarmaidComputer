@@ -33,7 +33,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
                 string followerNames;
                 if (followers.Count() > 1)
                 {
-                    followerNames = string.Join(",", followers.Take(followers.Count - 2));
+                    followerNames = string.Join(",", followers.Take(followers.Count - 1));
                     followerNames = $"{followerNames}, and {followers.Last()}";
                 }
                 else
@@ -41,7 +41,10 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
                     followerNames = string.Join(",", followers);
                 }
 
-                speechComputer.Speak($"The following {followers.Count} most recent followers are: { followerNames }");
+                string output = $"The following {followers.Count} most recent followers are: {followerNames}";
+
+                speechComputer.Speak(output);
+                CompletedText = $"{this.GetType().Name} completed - {output}";
             }
             catch (InvalidOperationException)
             {

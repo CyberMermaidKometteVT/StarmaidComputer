@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -121,6 +122,11 @@ namespace StarmaidIntegrationComputer.Chat
             RemoveBlankFirstRichTextBoxLine();
         }
 
+        public void OutputToStreamer(string message)
+        {
+            ExecuteOnDispatcherThread(() => ChatbotResponsesRichTextBox.AppendText(message));
+        }
+
         private void RemoveBlankFirstRichTextBoxLine()
         {
             if ((ChatbotResponsesRichTextBox.Document.Blocks.FirstBlock as Paragraph).Inlines.Count() == 0)
@@ -230,14 +236,20 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void OnThalassaSpeechBegun()
         {
-            ThalassaShutUpButton.IsEnabled = true;
-            ThalassaShutUpButton.Content = "Shu_t up!";
+            ExecuteOnDispatcherThread(() =>
+            {
+                ThalassaShutUpButton.IsEnabled = true;
+                ThalassaShutUpButton.Content = "Shu_t up!";
+            });
         }
 
         private void OnThalassaSpeechOver()
         {
-            ThalassaShutUpButton.IsEnabled = false;
-            ThalassaShutUpButton.Content = "(Not Talking)";
+            ExecuteOnDispatcherThread(() =>
+            {
+                ThalassaShutUpButton.IsEnabled = false;
+                ThalassaShutUpButton.Content = "(Not Talking)";
+            });
 
         }
 
@@ -429,7 +441,7 @@ namespace StarmaidIntegrationComputer.Chat
             transform.ScaleY += numberOfClicks / 10.0;
 
             AutoscrollCheckBox.RenderTransform = transform;
-            AutoscrollCheckBox.RenderTransformOrigin = new Point(1, 0);
+            AutoscrollCheckBox.RenderTransformOrigin = new System.Windows.Point(1, 0);
         }
 
         private void ResetFormTextScale()

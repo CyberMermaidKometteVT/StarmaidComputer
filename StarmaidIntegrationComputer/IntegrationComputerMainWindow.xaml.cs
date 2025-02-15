@@ -43,7 +43,7 @@ namespace StarmaidIntegrationComputer
             this.thalassaCore = thalassaCore;
             this.streamerProfileSettings = streamerProfileSettings;
             this.speechComputer = speechComputer;
-            this.core.Output = AppendOutput;
+            this.core.OutputToMainWindow = AppendOutput;
             this.core.UpdateIsRunningVisuals = SetToggleButtonContent;
 
             Loaded += IntegrationComputerMainWindow_Loaded;
@@ -145,7 +145,7 @@ namespace StarmaidIntegrationComputer
 
         private void SpawnNewTestChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
-            var activeChatWindow = chatWindowFactory.CreateNew();
+            ChatWindow activeChatWindow = chatWindowFactory.CreateNew();
 
             activeChatWindow.OnNewChatComputer += () =>
             {
@@ -154,6 +154,7 @@ namespace StarmaidIntegrationComputer
                 activeChatWindow.OnAbortingRunningCommand = AbortAllExecutingCommands;
 
                 core.OnCommandListChanged = commandListCount => activeChatWindow.RunningCommandCountChanged(commandListCount);
+                core.OutputToStreamer = activeChatWindow.OutputToStreamer;
             };
 
             chatWindows.Add(activeChatWindow);

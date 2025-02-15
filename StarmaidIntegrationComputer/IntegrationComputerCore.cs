@@ -25,6 +25,7 @@ using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
+using StarmaidIntegrationComputer.Chat;
 
 namespace StarmaidIntegrationComputer
 {
@@ -84,11 +85,12 @@ namespace StarmaidIntegrationComputer
         private readonly UdpCommandListener udpListener;
         private readonly StreamerProfileSettings profileSettings;
 
-        public Action<string> Output { get; set; }
+        public Action<string> OutputToMainWindow { get; set; }
 
         public Action UpdateIsRunningVisuals { get; set; }
 
         public List<CommandBase> ExecutingCommands { get; } = new List<CommandBase> { };
+        public Action<string> OutputToStreamer { get; set; }
 
         public IntegrationComputerCore(IntegrationComputerCoreCtorArgs ctorArgs)
         {
@@ -172,6 +174,8 @@ namespace StarmaidIntegrationComputer
 
                 command.OnCompleteActions.Add(ClearCommandFromExecutionList);
                 command.OnAbortActions.Add(ClearCommandFromExecutionList);
+                command.OnAbortActions.Add(WriteCommandAborted);
+                command.OnCompleteActions.Add(WriteToTextWindowIfThereIsSomethingToOutput);
 
                 command.Execute();
             }
@@ -183,6 +187,19 @@ namespace StarmaidIntegrationComputer
         {
             ExecutingCommands.Remove(command);
             OnCommandListChanged(ExecutingCommands.Count);
+        }
+
+        private void WriteCommandAborted(CommandBase command)
+        {
+            OutputToMainWindow($"Aborted command: {command.GetType()}");
+        }
+
+        private void WriteToTextWindowIfThereIsSomethingToOutput(CommandBase command)
+        {
+            if (!String.IsNullOrWhiteSpace(command.CompletedText))
+            {
+                OutputToStreamer(command.CompletedText);
+            }
         }
 
         private void StartListeningToTwitchApi()
@@ -296,7 +313,7 @@ namespace StarmaidIntegrationComputer
             chatbotLogger.LogInformation($"Chatbot logs: Chatbot {e.BotUsername} logs {sanitizedlogData}");
         }
 
-        private void Chatbot_OnMessageReceived(object? sender, TwitchLib.Client.Events.OnMessageReceivedArgs e)
+        private void Chatbot_OnMessageReceived(object? sender, OnMessageReceivedArgs e)
         {
             //TODO: Change the log level of this action
             string sanitizedMessageReceived = StringManipulation.SanitizeForRichTextBox(e.ChatMessage.Message);
@@ -397,12 +414,12 @@ namespace StarmaidIntegrationComputer
 
         private void PubSub_OnTimeout(object? sender, OnTimeoutArgs e)
         {
-            Output($"Timed out user - {e.TimedoutUser}!");
+            OutputToMainWindow($"Timed out user - {e.TimedoutUser}!");
         }
 
         private void PubSub_OnRaidUpdateV2(object? sender, OnRaidUpdateV2Args e)
         {
-            Output($"Raid update - raiding {e.TargetDisplayName}!");
+            OutputToMainWindow($"Raid update - raiding {e.TargetDisplayName}!");
         }
 
         private void PubSub_OnChannelPointsRewardRedeemed(object? sender, OnChannelPointsRewardRedeemedArgs e)
@@ -410,17 +427,17 @@ namespace StarmaidIntegrationComputer
             string title = e.RewardRedeemed.Redemption.Reward.Title;
             string user = e.RewardRedeemed.Redemption.User.DisplayName;
             string message = e.RewardRedeemed.Redemption.UserInput;
-            Output($"Reward redeemed by { user } - { title }{ (message != null ? $" - {message}" : "")}");
+            OutputToMainWindow($"Reward redeemed by { user } - { title }{ (message != null ? $" - {message}" : "")}");
         }
 
         private void pubSub_StreamUp(object? sender, OnStreamUpArgs e)
         {
-            Output("Stream up!");
+            OutputToMainWindow("Stream up!");
         }
 
         private void pubSub_StreamDown(object? sender, OnStreamDownArgs e)
         {
-            Output("Stream down!");
+            OutputToMainWindow("Stream down!");
         }
         #endregion pubSub listener event handlers
 

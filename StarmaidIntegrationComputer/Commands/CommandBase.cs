@@ -20,7 +20,7 @@ namespace StarmaidIntegrationComputer.Commands
         public List<Action<CommandBase>> OnCompleteActions { get; private set; } = new List<Action<CommandBase>>();
 
         public List<Action<CommandBase>> OnAbortActions { get; private set; } = new List<Action<CommandBase>>();
-
+        public string? CompletedText { get; protected set; }
 
         private readonly Timer executionTimer;
         private readonly ILogger<CommandBase> logger;
@@ -34,6 +34,8 @@ namespace StarmaidIntegrationComputer.Commands
             executionTimer = new Timer();
             executionTimer.Interval = DelayInMilliseconds;
             executionTimer.Elapsed += Timer_Elapsed;
+
+            CompletedText = $"Command completed: {this.GetType().Name}";
         }
 
         public void Execute()

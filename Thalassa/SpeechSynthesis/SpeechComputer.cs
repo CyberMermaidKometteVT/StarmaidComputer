@@ -24,18 +24,21 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
         private Regex removeCodeBlocksRegex = new Regex("```(.*)```", RegexOptions.Singleline);
 
-        const string urlGroupName = "url";
-        const string statusCodeGroupName = "statusCode";
-        const string contentGroupName = "content";
+        private const string urlGroupName = "url";
+        private const string statusCodeGroupName = "statusCode";
+        private const string contentGroupName = "content";
         private Regex interpretOpenAiHttpError = new Regex(@"Error responding, error: Error at chat/completions (?<" + urlGroupName + @">\(.*\)) with HTTP status code: (?<" + statusCodeGroupName + @">\w+)\. Content: (?<" + contentGroupName + @">.*)$", RegexOptions.Singleline);
+        private CancellationTokenSource? cancellationTokenSource = null;
+        private object openAiConsideringSpeaking = new object();
+        private object openAiSpeaking = new object();
+        private int runningOpenAiSpeechThreads = 0;
+        private Thread currentThread = Thread.CurrentThread;
 
-        public Prompt? LastSpeech { get; private set; }
-        public bool IsSpeaking { get { return speechSynthesizer.State == SynthesizerState.Speaking; } }
+        public bool IsSpeaking { get { return speechSynthesizer.State == SynthesizerState.Speaking || runningOpenAiSpeechThreads != 0; } }
 
         public List<Action> SpeechStartingHandlers { get; } = new List<Action>();
         public List<Action> SpeechCompletedHandlers { get; } = new List<Action>();
 
-        private object locker = new object();
 
         public SpeechComputer(ILogger<SpeechComputer> logger, ThalassaSettings thalassaSettings, OpenAISensitiveSettings openAISensitiveSettings, SpeechReplacements speechReplacements)
         {
@@ -71,42 +74,100 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
             text = CleanUpScript(text);
 
+            int workerthreads;
+            int completionPortThreads;
+            ThreadPool.GetMaxThreads(out workerthreads, out completionPortThreads);
 
-            //Add a toggle that will switch between speech systems
-#warning 
+            logger.LogInformation($"Max threads: worker threads {workerthreads}, completion port threads {completionPortThreads}; currently running: {ThreadPool.ThreadCount}");
+
             if (thalassaSettings.UseOpenAiTts)
             {
+                lock (openAiConsideringSpeaking)
+                {
+                    if (runningOpenAiSpeechThreads == 0)
+                    {
+                        cancellationTokenSource = new CancellationTokenSource();
+                    }
+
+                    if (!this.IsSpeaking)
+                    {
+                        SpeechStartingHandlers.Invoke();
+                    }
+
+                    runningOpenAiSpeechThreads++;
+                }
 
 
                 ThreadPool.QueueUserWorkItem(_ =>
-                {
-
-                    OpenAIClient aiClient = new OpenAIClient(openAISensitiveSettings.OpenAIBearerToken);
-                    OpenAI.Audio.AudioClient audioClient = aiClient.GetAudioClient("tts-1");
-                    var speechResult = audioClient.GenerateSpeech(text, GeneratedSpeechVoice.Nova);
-
-
-                    using var memoryStream = new MemoryStream(speechResult.Value.ToArray());
-                    using var mp3FileReader = new Mp3FileReader(memoryStream);
-                    using var waveOut = new WaveOutEvent();
-                    waveOut.Init(mp3FileReader);
-                    waveOut.Volume = 1f;
-
-                    lock (locker)
-                    {
-                        waveOut.Play();
-
-                        while (waveOut.PlaybackState == PlaybackState.Playing)
                         {
-                            Thread.Sleep(100);
-                        }
-                    }
-                });
+                            try
+                            {
+                                if (cancellationTokenSource.Token.IsCancellationRequested)
+                                {
+                                    logger.LogInformation("Speech abort requested; aborting speech from OpenAI TTS.");
+                                    return;
+                                }
 
+                                logger.LogInformation("Sending speech to OpenAI TTS.");
+
+
+                                OpenAIClient aiClient = new OpenAIClient(openAISensitiveSettings.OpenAIBearerToken);
+                                AudioClient audioClient = aiClient.GetAudioClient("tts-1");
+                                System.ClientModel.ClientResult<BinaryData> speechResult = audioClient.GenerateSpeech(text, GeneratedSpeechVoice.Nova);
+                                logger.LogInformation("Speech mp3 data received from OpenAI TTS. Playing now.");
+
+
+                                if (cancellationTokenSource.Token.IsCancellationRequested)
+                                {
+                                    logger.LogInformation("Speech abort requested; aborting speech from OpenAI TTS.");
+                                    return;
+                                }
+
+                                using MemoryStream memoryStream = new MemoryStream(speechResult.Value.ToArray());
+                                using Mp3FileReader mp3FileReader = new Mp3FileReader(memoryStream);
+                                using WaveOutEvent waveOut = new WaveOutEvent();
+                                waveOut.Init(mp3FileReader);
+                                waveOut.Volume = 1f;
+
+                                lock (openAiSpeaking)
+                                {
+                                    if (cancellationTokenSource.Token.IsCancellationRequested)
+                                    {
+                                        logger.LogInformation("Speech abort requested; aborting speech from OpenAI TTS.");
+                                        return;
+                                    }
+
+                                    waveOut.Play();
+
+                                    while (waveOut.PlaybackState == PlaybackState.Playing)
+                                    {
+                                        if (cancellationTokenSource.Token.IsCancellationRequested)
+                                        {
+                                            logger.LogInformation("Speech abort requested; aborting speech from OpenAI TTS.");
+                                            return;
+                                        }
+
+                                        Thread.Sleep(100);
+                                    }
+                                }
+                            }
+                            catch (Exception ex) when (ex is not ThreadAbortException)
+                            {
+                                logger.LogError($"Failed to speak - {ex.ToString()}");
+                            }
+                            finally
+                            {
+                                runningOpenAiSpeechThreads--;
+                                if (!this.IsSpeaking)
+                                {
+                                    SpeechCompletedHandlers.Invoke();
+                                }
+                            }
+                        });
             }
             else
             {
-                LastSpeech = speechSynthesizer.SpeakAsync(text);
+                speechSynthesizer.SpeakAsync(text);
             }
 
         }
@@ -120,6 +181,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         public void CancelSpeech()
         {
             speechSynthesizer.SpeakAsyncCancelAll();
+            cancellationTokenSource?.Cancel();
         }
 
         private string CleanUpScript(string text)
@@ -165,7 +227,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
             string errorContent = contentGroup.Value;
             string? errorStatusCode = statusCodeGroup?.Value;
-            var parsedJsonError = JsonSerializer.Deserialize<ParsedOpenAiError>(errorContent)?.error;
+            ParsedOpenAiError.ParsedError? parsedJsonError = JsonSerializer.Deserialize<ParsedOpenAiError>(errorContent)?.error;
             //url, statusCode, content
 
             string statusCodeMessage = errorStatusCode != null ? $"{errorStatusCode}, " : "";
