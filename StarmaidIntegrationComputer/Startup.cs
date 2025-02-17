@@ -101,7 +101,8 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<ThalassaToolBuilder>();
             services.AddSingleton<UdpCommandListener>();
             services.AddSingleton<RemoteThalassaControlInterpreter>();
-            services.AddSingleton<IUiThreadDispatcher, UiThreadDispatcher>();
+            services.AddSingleton<IUiThreadDispatchInvoker, UiThreadDispatchInvoker>();
+            services.AddSingleton<IOpenAiTtsDispatcher, OpenAiTtsDispatcher>();
 
             services.AddScoped(_ =>
                 TwitchApiFactory.Build(twitchSensitiveSettings.TwitchClientId, twitchSensitiveSettings.TwitchClientSecret, scopes)

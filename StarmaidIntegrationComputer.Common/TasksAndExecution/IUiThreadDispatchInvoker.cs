@@ -1,6 +1,6 @@
 ﻿namespace StarmaidIntegrationComputer.Common.TasksAndExecution
 {
-    public interface IUiThreadDispatcher
+    public interface IUiThreadDispatchInvoker
     {
         void ExecuteOnUiThread(Action actionToExecute);
     }

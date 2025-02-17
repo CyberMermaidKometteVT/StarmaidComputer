@@ -25,7 +25,6 @@ using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
-using StarmaidIntegrationComputer.Chat;
 
 namespace StarmaidIntegrationComputer
 {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -348,6 +347,20 @@ namespace StarmaidIntegrationComputer.Chat
             return Dispatcher.InvokeAsync(action).Task;
         }
 
+        private void EvaluateScrollbarForMessageTextBox()
+        {
+            double formHeight = this.ActualHeight;
+
+            if (this.ActualHeight > formHeight * 0.5)
+            {
+                UserMessageScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
+            }
+            else
+            {
+                UserMessageScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+            }
+        }
+
         private void UserMessageTextBox_KeyUp(object sender, KeyEventArgs e)
         {
             //Only send the message if we're hitting ENTER but not SHIFT-ENTER
@@ -359,7 +372,6 @@ namespace StarmaidIntegrationComputer.Chat
                 }
                 else
                 {
-
                     int selectionStart = UserMessageTextBox.SelectionStart;
                     UserMessageTextBox.Text = UserMessageTextBox.Text.Insert(selectionStart, Environment.NewLine);
                     UserMessageTextBox.SelectionStart = selectionStart + 2;
@@ -375,6 +387,9 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void ChatbotResponsesRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            EvaluateScrollbarForMessageTextBox();
+
+
             if (AutoscrollCheckBox.IsChecked == true)
             {
                 ChatbotResponsesScrollViewer.ScrollToEnd();
@@ -423,6 +438,11 @@ namespace StarmaidIntegrationComputer.Chat
                 ResetFormTextScale();
                 e.Handled = true;
             }
+
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+            }
         }
 
         private void IncrementFormTextScale(int numberOfClicks)
@@ -465,6 +485,18 @@ namespace StarmaidIntegrationComputer.Chat
             {
                 OnAbortingRunningCommand();
             }
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            EvaluateScrollbarForMessageTextBox();
+
+            //These calculations are garbage, the inside viewer really should not have the exact same actual height as its containing grid
+            //  But we ball! Komette's tired. Maybe at some later date I'll make this less silly.
+            //  Also, this doesn't follow good WPF principles, which should be using data binding.
+            //  Thalassa suggests that I use binding with a converter for the MaxHeight of the viewer.
+            OuterGrid.RowDefinitions[3].MaxHeight = this.ActualHeight / 2.0;
+            UserMessageScrollViewer.MaxHeight = this.ActualHeight / 2.0;
         }
     }
 }

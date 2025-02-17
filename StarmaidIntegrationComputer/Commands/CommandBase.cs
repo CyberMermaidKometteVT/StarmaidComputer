@@ -35,7 +35,7 @@ namespace StarmaidIntegrationComputer.Commands
             executionTimer.Interval = DelayInMilliseconds;
             executionTimer.Elapsed += Timer_Elapsed;
 
-            CompletedText = $"Command completed: {this.GetType().Name}";
+            CompletedText = $"{Environment.NewLine}{(char)0xa6} Command completed: {this.GetType().Name} {(char)0xa6}";
         }
 
         public void Execute()
