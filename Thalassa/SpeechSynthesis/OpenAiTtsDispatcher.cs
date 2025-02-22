@@ -20,7 +20,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
     {
         public bool IsSpeaking { get; private set; }
 
-        public Action DoneSpeaking { get; set; }
+        public Action DoneSpeaking { get; set; } = () => { };
 
         private readonly ConcurrentQueue<CancellableWorkerTask<byte[]>> processingTasks = new ConcurrentQueue<CancellableWorkerTask<byte[]>>();
 
@@ -34,7 +34,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
         public OpenAiTtsDispatcher(ILogger<OpenAiTtsDispatcher> logger, OpenAISensitiveSettings openAISensitiveSettings)
         {
-            Task.Run(StartListening);
+            Task.Run(StartListeningForSpeechEvents);
             this.logger = logger;
             this.openAISensitiveSettings = openAISensitiveSettings;
         }
@@ -51,6 +51,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
                 cancellableTask = new CancellableWorkerTask<byte[]>(() => ProcessTextForSpeech(textToSpeak, cancellableTask));
 #pragma warning restore CS8604 // Possible null reference argument.
 
+                logger.LogInformation("Komette thinks this might mysteriously not be getting hit when Thalassa is unexpectedly not talking; let's see if it is!");
                 //Lock on ProcessingTasks?
                 processingTasks.Enqueue(cancellableTask);
                 logger.LogInformation($"Speak call for \"{textToSpeakSummary}\" enqueued.");
@@ -60,10 +61,12 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
         public void Abort()
         {
+            logger.LogInformation("Aborting TTS.");
             //Locking processingTasks?
             aborting = true;
             lock (isSpeakingLocker)
             {
+                logger.LogInformation("Aborting TTS - in locker.");
                 int abortedTaskCount = 0;
                 foreach (CancellableWorkerTask<byte[]> cancelableTask in processingTasks)
                 {
@@ -71,17 +74,33 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
                     abortedTaskCount++;
                 }
 
+                Task[] abortingTasks = processingTasks
+                    .Select(cancellableWorker => cancellableWorker.Task)
+                    .ToArray();
                 processingTasks.Clear();
 
                 if (abortedTaskCount > 0)
                 {
                     logger.LogInformation($"{abortedTaskCount} speak calls dequeued due to abort.");
                     DoneSpeaking();
-                    aborting = false;
+
+                    logger.LogInformation($"Waiting for all tasks to exit...");
+
+                    Task.WhenAll(abortingTasks)
+                        .ContinueWith(task =>
+                        {
+                            logger.LogInformation("All speaking tasks have exited, clearing aborting flag ...");
+                            IsSpeaking = false;
+                            aborting = false;
+
+                            taskAvailable.Set();
+                        });
+                }
+                else
+                {
+                    taskAvailable.Set();
                 }
             }
-
-            taskAvailable.Set();
         }
 
         private static string SummarizeTextToSpeak(string textToSpeak)
@@ -91,11 +110,13 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
             return textToSpeakSummary;
         }
 
-        private async Task StartListening()
+        private async Task StartListeningForSpeechEvents()
         {
+            //Infinite loop to listen for the lifetime of the application
             while (true)
             {
                 //TODO: OpenAI seems to think that this is more performant than a Task.Delay()? I'm pretty sure it's not, we're gonna be looping, a lot!
+
                 taskAvailable.Wait();
 
                 if (aborting) continue;
@@ -103,10 +124,31 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
                 bool peekSuccessful = processingTasks.TryPeek(out CancellableWorkerTask<byte[]>? firstTask);
                 if (peekSuccessful && firstTask.IsWorkComplete && !aborting)
                 {
-                    logger.LogInformation("Speak call starting to speak.");
+                    logger.LogInformation($"Speak call starting to speak. Presently there are {processingTasks.Count} speech processing tasks in the queue.");
                     IsSpeaking = true;
 
-                    await OutputSpeech(firstTask.WorkOutput, firstTask.CancellationTokenSource);
+                    byte outputSpeechAttempts = 0;
+                    for (; outputSpeechAttempts < 3; outputSpeechAttempts++)
+                    {
+                        try
+                        {
+
+                            await OutputSpeech(firstTask.WorkOutput, firstTask.CancellationTokenSource);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError($"Failed to output speech {outputSpeechAttempts + 1} times.");
+                        }
+                    }
+
+                    if (outputSpeechAttempts == 3)
+                    {
+                        logger.LogError("Gave up on trying to output speech. Moving on.");
+                    }
+
+                    logger.LogInformation($"Dequeueing task while there are {processingTasks.Count} speech processing tasks in the queue.");
+
                     processingTasks.TryDequeue(out firstTask);
 
                     lock (isSpeakingLocker)
@@ -166,7 +208,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
         private Task OutputSpeech(byte[] speechResult, CancellationTokenSource cancellationTokenSource)
         {
-            return Task.Run(() =>
+            Task result = Task.Run(async () =>
             {
                 logger.LogInformation("Outputting speechResult to speakers.");
                 using MemoryStream memoryStream = new MemoryStream(speechResult);
@@ -191,11 +233,13 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
                         return;
                     }
 
-                    Task.Delay(100);
+                    await Task.Delay(100);
                 }
 
-                logger.LogInformation("Finished outputting speechResult to spears.");
+                logger.LogInformation("Finished outputting speechResult to speakers.");
             });
+
+            return result;
         }
     }
 }

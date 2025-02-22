@@ -170,7 +170,6 @@ namespace StarmaidIntegrationComputer
             foreach (CommandBase command in removalQueue)
             {
                 command.Abort();
-                core.ExecutingCommands.Remove(command);
             }
 
             if (removalQueue.Length > 0)
