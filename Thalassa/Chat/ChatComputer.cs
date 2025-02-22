@@ -252,6 +252,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 if (isCommand)
                 {
                     initialPromptContent = openAISettings.GptCommandPrompt;
+                    chatMessages.Add(new UserChatMessage("The next message will be a command."));
                 }
                 else // not a command
                 {
@@ -261,7 +262,6 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 chatMessages.RemoveAt(0);
                 chatMessages.Insert(0, new SystemChatMessage(initialPromptContent));
 
-                chatMessages.Add(new UserChatMessage("The next message will be a command."));
 
                 logger.LogInformation("Continuing existing conversation.");
             }
