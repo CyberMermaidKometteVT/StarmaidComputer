@@ -17,8 +17,6 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using System.Linq;
-using OpenAI.Managers;
-using OpenAI.Extensions;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
@@ -96,16 +94,15 @@ namespace StarmaidIntegrationComputer
             services.AddScoped<VoiceToTextManager>();
             services.AddSingleton<TranscriptionSender>();
             services.AddSingleton<VoiceListener>();
-            services.AddHttpClient<TranscriptionSender>();
+            services.AddHttpClient();
             services.AddSingleton<StarmaidStateBag>();
             services.AddSingleton<LiveAuthorizationInfo>();
             services.AddSingleton<SoundEffectPlayer>();
-            services.AddSingleton<ThalassaFunctionBuilder>();
+            services.AddSingleton<ThalassaToolBuilder>();
             services.AddSingleton<UdpCommandListener>();
             services.AddSingleton<RemoteThalassaControlInterpreter>();
-            services.AddSingleton<IUiThreadDispatcher, UiThreadDispatcher>();
-            services.AddScoped<OpenAIService>();
-            services.AddOpenAIService(options => options.ApiKey = openAiSensitiveSettings.OpenAIBearerToken);
+            services.AddSingleton<IUiThreadDispatchInvoker, UiThreadDispatchInvoker>();
+            services.AddSingleton<IOpenAiTtsDispatcher, OpenAiTtsDispatcher>();
 
             services.AddScoped(_ =>
                 TwitchApiFactory.Build(twitchSensitiveSettings.TwitchClientId, twitchSensitiveSettings.TwitchClientSecret, scopes)

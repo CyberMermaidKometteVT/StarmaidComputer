@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 
-using OpenAI.Managers;
-
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Thalassa;
@@ -21,11 +19,11 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly ThalassaCore thalassaCore;
         private readonly SpeechComputer speechComputer;
         private readonly VoiceListener voiceListener;
-        private readonly OpenAIService openAIService;
+        private readonly OpenAISensitiveSettings openAISensitiveSettings;
         private readonly StreamerProfileSettings streamerProfileSettings;
-        private readonly ThalassaFunctionBuilder thalassaFunctionBuilder;
+        private readonly ThalassaToolBuilder thalassaFunctionBuilder;
 
-        public ChatWindowFactory(StarmaidStateBag stateBag, ILogger<ChatComputer> logger, OpenAISettings openAISettings, SoundEffectPlayer soundEffectPlayer, ThalassaCore thalassaCore, SpeechComputer speechComputer, VoiceListener voiceListener, OpenAIService openAIService, StreamerProfileSettings streamerProfileSettings, ThalassaFunctionBuilder thalassaFunctionBuilder)
+        public ChatWindowFactory(StarmaidStateBag stateBag, ILogger<ChatComputer> logger, OpenAISettings openAISettings, SoundEffectPlayer soundEffectPlayer, ThalassaCore thalassaCore, SpeechComputer speechComputer, VoiceListener voiceListener, OpenAISensitiveSettings openAISensitiveSettings, StreamerProfileSettings streamerProfileSettings, ThalassaToolBuilder thalassaFunctionBuilder)
         {
             this.stateBag = stateBag;
             this.logger = logger;
@@ -33,7 +31,7 @@ namespace StarmaidIntegrationComputer.Chat
             this.thalassaCore = thalassaCore;
             this.speechComputer = speechComputer;
             this.voiceListener = voiceListener;
-            this.openAIService = openAIService;
+            this.openAISensitiveSettings = openAISensitiveSettings;
             this.streamerProfileSettings = streamerProfileSettings;
             this.thalassaFunctionBuilder = thalassaFunctionBuilder;
             this.openAISettings = openAISettings;
@@ -50,7 +48,7 @@ namespace StarmaidIntegrationComputer.Chat
                 ThalassaCore = thalassaCore,
                 SpeechComputer = speechComputer,
                 VoiceListener = voiceListener,
-                OpenAIService = openAIService,
+                OpenAISensitiveSettings = openAISensitiveSettings,
                 StreamerProfileSettings = streamerProfileSettings,
                 ThalassaFunctionBuilder = thalassaFunctionBuilder
             };

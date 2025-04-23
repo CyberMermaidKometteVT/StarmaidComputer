@@ -20,10 +20,11 @@ using StarmaidIntegrationComputer.Helpers;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Client.Events;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
-using OpenAI.ObjectModels.RequestModels;
 using StarmaidIntegrationComputer.Common;
 using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
+using StarmaidIntegrationComputer.Common.Settings;
+using StarmaidIntegrationComputer.Common.TasksAndExecution;
 
 namespace StarmaidIntegrationComputer
 {
@@ -81,12 +82,14 @@ namespace StarmaidIntegrationComputer
         private ThalassaSettings thalassaSettings;
         private readonly UdpCommandSettings udpSettings;
         private readonly UdpCommandListener udpListener;
+        private readonly StreamerProfileSettings profileSettings;
 
-        public Action<string> Output { get; set; }
+        public Action<string> OutputToMainWindow { get; set; }
 
         public Action UpdateIsRunningVisuals { get; set; }
 
         public List<CommandBase> ExecutingCommands { get; } = new List<CommandBase> { };
+        public Action<string> OutputToStreamer { get; set; }
 
         public IntegrationComputerCore(IntegrationComputerCoreCtorArgs ctorArgs)
         {
@@ -103,6 +106,7 @@ namespace StarmaidIntegrationComputer
             this.thalassaSettings = ctorArgs.ThalassaSettings;
             this.udpSettings = ctorArgs.UdpCommandSettings;
             this.udpListener = ctorArgs.UdpCommandListener;
+            this.profileSettings = ctorArgs.StreamerProfileSettings;
 
             ILogger<CommandBase> commandBaseLogger = ctorArgs.LoggerFactory.CreateLogger<CommandBase>();
 
@@ -111,7 +115,7 @@ namespace StarmaidIntegrationComputer
             ctorArgs.AuthorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
 
             IsRunning = twitchSettings.RunOnStartup;
-            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
+            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, profileSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
         }
 
         public void OnLoaded()
@@ -143,7 +147,7 @@ namespace StarmaidIntegrationComputer
 
 
             pubSubLogger.LogInformation("Instantiating pub sub");
-            pubSub = new TwitchPubSub(pubSubLogger);
+            pubSub = new TwitchPubSub(pubSubLogger); 
 
             User thalassaUserId = (await twitchConnection.Helix.Users
                 .GetUsersAsync(logins: new List<string> { twitchSensitiveSettings.TwitchApiUsername })).Users.Single();
@@ -159,19 +163,21 @@ namespace StarmaidIntegrationComputer
             ConnectChatbot();
         }
 
-        internal Task ConsiderThalassaResponseAsACommand(FunctionCall thalassaResponse)
+        internal Task ConsiderThalassaResponseAsACommand(IList<ThalassaCommandCallModel> thalassaCommandCalls)
         {
-            Dictionary<string, object>? arguments = thalassaResponse.ParseArguments();
+            foreach (ThalassaCommandCallModel commandCall in thalassaCommandCalls)
+            {
+                var command = commandFactory.Parse(commandCall.Name, commandCall.Arguments);
+                ExecutingCommands.Add(command);
+                OnCommandListChanged(ExecutingCommands.Count);
 
+                command.OnCompleteActions.Add(ClearCommandFromExecutionList);
+                command.OnAbortActions.Add(ClearCommandFromExecutionList);
+                command.OnAbortActions.Add(WriteCommandAborted);
+                command.OnCompleteActions.Add(WriteToTextWindowIfThereIsSomethingToOutput);
 
-            var command = commandFactory.Parse(thalassaResponse.Name, arguments);
-            ExecutingCommands.Add(command);
-            OnCommandListChanged(ExecutingCommands.Count);
-
-            command.OnCompleteActions.Add(ClearCommandFromExecutionList);
-            command.OnAbortActions.Add(ClearCommandFromExecutionList);
-
-            command.Execute();
+                command.Execute();
+            }
 
             return Task.CompletedTask;
         }
@@ -180,6 +186,19 @@ namespace StarmaidIntegrationComputer
         {
             ExecutingCommands.Remove(command);
             OnCommandListChanged(ExecutingCommands.Count);
+        }
+
+        private void WriteCommandAborted(CommandBase command)
+        {
+            OutputToMainWindow($"Aborted command: {command.GetType()}");
+        }
+
+        private void WriteToTextWindowIfThereIsSomethingToOutput(CommandBase command)
+        {
+            if (!String.IsNullOrWhiteSpace(command.CompletedText))
+            {
+                OutputToStreamer(command.CompletedText);
+            }
         }
 
         private void StartListeningToTwitchApi()
@@ -293,7 +312,7 @@ namespace StarmaidIntegrationComputer
             chatbotLogger.LogInformation($"Chatbot logs: Chatbot {e.BotUsername} logs {sanitizedlogData}");
         }
 
-        private void Chatbot_OnMessageReceived(object? sender, TwitchLib.Client.Events.OnMessageReceivedArgs e)
+        private void Chatbot_OnMessageReceived(object? sender, OnMessageReceivedArgs e)
         {
             //TODO: Change the log level of this action
             string sanitizedMessageReceived = StringManipulation.SanitizeForRichTextBox(e.ChatMessage.Message);
@@ -394,12 +413,12 @@ namespace StarmaidIntegrationComputer
 
         private void PubSub_OnTimeout(object? sender, OnTimeoutArgs e)
         {
-            Output($"Timed out user - {e.TimedoutUser}!");
+            OutputToMainWindow($"Timed out user - {e.TimedoutUser}!");
         }
 
         private void PubSub_OnRaidUpdateV2(object? sender, OnRaidUpdateV2Args e)
         {
-            Output($"Raid update - raiding {e.TargetDisplayName}!");
+            OutputToMainWindow($"Raid update - raiding {e.TargetDisplayName}!");
         }
 
         private void PubSub_OnChannelPointsRewardRedeemed(object? sender, OnChannelPointsRewardRedeemedArgs e)
@@ -407,17 +426,17 @@ namespace StarmaidIntegrationComputer
             string title = e.RewardRedeemed.Redemption.Reward.Title;
             string user = e.RewardRedeemed.Redemption.User.DisplayName;
             string message = e.RewardRedeemed.Redemption.UserInput;
-            Output($"Reward redeemed by { user } - { title }{ (message != null ? $" - {message}" : "")}");
+            OutputToMainWindow($"Reward redeemed by { user } - { title }{ (message != null ? $" - {message}" : "")}");
         }
 
         private void pubSub_StreamUp(object? sender, OnStreamUpArgs e)
         {
-            Output("Stream up!");
+            OutputToMainWindow("Stream up!");
         }
 
         private void pubSub_StreamDown(object? sender, OnStreamDownArgs e)
         {
-            Output("Stream down!");
+            OutputToMainWindow("Stream down!");
         }
         #endregion pubSub listener event handlers
 

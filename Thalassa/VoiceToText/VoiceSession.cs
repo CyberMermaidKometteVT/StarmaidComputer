@@ -9,13 +9,13 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 {
     internal class VoiceSession : IVoiceSession
     {
-        const int maxSpeechLengthMilliseconds = 15 * 1000; //15 sec * milliseconds
+        const int maxSpeechLengthMilliseconds = 45 * 1000; //45 sec * milliseconds
         const int terminalSilenceLengthMilliseconds = 2 * 1000; // 2 sec * milliseconds
 
         public Task<byte[]> ListeningTask { get; private set; }
 
         private readonly ILogger<IVoiceSession> sessionLogger;
-        private readonly IUiThreadDispatcher dispatcher;
+        private readonly IUiThreadDispatchInvoker dispatcher;
         private readonly WaveIn? waveIn = new WaveIn();
         private WaveFileWriter waveFileWriter;
 
@@ -29,7 +29,7 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
         private object locker = new object();
 
-        public VoiceSession(ILogger<IVoiceSession> sessionLogger, IUiThreadDispatcher dispatcher)
+        public VoiceSession(ILogger<IVoiceSession> sessionLogger, IUiThreadDispatchInvoker dispatcher)
         {
             this.sessionLogger = sessionLogger;
             this.dispatcher = dispatcher;

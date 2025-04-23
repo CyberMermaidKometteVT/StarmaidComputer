@@ -5,7 +5,7 @@ using StarmaidIntegrationComputer.Common.TasksAndExecution;
 
 namespace StarmaidIntegrationComputer
 {
-    public class UiThreadDispatcher : IUiThreadDispatcher
+    public class UiThreadDispatchInvoker : IUiThreadDispatchInvoker
     {
         public void ExecuteOnUiThread(Action actionToExecute)
         {

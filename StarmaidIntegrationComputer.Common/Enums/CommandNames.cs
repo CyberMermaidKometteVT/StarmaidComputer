@@ -6,6 +6,10 @@
         public const string TIMEOUT = "Timeout";
         public const string TURN_ON_SHIELD_MODE = "TurnOnShieldMode";
         public const string TURN_OFF_SHIELD_MODE = "TurnOffShieldMode";
+        public const string RESET_KRUIZ_CONTROL = "ResetKruizControl";
+
+        public const string SEND_CHAT_MESSAGE = "SendChatMessage";
+
         public const string MUTE = "Mute";
         public const string UNMUTE = "Unmute";
         public const string DEAFEN = "Deafen";

@@ -6,7 +6,6 @@ using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Thalassa.Settings;
-using OpenAI.Managers;
 using StarmaidIntegrationComputer.Common.Settings;
 
 namespace StarmaidIntegrationComputer.Chat
@@ -20,8 +19,8 @@ namespace StarmaidIntegrationComputer.Chat
         public ThalassaCore ThalassaCore { get; set; }
         public SpeechComputer SpeechComputer { get; set; }
         public VoiceListener VoiceListener { get; set; }
-        public OpenAIService OpenAIService { get; set; }
+        public OpenAISensitiveSettings OpenAISensitiveSettings { get; set; }
         public StreamerProfileSettings StreamerProfileSettings { get; set; }
-        public ThalassaFunctionBuilder ThalassaFunctionBuilder { get; set; }
+        public ThalassaToolBuilder ThalassaFunctionBuilder { get; set; }
     }
 }

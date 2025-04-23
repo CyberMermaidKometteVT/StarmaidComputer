@@ -13,35 +13,39 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
     public class SpeechComputer
     {
         private readonly ILogger<SpeechComputer> logger;
+        private readonly ThalassaSettings thalassaSettings;
         private readonly SpeechSynthesizer speechSynthesizer;
         private readonly SpeechReplacements speechReplacements;
-
+        private readonly IOpenAiTtsDispatcher openAiTtsDispatcher;
         private Regex removeCodeBlocksRegex = new Regex("```(.*)```", RegexOptions.Singleline);
 
-        const string urlGroupName = "url";
-        const string statusCodeGroupName = "statusCode";
-        const string contentGroupName = "content";
+        private const string urlGroupName = "url";
+        private const string statusCodeGroupName = "statusCode";
+        private const string contentGroupName = "content";
         private Regex interpretOpenAiHttpError = new Regex(@"Error responding, error: Error at chat/completions (?<" + urlGroupName + @">\(.*\)) with HTTP status code: (?<" + statusCodeGroupName + @">\w+)\. Content: (?<" + contentGroupName + @">.*)$", RegexOptions.Singleline);
+        private CancellationTokenSource? cancellationTokenSource = null;
+        private int runningOpenAiSpeechThreads = 0;
 
-        public Prompt? LastSpeech { get; private set; }
-        public bool IsSpeaking { get { return speechSynthesizer.State == SynthesizerState.Speaking; } }
+        public bool IsSpeaking { get { return speechSynthesizer.State == SynthesizerState.Speaking || runningOpenAiSpeechThreads != 0; } }
 
         public List<Action> SpeechStartingHandlers { get; } = new List<Action>();
         public List<Action> SpeechCompletedHandlers { get; } = new List<Action>();
 
-        public SpeechComputer(ILogger<SpeechComputer> logger, SpeechReplacements speechReplacements)
+
+        public SpeechComputer(ILogger<SpeechComputer> logger, ThalassaSettings thalassaSettings, SpeechReplacements speechReplacements, IOpenAiTtsDispatcher dispatcher)
         {
             this.logger = logger;
+            this.thalassaSettings = thalassaSettings;
             this.speechReplacements = speechReplacements;
-
+            this.openAiTtsDispatcher = dispatcher;
             speechSynthesizer = new SpeechSynthesizer();
 
-            //TODO: To find installed voices if I continue to use SpeechSynthesizer, use:
-            //  speechSynthesizer.GetInstalledVoices()
             speechSynthesizer.SelectVoice("Microsoft Zira Desktop");
 
             speechSynthesizer.SpeakStarted += SpeechSynthesizer_SpeakStarted;
             speechSynthesizer.SpeakCompleted += SpeechSynthesizer_SpeakCompleted;
+
+            dispatcher.DoneSpeaking = SpeechCompletedHandlers.Invoke;
 
         }
 
@@ -61,7 +65,16 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
             text = CleanUpScript(text);
 
-            LastSpeech = speechSynthesizer.SpeakAsync(text);
+            if (thalassaSettings.UseOpenAiTts)
+            {
+                SpeechStartingHandlers.Invoke();
+                openAiTtsDispatcher.Speak(text);
+            }
+            else
+            {
+                speechSynthesizer.SpeakAsync(text);
+            }
+
         }
 
         public Task SpeakFakeAsync(string text)
@@ -73,6 +86,8 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
         public void CancelSpeech()
         {
             speechSynthesizer.SpeakAsyncCancelAll();
+            cancellationTokenSource?.Cancel();
+            openAiTtsDispatcher.Abort();
         }
 
         private string CleanUpScript(string text)
@@ -118,7 +133,7 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
             string errorContent = contentGroup.Value;
             string? errorStatusCode = statusCodeGroup?.Value;
-            var parsedJsonError = JsonSerializer.Deserialize<ParsedOpenAiError>(errorContent)?.error;
+            ParsedOpenAiError.ParsedError? parsedJsonError = JsonSerializer.Deserialize<ParsedOpenAiError>(errorContent)?.error;
             //url, statusCode, content
 
             string statusCodeMessage = errorStatusCode != null ? $"{errorStatusCode}, " : "";

@@ -10,13 +10,13 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
         private readonly Queue<VoiceSession> runningSessions = new();
         private readonly ILogger<VoiceListener> logger;
         private readonly ILogger<IVoiceSession> sessionLogger;
-        private readonly IUiThreadDispatcher dispatcher;
+        private readonly IUiThreadDispatchInvoker dispatcher;
 
         public bool IsRunning { get { return runningSessions.Count > 0; } }
         public List<Action> SessionStartingHandlers { get; } = new List<Action>();
         public List<Action> SessionCompleteHandlers { get; } = new List<Action>();
 
-        public VoiceListener(ILogger<VoiceListener> logger, ILogger<IVoiceSession> sessionLogger, IUiThreadDispatcher dispatcher)
+        public VoiceListener(ILogger<VoiceListener> logger, ILogger<IVoiceSession> sessionLogger, IUiThreadDispatchInvoker dispatcher)
         {
             this.logger = logger;
             this.sessionLogger = sessionLogger;

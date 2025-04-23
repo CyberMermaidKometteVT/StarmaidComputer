@@ -2,40 +2,44 @@
 
 using Microsoft.Extensions.Logging;
 
-using OpenAI.Managers;
-using OpenAI.ObjectModels.RequestModels;
-using OpenAI.ObjectModels.ResponseModels;
-using OpenAI.ObjectModels.SharedModels;
 
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.Settings;
+using OpenAI.Chat;
+using System.ClientModel;
+using System.Text.Json;
+using Newtonsoft.Json.Linq;
 
 namespace StarmaidIntegrationComputer.Thalassa.Chat
 {
     public class ChatComputer
     {
-        private readonly OpenAIService openAIService;
         private readonly StreamerProfileSettings streamerProfileSettings;
         private readonly StarmaidStateBag stateBag;
         private readonly ILogger<ChatComputer> logger;
+        private readonly OpenAISensitiveSettings openAISensitiveSettings;
         private readonly OpenAISettings openAISettings;
-        ChatCompletionCreateRequest request;
-        public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; private set; } = new AsyncTwoStringsMethodList();
-        public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; private set; } = new AsyncStringMethodList();
-        public AsyncMethodList<FunctionCall> OutputChatbotCommandHandlers { get; private set; } = new AsyncMethodList<FunctionCall>();
+        private readonly List<ChatMessage> chatMessages = new List<ChatMessage>();
+        ChatClient request;
+        public AsyncTwoStringsMethodList OutputUserMessageHandlers { get; } = new AsyncTwoStringsMethodList();
+        public AsyncStringMethodList OutputChatbotChattingMessageHandlers { get; } = new AsyncStringMethodList();
+        public AsyncMethodList<IList<ThalassaCommandCallModel>> OutputChatbotCommandHandlers { get; } = new AsyncMethodList<IList<ThalassaCommandCallModel>>();
 
-        private readonly List<FunctionDefinition> streamerAccessibleThalassaFunctions;
+        private readonly List<ChatTool> toolsAccessibleByStreamerOrder;
+        private readonly List<ChatTool> toolsAccessibleDuringStreamerConversation;
 
-        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAIService openAIService, ThalassaFunctionBuilder thalassaFunctionBuilder, StreamerProfileSettings streamerProfileSettings)
+        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAISensitiveSettings openAISensitiveSettings, ThalassaToolBuilder thalassaFunctionBuilder, StreamerProfileSettings streamerProfileSettings)
         {
             this.stateBag = stateBag;
             this.logger = logger;
             this.openAISettings = openAISettings;
-            this.openAIService = openAIService;
+            this.openAISensitiveSettings = openAISensitiveSettings;
             this.streamerProfileSettings = streamerProfileSettings;
-            streamerAccessibleThalassaFunctions = thalassaFunctionBuilder.BuildStreamerAccessibleFunctions();
+            toolsAccessibleByStreamerOrder = thalassaFunctionBuilder.BuildToolsAccessibleByStreamerOrder();
+            toolsAccessibleDuringStreamerConversation = thalassaFunctionBuilder.BuildToolsAccessibleDuringStreamerConversation();
+
         }
 
         public async Task SendChat(string userName, string userMessage)
@@ -43,35 +47,51 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             bool isCommand = GetIsCommand(userName, userMessage);
             PrepareToSendChat(isCommand);
 
-            request.Messages.Add(new ChatMessage("user", userMessage, userName));
+            chatMessages.Add(new UserChatMessage($"{userName}: {userMessage}"));
 
             OutputUserMessage(userName, userMessage.TrimEnd());
 
-            string response;
+            string responseMessage;
             try
             {
-                ChatCompletionCreateResponse? completionResponse = await openAIService.CreateCompletion(request);
-                var firstResponseChoice = completionResponse.Choices.First();
-                var responseMessage = firstResponseChoice.Message;
-                response = responseMessage.Content;
-
-                if (responseMessage.Content != null)
+                ChatCompletionOptions options = new ChatCompletionOptions
                 {
-                    request.Messages.Add(responseMessage);
+                    TopP = 0.02f
+                };
+
+                if (isCommand)
+                {
+                    toolsAccessibleByStreamerOrder.ForEach(function => options.Tools.Add(function));
                 }
                 else
                 {
-                    //TODO: Figure out if we need to identify the case where Content is null but there is no function call involved
-                    var functionCallMessage = new ChatMessage(responseMessage.Role, "", responseMessage.Name, responseMessage.FunctionCall);
-                    request.Messages.Add(functionCallMessage);
+                    toolsAccessibleDuringStreamerConversation.ForEach(function => options.Tools.Add(function));
                 }
 
-                OutputChatbotFunctionCall(firstResponseChoice);
+                ClientResult<ChatCompletion> completedClientResult = await request.CompleteChatAsync(messages: chatMessages, options: options);
 
-                if (response != null)
+                ChatCompletion completion = completedClientResult.Value;
+
+
+                //Test this: is the refusal in fact null or whitespace if there's no error?
+                // Test this: Is the refusal an error like I think it is?
+                if (!String.IsNullOrWhiteSpace(completion.Refusal))
                 {
-                    OutputChatbotResponse(response);
+                    HandleRefusal(completion.Refusal);
+                    return;
                 }
+
+                logger.LogInformation($"Chat completion received; finish reason {completedClientResult.Value.FinishReason}");
+
+
+                if (completion.Content.Count != 0)
+                {
+                    chatMessages.Add(new AssistantChatMessage(completion.Content));
+                    responseMessage = GetResponseMessage(completion.Content);
+                    OutputChatbotResponse(responseMessage);
+                }
+
+                OutputAndExecuteChatbotToolCalls(completion.ToolCalls);
             }
             catch (HttpRequestException ex)
             {
@@ -80,6 +100,24 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 OutputChatbotResponse(failureMessage);
                 return;
             }
+        }
+
+        private string GetResponseMessage(ChatMessageContent content)
+        {
+            StringBuilder messageParts = new StringBuilder();
+            foreach (ChatMessageContentPart part in content)
+            {
+                if (part.Kind == ChatMessageContentPartKind.Text)
+                {
+                    messageParts.Append(part.Text);
+                }
+            }
+            return messageParts.ToString();
+        }
+
+        private void HandleRefusal(string refusal)
+        {
+            chatMessages.Add(new AssistantChatMessage($"(The chatbot model encountered an error trying to respond to this chat: {refusal})"));
         }
 
         private bool GetIsCommand(string userName, string userMessage)
@@ -104,40 +142,72 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             return isCommand;
         }
 
-        private void OutputChatbotFunctionCall(ChatChoiceResponse firstResponseChoice)
+        private void OutputAndExecuteChatbotToolCalls(IReadOnlyList<ChatToolCall> toolCalls)
         {
-            var functionCall = firstResponseChoice.Message.FunctionCall;
-            if (functionCall != null)
+            if (toolCalls.Count == 0)
             {
-#warning Replace with better solution!
-                StringBuilder executionOutput = new StringBuilder("Executing: ")
-                    .Append(functionCall.Name).Append("(");
-                if (!String.IsNullOrWhiteSpace(functionCall.Arguments))
-                {
-                    bool firstArgument = true;
-                    foreach (KeyValuePair<string, object> argumentByName in functionCall.ParseArguments())
-                    {
-                        if (!firstArgument)
-                        {
-                            executionOutput.Append(",");
-                        }
-
-                        firstArgument = false;
-
-                        executionOutput.Append(" ");
-                        executionOutput.Append(argumentByName.Key)
-                            .Append(": ")
-                            .Append(argumentByName.Value);
-                    }
-                }
-                executionOutput.Append(" )");
-
-                OutputChatbotResponse(executionOutput.ToString());
-                OutputChatbotCommandHandlers.Execute(functionCall);
-
+                return;
             }
+
+            StringBuilder toolCallsDescription = new StringBuilder("Executing: ");
+            List<ThalassaCommandCallModel> commandsToExecute = ModelThalassaCommandCalls(toolCalls);
+
+            bool wasFirstCommand = true;
+            foreach (ThalassaCommandCallModel commandCallModel in commandsToExecute)
+            {
+                if (!wasFirstCommand)
+                {
+                    toolCallsDescription.Append("; ");
+                }
+                toolCallsDescription.Append(commandCallModel.Name);
+                DescribeFunctionArguments(toolCallsDescription, commandCallModel);
+                wasFirstCommand = false;
+            }
+
+            OutputChatbotResponse(toolCallsDescription.ToString());
+            OutputChatbotCommandHandlers.Execute(commandsToExecute);
         }
 
+        private void DescribeFunctionArguments(StringBuilder descriptionBuilder, ThalassaCommandCallModel commandCallModel)
+        {
+            descriptionBuilder.Append("(");
+            bool isFirst = true;
+            foreach (ThalassaCommandCallArgument argument in commandCallModel.Arguments)
+            {
+                if (!isFirst)
+                {
+                    descriptionBuilder.Append(", ");
+                }
+
+                descriptionBuilder.Append(argument.Name)
+                    .Append(": ")
+                    .Append(argument.SerializedValue);
+            }
+            descriptionBuilder.Append(")");
+        }
+
+        private List<ThalassaCommandCallModel> ModelThalassaCommandCalls(IReadOnlyList<ChatToolCall> toolCalls)
+        {
+            List<ThalassaCommandCallModel> results = new List<ThalassaCommandCallModel>();
+            foreach (ChatToolCall toolCall in toolCalls)
+            {
+                ThalassaCommandCallModel newModel = new ThalassaCommandCallModel(toolCall.FunctionName);
+
+                using JsonDocument argumentsJsonDocument = JsonDocument.Parse(toolCall.FunctionArguments);
+                JObject argumentsJsonObject = JObject.Parse(argumentsJsonDocument.RootElement.ToString());
+
+                foreach (JProperty property in argumentsJsonObject.Properties())
+                {
+
+                    //TODO: Does property.Value.ToString() return me the primitive value of the argument?
+                    newModel.Arguments.Add(new ThalassaCommandCallArgument(property.Name, property.Value.ToString()));
+                }
+
+                results.Add(newModel);
+            }
+
+            return results;
+        }
 
         private void PrepareToSendChat(bool isCommand)
         {
@@ -151,33 +221,29 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             string chatters = string.Join(", ", stateBag.Chatters.Select(chatter => chatter.ChatterName));
             string viewers = string.Join(", ", stateBag.Viewers);
             string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
-            request.Messages.Add(new ChatMessage("system", starmaidContext));
+            chatMessages.Add(new SystemChatMessage(starmaidContext));
         }
 
         private void InitializeConversationForMessage(bool isCommand)
         {
+
             if (request == null)
             {
                 logger.LogInformation("Starting a new conversation.");
-                request = new ChatCompletionCreateRequest
-                {
-                    Model = OpenAI.ObjectModels.Models.Gpt_3_5_Turbo_16k,
-                    Messages = new List<ChatMessage>(),
-                    MaxTokens = 8000,
-                    TopP = 0.02f,
-                    //Temperature = 0.1f,
-                    N = 1,
-                };
+
+
+
+                request = new ChatClient(model: "gpt-4o-mini",
+                    credential: new ApiKeyCredential(openAISensitiveSettings.OpenAIBearerToken));
 
                 if (isCommand)
                 {
-                    request.Messages.Add(new ChatMessage("system", openAISettings.GptCommandPrompt));
-                    request.Functions = streamerAccessibleThalassaFunctions;
+                    chatMessages.Add(new SystemChatMessage(openAISettings.GptCommandPrompt));
                 }
                 else
                 {
                     //TODO: Add multiple initial prompt functionality to the json
-                    request.Messages.Add(new ChatMessage("system", openAISettings.GptChatPrompt));
+                    chatMessages.Add(new SystemChatMessage(openAISettings.GptChatPrompt));
                 }
             }
             else
@@ -186,18 +252,16 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
                 if (isCommand)
                 {
                     initialPromptContent = openAISettings.GptCommandPrompt;
-                    request.Functions = streamerAccessibleThalassaFunctions;
+                    chatMessages.Add(new UserChatMessage("The next message will be a command."));
                 }
                 else // not a command
                 {
                     initialPromptContent = openAISettings.GptChatPrompt;
-                    request.Functions = null;
                 }
 
-                request.Messages.RemoveAt(0);
-                request.Messages.Insert(0, new ChatMessage("system", initialPromptContent));
+                chatMessages.RemoveAt(0);
+                chatMessages.Insert(0, new SystemChatMessage(initialPromptContent));
 
-                request.Messages.Add(new ChatMessage("user", "The next message will be a command."));
 
                 logger.LogInformation("Continuing existing conversation.");
             }

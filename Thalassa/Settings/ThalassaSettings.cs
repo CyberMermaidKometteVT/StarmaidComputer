@@ -9,5 +9,7 @@
         public string CannedMessageText { get; set; }
         public string CannedMessageDescription { get; set; }
         public string TimeoutDurationExtraDescription { get; set; }
+
+        public bool UseOpenAiTts { get; set; }
     }
 }

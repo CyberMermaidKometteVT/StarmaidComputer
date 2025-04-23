@@ -1,0 +1,23 @@
+DONE
+* Switching to OpenAI TTS instead of Microsoft Speech Synthesizer (which is garbo)
+* Changing OpenAI library
+* Updating a few packages
+* Adding Send To Chat command
+* Fixing SayLastFollwers (not outputting to my output window, didn't say all the followers)
+Sunday
+* Code Blocks no longer hide text between them
+* Chat messages occur in the right order, no race conditions on TTS
+* Better chat text box behaviors
+	-	Shift-ENTER inserts TWO newlines, not one
+	-	ENTER with no shift also looks like it adds a newline
+	-	Needs a scrollbar
+* UDP port matches designations in SAMMI, also can be different from prod to dev
+
+TODO:
+* TTS for commands is sometimes missing naming parameters? Probably nontrivial, might not be fixable.
+* Sending commands has a nondeterministic order - this is a significant, nontrivial issue, because we don't know which
+   commands do or do not need to execute sequentially. Ideally, we'd like to be able to execute them simultaneously.
+   Maybe consider having each command able to list a type of command it needs out of an executing command list before it can begin?
+* 
+
+

@@ -12,8 +12,6 @@ using System.Windows.Threading;
 
 using Microsoft.Extensions.Logging;
 
-using OpenAI.Managers;
-
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Thalassa;
@@ -53,9 +51,9 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly ThalassaCore thalassaCore;
         private readonly SpeechComputer speechComputer;
         private readonly VoiceListener voiceListener;
-        private readonly OpenAIService openAIService;
+        private readonly OpenAISensitiveSettings openAISensitiveSettings;
         private readonly StreamerProfileSettings streamerProfileSettings;
-        private readonly ThalassaFunctionBuilder thalassaFunctionBuilder;
+        private readonly ThalassaToolBuilder thalassaFunctionBuilder;
         private Action? onNewChatComputerUsePropertyOnly = null;
 
         public Action? OnAbortingRunningCommand = null;
@@ -102,7 +100,7 @@ namespace StarmaidIntegrationComputer.Chat
             this.thalassaCore = args.ThalassaCore;
             this.speechComputer = args.SpeechComputer;
             this.voiceListener = args.VoiceListener;
-            this.openAIService = args.OpenAIService;
+            this.openAISensitiveSettings = args.OpenAISensitiveSettings;
             this.streamerProfileSettings = args.StreamerProfileSettings;
             this.thalassaFunctionBuilder = args.ThalassaFunctionBuilder;
 
@@ -121,6 +119,11 @@ namespace StarmaidIntegrationComputer.Chat
 
             ChatbotResponsesRichTextBox.Document.LineHeight = 1;
             RemoveBlankFirstRichTextBoxLine();
+        }
+
+        public void OutputToStreamer(string message)
+        {
+            ExecuteOnDispatcherThread(() => ChatbotResponsesRichTextBox.AppendText(message));
         }
 
         private void RemoveBlankFirstRichTextBoxLine()
@@ -146,7 +149,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void CreateNewChatComputer()
         {
-            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAIService, thalassaFunctionBuilder, streamerProfileSettings);
+            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAISensitiveSettings, thalassaFunctionBuilder, streamerProfileSettings);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 
@@ -232,14 +235,20 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void OnThalassaSpeechBegun()
         {
-            ThalassaShutUpButton.IsEnabled = true;
-            ThalassaShutUpButton.Content = "Shu_t up!";
+            ExecuteOnDispatcherThread(() =>
+            {
+                ThalassaShutUpButton.IsEnabled = true;
+                ThalassaShutUpButton.Content = "Shu_t up!";
+            });
         }
 
         private void OnThalassaSpeechOver()
         {
-            ThalassaShutUpButton.IsEnabled = false;
-            ThalassaShutUpButton.Content = "(Not Talking)";
+            ExecuteOnDispatcherThread(() =>
+            {
+                ThalassaShutUpButton.IsEnabled = false;
+                ThalassaShutUpButton.Content = "(Not Talking)";
+            });
 
         }
 
@@ -338,6 +347,20 @@ namespace StarmaidIntegrationComputer.Chat
             return Dispatcher.InvokeAsync(action).Task;
         }
 
+        private void EvaluateScrollbarForMessageTextBox()
+        {
+            double formHeight = this.ActualHeight;
+
+            if (this.ActualHeight > formHeight * 0.5)
+            {
+                UserMessageScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Visible;
+            }
+            else
+            {
+                UserMessageScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+            }
+        }
+
         private void UserMessageTextBox_KeyUp(object sender, KeyEventArgs e)
         {
             //Only send the message if we're hitting ENTER but not SHIFT-ENTER
@@ -349,7 +372,6 @@ namespace StarmaidIntegrationComputer.Chat
                 }
                 else
                 {
-
                     int selectionStart = UserMessageTextBox.SelectionStart;
                     UserMessageTextBox.Text = UserMessageTextBox.Text.Insert(selectionStart, Environment.NewLine);
                     UserMessageTextBox.SelectionStart = selectionStart + 2;
@@ -365,6 +387,9 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void ChatbotResponsesRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            EvaluateScrollbarForMessageTextBox();
+
+
             if (AutoscrollCheckBox.IsChecked == true)
             {
                 ChatbotResponsesScrollViewer.ScrollToEnd();
@@ -413,6 +438,11 @@ namespace StarmaidIntegrationComputer.Chat
                 ResetFormTextScale();
                 e.Handled = true;
             }
+
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+            }
         }
 
         private void IncrementFormTextScale(int numberOfClicks)
@@ -431,7 +461,7 @@ namespace StarmaidIntegrationComputer.Chat
             transform.ScaleY += numberOfClicks / 10.0;
 
             AutoscrollCheckBox.RenderTransform = transform;
-            AutoscrollCheckBox.RenderTransformOrigin = new Point(1, 0);
+            AutoscrollCheckBox.RenderTransformOrigin = new System.Windows.Point(1, 0);
         }
 
         private void ResetFormTextScale()
@@ -455,6 +485,18 @@ namespace StarmaidIntegrationComputer.Chat
             {
                 OnAbortingRunningCommand();
             }
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            EvaluateScrollbarForMessageTextBox();
+
+            //These calculations are garbage, the inside viewer really should not have the exact same actual height as its containing grid
+            //  But we ball! Komette's tired. Maybe at some later date I'll make this less silly.
+            //  Also, this doesn't follow good WPF principles, which should be using data binding.
+            //  Thalassa suggests that I use binding with a converter for the MaxHeight of the viewer.
+            OuterGrid.RowDefinitions[3].MaxHeight = this.ActualHeight / 2.0;
+            UserMessageScrollViewer.MaxHeight = this.ActualHeight / 2.0;
         }
     }
 }

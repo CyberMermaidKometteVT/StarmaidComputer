@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using StarmaidIntegrationComputer.Commands.Twitch;
 using StarmaidIntegrationComputer.Commands.Twitch.Enums;
 using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.Settings;
+using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
@@ -21,6 +23,7 @@ namespace StarmaidIntegrationComputer.Commands
         private readonly ILogger<CommandBase> commandLogger;
         private readonly TwitchSensitiveSettings twitchSensitiveSettings;
         private readonly ThalassaSettings thalassaSettings;
+        private readonly StreamerProfileSettings profileSettings;
         private readonly SpeechComputer speechComputer;
         private readonly TwitchClient chatbot;
         private readonly TwitchAPI twitchApi;
@@ -30,11 +33,14 @@ namespace StarmaidIntegrationComputer.Commands
         public const string LAST_RAIDER_VERBIAGE = "the last raider";
         public const int DEFAULT_TIMEOUT_DURATION_IN_SECONDS = 300;
 
-        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, ThalassaSettings thalassaSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag)
+        private const string TARGET_ARGUMENT_NAME = "target";
+
+        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, ThalassaSettings thalassaSettings, StreamerProfileSettings profileSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag)
         {
             this.commandLogger = logger;
             this.twitchSensitiveSettings = twitchSensitiveSettings;
             this.thalassaSettings = thalassaSettings;
+            this.profileSettings = profileSettings;
             this.speechComputer = speechComputer;
             this.chatbot = chatbot;
             this.twitchApi = twitchApi;
@@ -42,25 +48,55 @@ namespace StarmaidIntegrationComputer.Commands
             this.liveTwitchAuthorizationInfo = liveTwitchAuthorizationInfo;
         }
 
-        public CommandBase? Parse(string command, Dictionary<string, object>? arguments)
+        public CommandBase? Parse(string command, IList<ThalassaCommandCallArgument>? arguments)
         {
 
             command = command.ToLower();
             if (command == CommandNames.SHOUTOUT.ToLower())
             {
-                var target = GetTargetFromArguments(arguments);
+                string? target = GetTargetFromArguments(arguments);
                 target = InterpretShoutoutTarget(target);
+
+                if (string.IsNullOrWhiteSpace(target))
+                {
+                    return new FailedCommand(commandLogger, speechComputer, $"Failed to parse required argument for command {command}: {TARGET_ARGUMENT_NAME}. See log for additional details.");
+                }
 
                 return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, chatbot, stateBag, target);
             }
             if (command == CommandNames.TIMEOUT.ToLower())
             {
-                var target = GetTargetFromArguments(arguments);
-                var durationInSeconds = GetDurationFromArguments(arguments) ?? DEFAULT_TIMEOUT_DURATION_IN_SECONDS;
+                string? target = GetTargetFromArguments(arguments);
+                int durationInSeconds = GetDurationFromArguments(arguments) ?? DEFAULT_TIMEOUT_DURATION_IN_SECONDS;
                 string? timeoutReason = ParseArgumentAsString(arguments, "reason");
+
+                if (string.IsNullOrWhiteSpace(target))
+                {
+                    return new FailedCommand(commandLogger, speechComputer, $"Failed to parse required argument for command {command}: {TARGET_ARGUMENT_NAME}. See log for additional details.");
+                }
 
                 return new TimeoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, target, durationInSeconds, timeoutReason);
             }
+
+            if (command == CommandNames.SEND_CHAT_MESSAGE.ToLower())
+            {
+                const string MESSAGE_TO_SEND_ARGUMENT_NAME = "message";
+                string? messageToSend = ParseArgumentAsString(arguments, MESSAGE_TO_SEND_ARGUMENT_NAME);
+
+
+                if (string.IsNullOrWhiteSpace(messageToSend))
+                {
+                    return new FailedCommand(commandLogger, speechComputer, $"Failed to parse required argument for command {command}: {MESSAGE_TO_SEND_ARGUMENT_NAME}. See log for additional details.");
+                }
+
+                return new SendChatMessageCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, chatbot, profileSettings, messageToSend);
+            }
+
+            if (command == CommandNames.RESET_KRUIZ_CONTROL.ToLower())
+            {
+                return new ResetKruizControlCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, chatbot);
+            }
+
             if (command == CommandNames.SAY_LAST_RAIDER.ToLower())
             {
                 return new SayLastRaiderCommand(commandLogger, speechComputer, stateBag);
@@ -82,9 +118,9 @@ namespace StarmaidIntegrationComputer.Commands
             return null;
         }
 
-        private int? GetDurationFromArguments(Dictionary<string, object>? arguments, int? defaultValue = null)
+        private int? GetDurationFromArguments(IList<ThalassaCommandCallArgument>? arguments, int? defaultValue = null)
         {
-            string argumentAsString = ParseArgumentAsString(arguments, "duration");
+            string? argumentAsString = ParseArgumentAsString(arguments, "duration");
             if (!string.IsNullOrWhiteSpace(argumentAsString))
             {
                 if (int.TryParse(argumentAsString, out var durationInSeconds))
@@ -95,33 +131,25 @@ namespace StarmaidIntegrationComputer.Commands
             return null;
         }
 
-        private string GetTargetFromArguments(Dictionary<string, object>? arguments)
+        private string? GetTargetFromArguments(IList<ThalassaCommandCallArgument>? arguments)
         {
-            return ParseArgumentAsString(arguments, "target");
+            return ParseArgumentAsString(arguments, TARGET_ARGUMENT_NAME);
         }
 
         //This is probably more JSON parsing than I really need to do, but at time of development I am tired!
-        private string? ParseArgumentAsString(Dictionary<string, object>? arguments, string argumentName)
+        private string? ParseArgumentAsString(IList<ThalassaCommandCallArgument>? arguments, string argumentName)
         {
-            object? argumentBoxed = null;
-            arguments.TryGetValue(argumentName, out argumentBoxed);
             string? argumentAsString = null;
-            if (argumentBoxed != null)
-            {
-                argumentAsString = ((System.Text.Json.JsonElement)argumentBoxed).ToString();
-            }
+            TryGetSerializedValue(arguments, argumentName, out argumentAsString);
+
 
             return argumentAsString;
         }
-        private int? ParseArgumentAsInt(Dictionary<string, object>? arguments, string argumentName)
+        private int? ParseArgumentAsInt(IList<ThalassaCommandCallArgument>? arguments, string argumentName)
         {
-            object? argumentBoxed = null;
-            arguments.TryGetValue(argumentName, out argumentBoxed);
             string? argumentAsString = null;
-            if (argumentBoxed != null)
-            {
-                argumentAsString = ((System.Text.Json.JsonElement)argumentBoxed).ToString();
-            }
+            TryGetSerializedValue(arguments, argumentName, out argumentAsString);
+
             int argumentAsInt;
             if (!int.TryParse(argumentAsString, out argumentAsInt))
             {
@@ -131,8 +159,23 @@ namespace StarmaidIntegrationComputer.Commands
             return argumentAsInt;
         }
 
-        private string InterpretShoutoutTarget(string target)
+        private bool TryGetSerializedValue(IList<ThalassaCommandCallArgument>? arguments, string argumentName, out string? serializedValue)
         {
+            var argument = arguments?.Where(argumentCandidate => argumentCandidate.Name == argumentName)?.FirstOrDefault();
+
+            if (argument == null)
+            {
+                serializedValue = null;
+                return false;
+            }
+
+            serializedValue = argument.SerializedValue;
+            return true;
+        }
+
+        private string? InterpretShoutoutTarget(string? target)
+        {
+
             if (target == LAST_RAIDER_VERBIAGE)
             {
                 if (stateBag.Raiders.Any())

@@ -65,13 +65,22 @@ namespace StarmaidIntegrationComputer.UdpThalassaControl
                 });
 
 
-            socket.Bind(new IPEndPoint(new IPAddress(ipBytes.ToArray()), settings.Port));
+            socket.Bind(new IPEndPoint(new IPAddress(ipBytes.ToArray()), GetPort()));
 
             byte[] buffer = new byte[BUFFER_LENGTH];
 
             remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
             StartListening(buffer);
 
+        }
+
+        private int GetPort()
+        {
+#if DEBUG
+            return settings.PortDev;
+#else
+            return settings.PortProd;
+#endif
         }
 
         private EndPoint StartListening(byte[] buffer)
