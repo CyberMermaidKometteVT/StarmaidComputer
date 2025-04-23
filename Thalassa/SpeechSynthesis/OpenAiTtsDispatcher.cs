@@ -26,17 +26,19 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
 
         private readonly ILogger<OpenAiTtsDispatcher> logger;
         private readonly OpenAISensitiveSettings openAISensitiveSettings;
+        private readonly ThalassaSettings thalassaSettings;
         private bool aborting = false;
         private object isSpeakingLocker = new object();
 
         private readonly ManualResetEventSlim taskAvailable = new ManualResetEventSlim();
 
 
-        public OpenAiTtsDispatcher(ILogger<OpenAiTtsDispatcher> logger, OpenAISensitiveSettings openAISensitiveSettings)
+        public OpenAiTtsDispatcher(ILogger<OpenAiTtsDispatcher> logger, OpenAISensitiveSettings openAISensitiveSettings, ThalassaSettings thalassaSettings)
         {
             Task.Run(StartListeningForSpeechEvents);
             this.logger = logger;
             this.openAISensitiveSettings = openAISensitiveSettings;
+            this.thalassaSettings = thalassaSettings;
         }
 
         public void Speak(string textToSpeak)
@@ -213,9 +215,16 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
                 logger.LogInformation("Outputting speechResult to speakers.");
                 using MemoryStream memoryStream = new MemoryStream(speechResult);
                 using Mp3FileReader mp3FileReader = new Mp3FileReader(memoryStream);
-                using WaveOutEvent waveOut = new WaveOutEvent();
-                waveOut.Init(mp3FileReader);
-                waveOut.Volume = 1f;
+
+                DirectSoundDeviceInfo? outputDevice = DirectSoundOut.Devices.FirstOrDefault(device => device.Description.Contains(thalassaSettings.AudioDeviceName));
+                Guid outputDeviceGuid = outputDevice?.Guid ?? DirectSoundOut.DSDEVID_DefaultPlayback;
+
+                string outputDeviceLogInfo = outputDevice != null ? $"Speaking on output device {outputDevice.Description}" : "No specified output device found, speaking on the Windows default audio device.";
+                logger.LogInformation(outputDeviceLogInfo);
+
+                using DirectSoundOut directSoundOut = new DirectSoundOut(outputDeviceGuid);
+                directSoundOut.Volume = 1f;
+                directSoundOut.Init(mp3FileReader);
 
                 if (cancellationTokenSource.Token.IsCancellationRequested)
                 {
@@ -223,9 +232,9 @@ namespace StarmaidIntegrationComputer.Thalassa.SpeechSynthesis
                     return;
                 }
 
-                waveOut.Play();
+                directSoundOut.Play();
 
-                while (waveOut.PlaybackState == PlaybackState.Playing)
+                while (directSoundOut.PlaybackState == PlaybackState.Playing)
                 {
                     if (cancellationTokenSource.Token.IsCancellationRequested)
                     {
