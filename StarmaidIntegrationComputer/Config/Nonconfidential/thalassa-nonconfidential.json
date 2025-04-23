@@ -4,6 +4,7 @@
     "CancelListeningConfidenceThreshold": 0.80,
     "AbortCommandConfidenceThreshold": 0.80,
     "UseOpenAiTts": true,
+    "AudioDeviceName": "VoiceMeeter VAIO3 Input",
 
     //The message for her to send in a canned message.
     "CannedMessageText": "Follow along at home! | Planning: https://fish-brain.com/ThalassaPlanning | Github: https://fish-brain.com/ThalassaGithub,",
