@@ -27,7 +27,7 @@ namespace StarmaidIntegrationComputer.Chat
     /// </summary>
     public partial class ChatWindow : Window
     {
-        private readonly StarmaidStateBag stateBag;
+        private readonly AudienceRegistry audienceRegistry;
         private readonly ILogger<ChatComputer> logger;
 
         private ChatComputer? activeChatComputerUsePropertyOnly;
@@ -93,7 +93,7 @@ namespace StarmaidIntegrationComputer.Chat
         //TODO: Consider ripping logic out into a custom control, and/or a controller for the Thalassa command strip.
         public ChatWindow(ChatWindowCtorArgs args)
         {
-            this.stateBag = args.StateBag;
+            this.audienceRegistry = args.AudienceRegistry;
             this.logger = args.Logger;
             this.openAISettings = args.OpenAISettings;
             this.soundEffectPlayer = args.SoundEffectPlayer;
@@ -149,7 +149,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void CreateNewChatComputer()
         {
-            ActiveChatComputer = new ChatComputer(stateBag, openAISettings, logger, openAISensitiveSettings, thalassaFunctionBuilder, streamerProfileSettings);
+            ActiveChatComputer = new ChatComputer(audienceRegistry, openAISettings, logger, openAISensitiveSettings, thalassaFunctionBuilder, streamerProfileSettings);
             ActiveChatComputer.OutputUserMessageHandlers.Add(OnMessageSent);
             ActiveChatComputer.OutputChatbotChattingMessageHandlers.Add(OnMessageReceived);
 
@@ -476,7 +476,7 @@ namespace StarmaidIntegrationComputer.Chat
 
         private void ThalassaWasNotTalkingToYouButton_Click(object sender, RoutedEventArgs e)
         {
-            thalassaCore.AbortCurrentListening();
+            thalassaCore.CancelCurrentListening();
         }
 
         private void ThalassaAbortCommandButton_Click(object sender, RoutedEventArgs e)

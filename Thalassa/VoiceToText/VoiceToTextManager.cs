@@ -45,11 +45,11 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             return interpretedText;
         }
 
-        public void AbortCurrentListening()
+        public void CancelCurrentListening()
         {
             if (voiceListener.IsRunning)
             {
-                voiceListener.AbortCurrentListening();
+                voiceListener.CancelCurrentListening();
             }
         }
 

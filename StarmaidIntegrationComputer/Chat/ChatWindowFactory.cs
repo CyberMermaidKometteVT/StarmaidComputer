@@ -12,7 +12,7 @@ namespace StarmaidIntegrationComputer.Chat
 {
     public class ChatWindowFactory
     {
-        private readonly StarmaidStateBag stateBag;
+        private readonly AudienceRegistry audienceRegistry;
         private readonly OpenAISettings openAISettings;
         private readonly ILogger<ChatComputer> logger;
         private readonly SoundEffectPlayer soundEffectPlayer;
@@ -23,9 +23,9 @@ namespace StarmaidIntegrationComputer.Chat
         private readonly StreamerProfileSettings streamerProfileSettings;
         private readonly ThalassaToolBuilder thalassaFunctionBuilder;
 
-        public ChatWindowFactory(StarmaidStateBag stateBag, ILogger<ChatComputer> logger, OpenAISettings openAISettings, SoundEffectPlayer soundEffectPlayer, ThalassaCore thalassaCore, SpeechComputer speechComputer, VoiceListener voiceListener, OpenAISensitiveSettings openAISensitiveSettings, StreamerProfileSettings streamerProfileSettings, ThalassaToolBuilder thalassaFunctionBuilder)
+        public ChatWindowFactory(AudienceRegistry audienceRegistry, ILogger<ChatComputer> logger, OpenAISettings openAISettings, SoundEffectPlayer soundEffectPlayer, ThalassaCore thalassaCore, SpeechComputer speechComputer, VoiceListener voiceListener, OpenAISensitiveSettings openAISensitiveSettings, StreamerProfileSettings streamerProfileSettings, ThalassaToolBuilder thalassaFunctionBuilder)
         {
-            this.stateBag = stateBag;
+            this.audienceRegistry = audienceRegistry;
             this.logger = logger;
             this.soundEffectPlayer = soundEffectPlayer;
             this.thalassaCore = thalassaCore;
@@ -41,7 +41,7 @@ namespace StarmaidIntegrationComputer.Chat
         {
             var args = new ChatWindowCtorArgs
             {
-                StateBag = stateBag,
+                AudienceRegistry = audienceRegistry,
                 Logger = logger,
                 OpenAISettings = openAISettings,
                 SoundEffectPlayer = soundEffectPlayer,

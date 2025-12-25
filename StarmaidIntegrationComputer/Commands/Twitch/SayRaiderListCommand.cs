@@ -11,31 +11,31 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 {
     internal class SayRaiderListCommand : CommandBase
     {
-        public StarmaidStateBag StateBag { get; }
+        public AudienceRegistry AudienceRegistry { get; }
 
-        public SayRaiderListCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, StarmaidStateBag stateBag) : base(logger, speechComputer)
+        public SayRaiderListCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, AudienceRegistry audienceRegistry) : base(logger, speechComputer)
         {
-            StateBag = stateBag;
+            AudienceRegistry = audienceRegistry;
         }
 
         protected override Task PerformCommandAsync()
         {
-            if (!StateBag.Raiders.Any())
+            if (!AudienceRegistry.Raiders.Any())
             {
                 speechComputer.Speak($"No raiders found.");
                 return Task.CompletedTask;
             }
 
-            IEnumerable<string> allRaidersButTheLastOne = StateBag.Raiders.Take(StateBag.Raiders.Count() - 1).Select(raider => raider.RaiderName);
+            IEnumerable<string> allRaidersButTheLastOne = AudienceRegistry.Raiders.Take(AudienceRegistry.Raiders.Count() - 1).Select(raider => raider.RaiderName);
             string allRaiders = string.Join(", ", allRaidersButTheLastOne);
-            if (StateBag.Raiders.Count() > 1)
+            if (AudienceRegistry.Raiders.Count() > 1)
             {
                 allRaiders += ", and ";
             }
-            allRaiders = allRaiders += StateBag.Raiders.Last().RaiderName;
-            string sIfPlural = StateBag.Raiders.Count() != 1 ? "s" : "";
+            allRaiders = allRaiders += AudienceRegistry.Raiders.Last().RaiderName;
+            string sIfPlural = AudienceRegistry.Raiders.Count() != 1 ? "s" : "";
 
-            speechComputer.Speak($"{StateBag.Raiders.Count()} raider{sIfPlural}: {allRaiders}");
+            speechComputer.Speak($"{AudienceRegistry.Raiders.Count()} raider{sIfPlural}: {allRaiders}");
             return Task.CompletedTask;
         }
     }

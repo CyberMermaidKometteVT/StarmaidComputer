@@ -12,7 +12,7 @@ namespace StarmaidIntegrationComputer.Chat
 {
     public class ChatWindowCtorArgs
     {
-        public StarmaidStateBag StateBag { get; set; }
+        public AudienceRegistry AudienceRegistry { get; set; }
         public ILogger<ChatComputer> Logger { get; set; }
         public OpenAISettings OpenAISettings { get; set; }
         public SoundEffectPlayer SoundEffectPlayer { get; set; }

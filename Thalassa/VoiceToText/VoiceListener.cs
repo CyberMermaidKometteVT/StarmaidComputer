@@ -90,7 +90,7 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
             return session.Start();
         }
 
-        public void AbortCurrentListening()
+        public void CancelCurrentListening()
         {
             foreach (IVoiceSession session in runningSessions)
             {
