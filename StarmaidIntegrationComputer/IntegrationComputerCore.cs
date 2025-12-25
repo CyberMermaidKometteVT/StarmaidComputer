@@ -57,7 +57,7 @@ namespace StarmaidIntegrationComputer
         private readonly SpeechComputer speechComputer;
         private readonly CommandFactory commandFactory;
 
-        private readonly StarmaidStateBag commandStateBag;
+        private readonly AudienceRegistry commandAudienceRegistry;
         private ChatComputer activeChatComputerUsePropertyOnly;
         public ChatComputer ActiveChatComputer
         {
@@ -101,7 +101,7 @@ namespace StarmaidIntegrationComputer
             this.twitchConnection = ctorArgs.TwitchConnection;
             this.chatbotLogger = ctorArgs.LoggerFactory.CreateLogger<TwitchClient>();
             this.speechComputer = ctorArgs.SpeechComputer;
-            this.commandStateBag = ctorArgs.StateBag;
+            this.commandAudienceRegistry = ctorArgs.AudienceRegistry;
             this.liveTwitchAuthorizationInfo = ctorArgs.LiveTwitchAuthorizationInfo;
             this.thalassaSettings = ctorArgs.ThalassaSettings;
             this.udpSettings = ctorArgs.UdpCommandSettings;
@@ -115,7 +115,7 @@ namespace StarmaidIntegrationComputer
             ctorArgs.AuthorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
 
             IsRunning = twitchSettings.RunOnStartup;
-            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, profileSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.StateBag);
+            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, profileSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.AudienceRegistry);
         }
 
         public void OnLoaded()
@@ -265,19 +265,19 @@ namespace StarmaidIntegrationComputer
 
         private void Chatbot_OnExistingUsersDetected(object? sender, OnExistingUsersDetectedArgs e)
         {
-            commandStateBag.Viewers.AddRange(e.Users);
+            commandAudienceRegistry.Viewers.AddRange(e.Users);
         }
 
         private void Chatbot_OnUserLeft(object? sender, TwitchLib.Client.Events.OnUserLeftArgs e)
         {
-            commandStateBag.Viewers.Remove(e.Username);
+            commandAudienceRegistry.Viewers.Remove(e.Username);
         }
 
         private void Chatbot_OnUserJoined(object? sender, TwitchLib.Client.Events.OnUserJoinedArgs e)
         {
-            if (!commandStateBag.Viewers.Contains(e.Username))
+            if (!commandAudienceRegistry.Viewers.Contains(e.Username))
             {
-                commandStateBag.Viewers.Add(e.Username);
+                commandAudienceRegistry.Viewers.Add(e.Username);
             }
         }
 
@@ -287,7 +287,7 @@ namespace StarmaidIntegrationComputer
 
             DateTime raidTimestamp = TmiSentTsHelpers.ParseOrNow(e.RaidNotification.TmiSentTs);
 
-            RaiderInfo? previousRaider = commandStateBag.Raiders.SingleOrDefault(previousRaider => previousRaider.RaiderName == e.RaidNotification.DisplayName);
+            RaiderInfo? previousRaider = commandAudienceRegistry.Raiders.SingleOrDefault(previousRaider => previousRaider.RaiderName == e.RaidNotification.DisplayName);
 
 
             if (previousRaider == null)
@@ -299,7 +299,7 @@ namespace StarmaidIntegrationComputer
                     LastShoutedOut = null
                 };
 
-                commandStateBag.Raiders.Add(raider);
+                commandAudienceRegistry.Raiders.Add(raider);
             }
             else
             {
@@ -318,7 +318,7 @@ namespace StarmaidIntegrationComputer
             string sanitizedMessageReceived = StringManipulation.SanitizeForRichTextBox(e.ChatMessage.Message);
             chatbotLogger.LogInformation($"Message received - {e.ChatMessage.DisplayName}: {sanitizedMessageReceived}");
 
-            if (!commandStateBag.Chatters.Any(chatter => chatter.ChatterName == e.ChatMessage.DisplayName))
+            if (!commandAudienceRegistry.Chatters.Any(chatter => chatter.ChatterName == e.ChatMessage.DisplayName))
             {
                 DateTime sentTimestamp = TmiSentTsHelpers.ParseOrNow(e.ChatMessage.TmiSentTs);
 
@@ -328,7 +328,7 @@ namespace StarmaidIntegrationComputer
 
                 Chatter newChatter = new Chatter(e.ChatMessage.DisplayName, messageInfo);
 
-                commandStateBag.Chatters.Add(newChatter);
+                commandAudienceRegistry.Chatters.Add(newChatter);
             }
         }
 

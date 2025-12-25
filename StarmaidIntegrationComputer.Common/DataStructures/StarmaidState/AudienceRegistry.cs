@@ -1,6 +1,6 @@
 ﻿namespace StarmaidIntegrationComputer.Common.DataStructures.StarmaidState
 {
-    public class StarmaidStateBag
+    public class AudienceRegistry
     {
         public SortedSet<RaiderInfo> Raiders { get; } = new SortedSet<RaiderInfo>();
         public List<string> Viewers { get; } = new List<string>();

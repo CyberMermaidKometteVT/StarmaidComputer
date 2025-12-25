@@ -22,12 +22,12 @@ namespace StarmaidIntegrationComputer
         public TwitchAuthorizationUserTokenFlowHelper AuthorizationHelper { get; }
         public TwitchAPI TwitchConnection { get; }
         public SpeechComputer SpeechComputer { get; }
-        public StarmaidStateBag StateBag { get; }
+        public AudienceRegistry AudienceRegistry { get; }
         public LiveAuthorizationInfo LiveTwitchAuthorizationInfo { get; }
         public UdpCommandSettings UdpCommandSettings { get; }
         public UdpCommandListener UdpCommandListener { get; }
 
-        public IntegrationComputerCoreCtorArgs(ILoggerFactory loggerFactory, TwitchSensitiveSettings twitchSensitiveSettings, TwitchSettings twitchSettings, ThalassaSettings thalassaSettings, StreamerProfileSettings streamerProfileSettings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer, StarmaidStateBag stateBag, LiveAuthorizationInfo liveTwitchAuthorizationInfo, UdpCommandSettings udpCommandSettings, UdpCommandListener udpCommandListener)
+        public IntegrationComputerCoreCtorArgs(ILoggerFactory loggerFactory, TwitchSensitiveSettings twitchSensitiveSettings, TwitchSettings twitchSettings, ThalassaSettings thalassaSettings, StreamerProfileSettings streamerProfileSettings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer, AudienceRegistry audienceRegistry, LiveAuthorizationInfo liveTwitchAuthorizationInfo, UdpCommandSettings udpCommandSettings, UdpCommandListener udpCommandListener)
         {
             LoggerFactory = loggerFactory;
             TwitchSensitiveSettings = twitchSensitiveSettings;
@@ -37,7 +37,7 @@ namespace StarmaidIntegrationComputer
             AuthorizationHelper = authorizationHelper;
             TwitchConnection = twitchConnection;
             SpeechComputer = speechComputer;
-            StateBag = stateBag;
+            AudienceRegistry = audienceRegistry;
             LiveTwitchAuthorizationInfo = liveTwitchAuthorizationInfo;
             UdpCommandSettings = udpCommandSettings;
             UdpCommandListener = udpCommandListener;

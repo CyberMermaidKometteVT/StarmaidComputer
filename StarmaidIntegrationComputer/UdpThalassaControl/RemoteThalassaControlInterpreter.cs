@@ -54,7 +54,7 @@ namespace StarmaidIntegrationComputer.UdpThalassaControl
 
                 case ThalassaControlCommands.NOT_TALKING_TO_YOU:
                     logger.LogInformation($"Cancel listening remote command received! Stopping listening!");
-                    thalassaCore.AbortCurrentListening();
+                    thalassaCore.CancelCurrentListening();
                     break;
 
                 default:

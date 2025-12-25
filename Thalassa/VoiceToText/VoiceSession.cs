@@ -16,7 +16,8 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
         private readonly ILogger<IVoiceSession> sessionLogger;
         private readonly IUiThreadDispatchInvoker dispatcher;
-        private readonly WaveIn? waveIn = new WaveIn();
+        //private readonly WaveIn? waveIn = new WaveIn();
+        WaveInEvent waveIn = new WaveInEvent();
         private WaveFileWriter waveFileWriter;
 
         private readonly TaskCompletionSource<byte[]> taskCompletionSource;

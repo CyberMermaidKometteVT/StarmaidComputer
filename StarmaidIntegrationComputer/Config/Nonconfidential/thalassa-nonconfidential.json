@@ -4,7 +4,10 @@
     "CancelListeningConfidenceThreshold": 0.80,
     "AbortCommandConfidenceThreshold": 0.80,
     "UseOpenAiTts": true,
-    "AudioDeviceName": "VoiceMeeter VAIO3 Input",
+    "AudioDeviceName": "Voicemeeter VAIO (",
+
+    //WakeWordSelectedInterpreter can be "Porcupine" or "WindowsVoice".
+    "WakeWordSelectedInterpreter": "WindowsVoice",
 
     //The message for her to send in a canned message.
     "CannedMessageText": "Follow along at home! | Planning: https://fish-brain.com/ThalassaPlanning | Github: https://fish-brain.com/ThalassaGithub,",
@@ -25,8 +28,8 @@
     "AiName": "Thalassa",
     "AiDescription": "Komette's shipboard AI",
     "WakeWords": [ "Thalassa" ],
-    "CancelListeningPhrases": [ "Cancel Listening", "Stop Listening", "Abort Listening" ],
-    "AbortCommandPhrases": [ "Abort Execution", "Stop Execution", "Belay That" ],
+    "CancelListeningPhrases": [ "Cancel Listening", "Stop Listening", "Not talking to you", "Abort listening" ],
+    "AbortCommandPhrases": [ "Abort Execution", "Stop Execution", "Belay That", "Abort Command" ],
     //Find sound-alike words at https://www.rhymezone.com/r/rhyme.cgi?org1=syl&org2=l&typeofrhyme=sim
     //It might be better to leave the soundalike list empty though
     "WakeWordSoundalikes": [

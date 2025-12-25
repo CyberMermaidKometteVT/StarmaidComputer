@@ -20,6 +20,7 @@ using System.Linq;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
+using StarmaidIntegrationComputer.Thalassa.WakeWordProcessor;
 
 namespace StarmaidIntegrationComputer
 {
@@ -54,6 +55,7 @@ namespace StarmaidIntegrationComputer
 
             TwitchSensitiveSettings twitchSensitiveSettings = InjectSetting<TwitchSensitiveSettings>(services, configuration);
             OpenAISensitiveSettings openAiSensitiveSettings = InjectSetting<OpenAISensitiveSettings>(services, configuration);
+            ThalassaSensitiveSettings thalassaSensitiveSettings = InjectSetting<ThalassaSensitiveSettings>(services, configuration);
             InjectSetting<TwitchSettings>(services, configuration);
             InjectSetting<ThalassaSettings>(services, configuration);
             InjectSetting<SoundPathSettings>(services, configuration);
@@ -95,7 +97,7 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<TranscriptionSender>();
             services.AddSingleton<VoiceListener>();
             services.AddHttpClient();
-            services.AddSingleton<StarmaidStateBag>();
+            services.AddSingleton<AudienceRegistry>();
             services.AddSingleton<LiveAuthorizationInfo>();
             services.AddSingleton<SoundEffectPlayer>();
             services.AddSingleton<ThalassaToolBuilder>();
@@ -103,6 +105,7 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<RemoteThalassaControlInterpreter>();
             services.AddSingleton<IUiThreadDispatchInvoker, UiThreadDispatchInvoker>();
             services.AddSingleton<IOpenAiTtsDispatcher, OpenAiTtsDispatcher>();
+            services.AddSingleton<IWakeWordProcessorFactory, WakeWordProcessorFactory>();
 
             services.AddScoped(_ =>
                 TwitchApiFactory.Build(twitchSensitiveSettings.TwitchClientId, twitchSensitiveSettings.TwitchClientSecret, scopes)

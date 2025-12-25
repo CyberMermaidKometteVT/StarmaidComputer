@@ -21,12 +21,12 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 {
     internal class ShoutoutCommand : TwitchCommandBase
     {
-        public StarmaidStateBag StateBag { get; }
+        public AudienceRegistry AudienceRegistry { get; }
         public string ShoutoutTarget { get; }
-        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, TwitchClient chatbot, StarmaidStateBag stateBag, string target)
+        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, TwitchClient chatbot, AudienceRegistry audienceRegistry, string target)
             : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi, chatbot)
         {
-            this.StateBag = stateBag;
+            this.AudienceRegistry = audienceRegistry;
             this.ShoutoutTarget = target;
         }
 
@@ -62,7 +62,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 
             chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}. \"{state.LastTitle}\"{state.InterestingTagCommentary} (Currently {(!state.IsLive ? "not " : "")}live.)");
 
-            var firstRaidInstance = this.StateBag.Raiders.Where(raider => raider.RaiderName == ShoutoutTarget).FirstOrDefault();
+            var firstRaidInstance = this.AudienceRegistry.Raiders.Where(raider => raider.RaiderName == ShoutoutTarget).FirstOrDefault();
             if (firstRaidInstance == null)
             {
                 return;
@@ -78,8 +78,18 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
         private async Task<ShoutoutCommandState> GetStateFromTargetChannel()
         {
             ShoutoutCommandState state = new ShoutoutCommandState();
-#warning Error handling here if we are shouting out a non name - it's a BadRequestException.
-            GetUsersResponse targets = await twitchApi.Helix.Users.GetUsersAsync(logins: new List<string> { ShoutoutTarget });
+            GetUsersResponse targets;
+
+            try
+            {
+                targets = await twitchApi.Helix.Users.GetUsersAsync(logins: new List<string> { ShoutoutTarget });
+            }
+            catch(BadRequestException ex)
+            {
+                state.LastCategoryName = $"<Twitch error: User not found, can't look up information; exception message \"{ex.Message}\">";
+                state.IsValidUser = false;
+                return state;
+            }
 
             if (targets.Users.Count() == 0)
             {

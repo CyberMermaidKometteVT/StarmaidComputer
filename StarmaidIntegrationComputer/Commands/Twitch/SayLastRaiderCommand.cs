@@ -11,22 +11,22 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
 {
     internal class SayLastRaiderCommand : CommandBase
     {
-        public StarmaidStateBag StateBag { get; }
+        public AudienceRegistry AudienceRegistry { get; }
 
-        public SayLastRaiderCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, StarmaidStateBag stateBag) : base(logger, speechComputer)
+        public SayLastRaiderCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, AudienceRegistry audienceRegistry) : base(logger, speechComputer)
         {
-            StateBag = stateBag;
+            AudienceRegistry = audienceRegistry;
         }
 
         protected override Task PerformCommandAsync()
         {
-            if (!StateBag.Raiders.Any())
+            if (!AudienceRegistry.Raiders.Any())
             {
                 speechComputer.Speak($"No raiders found.");
                 return Task.CompletedTask;
             }
 
-            RaiderInfo raiderInfo = StateBag.Raiders.First();
+            RaiderInfo raiderInfo = AudienceRegistry.Raiders.First();
             string lastShoutedOutDescription = "Not shouted out.";
             if (raiderInfo.LastShoutedOut != null)
             {

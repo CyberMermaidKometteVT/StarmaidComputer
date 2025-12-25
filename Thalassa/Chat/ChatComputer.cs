@@ -17,7 +17,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
     public class ChatComputer
     {
         private readonly StreamerProfileSettings streamerProfileSettings;
-        private readonly StarmaidStateBag stateBag;
+        private readonly AudienceRegistry audienceRegistry;
         private readonly ILogger<ChatComputer> logger;
         private readonly OpenAISensitiveSettings openAISensitiveSettings;
         private readonly OpenAISettings openAISettings;
@@ -30,9 +30,9 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
         private readonly List<ChatTool> toolsAccessibleByStreamerOrder;
         private readonly List<ChatTool> toolsAccessibleDuringStreamerConversation;
 
-        public ChatComputer(StarmaidStateBag stateBag, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAISensitiveSettings openAISensitiveSettings, ThalassaToolBuilder thalassaFunctionBuilder, StreamerProfileSettings streamerProfileSettings)
+        public ChatComputer(AudienceRegistry audienceRegistry, OpenAISettings openAISettings, ILogger<ChatComputer> logger, OpenAISensitiveSettings openAISensitiveSettings, ThalassaToolBuilder thalassaFunctionBuilder, StreamerProfileSettings streamerProfileSettings)
         {
-            this.stateBag = stateBag;
+            this.audienceRegistry = audienceRegistry;
             this.logger = logger;
             this.openAISettings = openAISettings;
             this.openAISensitiveSettings = openAISensitiveSettings;
@@ -217,9 +217,9 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
         private void AppendCurrentStarmaidStateToConversation()
         {
-            string raiders = string.Join(", ", stateBag.Raiders.Select(raider => raider.RaiderName));
-            string chatters = string.Join(", ", stateBag.Chatters.Select(chatter => chatter.ChatterName));
-            string viewers = string.Join(", ", stateBag.Viewers);
+            string raiders = string.Join(", ", audienceRegistry.Raiders.Select(raider => raider.RaiderName));
+            string chatters = string.Join(", ", audienceRegistry.Chatters.Select(chatter => chatter.ChatterName));
+            string viewers = string.Join(", ", audienceRegistry.Viewers);
             string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
             chatMessages.Add(new SystemChatMessage(starmaidContext));
         }

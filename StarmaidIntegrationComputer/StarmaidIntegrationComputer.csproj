@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Config\Sensitive\thalassa-sensitive.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Config\Nonconfidential\discord-nonconfidential.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

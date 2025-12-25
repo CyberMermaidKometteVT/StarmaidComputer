@@ -27,7 +27,7 @@ namespace StarmaidIntegrationComputer.Commands
         private readonly SpeechComputer speechComputer;
         private readonly TwitchClient chatbot;
         private readonly TwitchAPI twitchApi;
-        private readonly StarmaidStateBag stateBag;
+        private readonly AudienceRegistry audienceRegistry;
         private readonly LiveAuthorizationInfo liveTwitchAuthorizationInfo;
 
         public const string LAST_RAIDER_VERBIAGE = "the last raider";
@@ -35,7 +35,7 @@ namespace StarmaidIntegrationComputer.Commands
 
         private const string TARGET_ARGUMENT_NAME = "target";
 
-        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, ThalassaSettings thalassaSettings, StreamerProfileSettings profileSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, StarmaidStateBag stateBag)
+        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, ThalassaSettings thalassaSettings, StreamerProfileSettings profileSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, AudienceRegistry audienceRegistry)
         {
             this.commandLogger = logger;
             this.twitchSensitiveSettings = twitchSensitiveSettings;
@@ -44,7 +44,7 @@ namespace StarmaidIntegrationComputer.Commands
             this.speechComputer = speechComputer;
             this.chatbot = chatbot;
             this.twitchApi = twitchApi;
-            this.stateBag = stateBag;
+            this.audienceRegistry = audienceRegistry;
             this.liveTwitchAuthorizationInfo = liveTwitchAuthorizationInfo;
         }
 
@@ -62,7 +62,7 @@ namespace StarmaidIntegrationComputer.Commands
                     return new FailedCommand(commandLogger, speechComputer, $"Failed to parse required argument for command {command}: {TARGET_ARGUMENT_NAME}. See log for additional details.");
                 }
 
-                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, chatbot, stateBag, target);
+                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, chatbot, audienceRegistry, target);
             }
             if (command == CommandNames.TIMEOUT.ToLower())
             {
@@ -99,11 +99,11 @@ namespace StarmaidIntegrationComputer.Commands
 
             if (command == CommandNames.SAY_LAST_RAIDER.ToLower())
             {
-                return new SayLastRaiderCommand(commandLogger, speechComputer, stateBag);
+                return new SayLastRaiderCommand(commandLogger, speechComputer, audienceRegistry);
             }
             if (command == CommandNames.SAY_RAIDER_LIST.ToLower())
             {
-                return new SayRaiderListCommand(commandLogger, speechComputer, stateBag);
+                return new SayRaiderListCommand(commandLogger, speechComputer, audienceRegistry);
             }
             if (command == CommandNames.SEND_CANNED_MESSAGE_TO_CHAT.ToLower())
             {
@@ -178,9 +178,9 @@ namespace StarmaidIntegrationComputer.Commands
 
             if (target == LAST_RAIDER_VERBIAGE)
             {
-                if (stateBag.Raiders.Any())
+                if (audienceRegistry.Raiders.Any())
                 {
-                    target = stateBag.Raiders.Last().RaiderName;
+                    target = audienceRegistry.Raiders.Last().RaiderName;
                     commandLogger.LogInformation($"The last raider, by the way, was {target}.");
                 }
             }
