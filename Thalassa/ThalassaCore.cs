@@ -93,8 +93,6 @@ namespace StarmaidIntegrationComputer.Thalassa
                 Logger.LogInformation($"Abort command phrase identified, but its behavior has not been wired up!");
             }
 
-            Logger.LogInformation("Abort command heard!");
-            AbortCommandIssued?.Invoke();
             CancelCurrentListening();
         }
 
