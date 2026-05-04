@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -16,6 +17,7 @@ namespace StarmaidIntegrationComputer.UdpThalassaControl
     public class UdpCommandListener : IDisposable
     {
         private bool isRunning = false;
+        public int? RunningPortNumber { get; private set; } = null;
 
         private readonly UdpCommandSettings settings;
         private readonly SpeechComputer speechComputer;
@@ -65,22 +67,47 @@ namespace StarmaidIntegrationComputer.UdpThalassaControl
                 });
 
 
-            socket.Bind(new IPEndPoint(new IPAddress(ipBytes.ToArray()), GetPort()));
+            try
+            {
+                socket.Bind(new IPEndPoint(new IPAddress(ipBytes.ToArray()), 0));
+                RunningPortNumber = (socket.LocalEndPoint as IPEndPoint).Port;
 
-            byte[] buffer = new byte[BUFFER_LENGTH];
+                byte[] buffer = new byte[BUFFER_LENGTH];
 
-            remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-            StartListening(buffer);
-
+                remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                StartListening(buffer);
+                WritePortNumber();
+            }
+            catch (Exception ex)
+            {
+                string errorMessage = $"Error starting UDP command listener: {ex.Message}";
+                speechComputer.Speak("Error starting UDP command listener. See log for details.");
+                logger.LogError(ex, errorMessage);
+                Stop(); // Intentionally not bothering to await this
+            }
         }
 
-        private int GetPort()
+        public async Task Stop()
         {
-#if DEBUG
-            return settings.PortDev;
-#else
-            return settings.PortProd;
-#endif
+            if (!isRunning)
+            {
+                return;
+            }
+
+            RunningPortNumber = null;
+            WritePortNumber();
+
+            await socket.DisconnectAsync(false);
+            socket.Close();
+            socket.Dispose();
+            disposables.Remove(socket);
+
+            isRunning = false;
+        }
+
+        private void WritePortNumber()
+        {
+            File.WriteAllText(settings.OutputPortFilePath, RunningPortNumber?.ToString());
         }
 
         private EndPoint StartListening(byte[] buffer)
@@ -110,21 +137,6 @@ namespace StarmaidIntegrationComputer.UdpThalassaControl
                 }
                 StartListening(buffer);
             }
-        }
-
-        public async Task Stop()
-        {
-            if (!isRunning)
-            {
-                return;
-            }
-
-            await socket.DisconnectAsync(false);
-            socket.Close();
-            socket.Dispose();
-            disposables.Remove(socket);
-
-            isRunning = false;
         }
 
         public void Dispose()

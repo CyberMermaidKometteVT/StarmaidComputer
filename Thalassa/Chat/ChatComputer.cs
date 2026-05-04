@@ -44,16 +44,18 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
 
         public async Task SendChat(string userName, string userMessage)
         {
-            bool isCommand = GetIsCommand(userName, userMessage);
-            PrepareToSendChat(isCommand);
-
-            chatMessages.Add(new UserChatMessage($"{userName}: {userMessage}"));
-
-            OutputUserMessage(userName, userMessage.TrimEnd());
-
-            string responseMessage;
             try
             {
+                bool isCommand = GetIsCommand(userName, userMessage);
+                PrepareToSendChat(isCommand);
+
+                chatMessages.Add(new UserChatMessage($"{userName}: {userMessage}"));
+
+                OutputUserMessage(userName, userMessage.TrimEnd());
+
+                string responseMessage;
+
+
                 ChatCompletionOptions options = new ChatCompletionOptions
                 {
                     TopP = 0.02f
