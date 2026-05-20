@@ -3,6 +3,8 @@
     "useUdp": true,
     "portProd": 59669,
     "portDev": 59668,
-    "ipAddress": "127.0.0.1"
+    "ipAddress": "127.0.0.1",
+    "OutputPortFilePath": "C:\\Users\\selen\\Dropbox\\Documents\\vroid model\\CyberMermaid\\Live Tools\\Thalassa\\ThalassaUDPPort.Prod.txt"
+
   }
 }
