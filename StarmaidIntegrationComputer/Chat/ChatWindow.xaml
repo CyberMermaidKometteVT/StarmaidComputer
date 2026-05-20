@@ -10,7 +10,7 @@
         Closed="Window_Closed" 
         PreviewMouseWheel="Window_PreviewMouseWheel" 
         PreviewKeyDown="Window_PreviewKeyDown"
-        SizeChanged="Window_SizeChanged"
+        SizeChanged="Window_SizeChanged" Icon="/Assets/Thalassa Speech Row, off.ico"
         >
 
     <Grid Name="OuterGrid" Margin="5px">

@@ -113,6 +113,7 @@ namespace StarmaidIntegrationComputer.UdpThalassaControl
         private EndPoint StartListening(byte[] buffer)
         {
             socket.BeginReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref remoteEndPoint, OnDataReceived_InterpretCommand, buffer);
+            logger.LogInformation($"Starting to listen on UDP {RunningPortNumber?.ToString()}");
             return remoteEndPoint;
         }
 
@@ -132,8 +133,13 @@ namespace StarmaidIntegrationComputer.UdpThalassaControl
                 if (message != null)
                 {
                     message = message.Trim('\0').Trim().ToUpper();
+                    logger.LogInformation($"Received UDP command: {message}");
                     remoteThalassaControlInterpreter.Interpret(message);
                     buffer = new byte[BUFFER_LENGTH];
+                }
+                else
+                {
+                    logger.LogInformation($"Received empty UDP command");
                 }
                 StartListening(buffer);
             }

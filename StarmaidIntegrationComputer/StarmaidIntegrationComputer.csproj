@@ -5,9 +5,12 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <PackageIcon>Thalassa.ico</PackageIcon>
+    <ApplicationIcon>Assets\Thalassa.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\Thalassa Speech Row, off.ico" />
     <None Remove="Config\Nonconfidential\discord-nonconfidential.json" />
     <None Remove="Config\Nonconfidential\generalSettings.json" />
     <None Remove="Config\Nonconfidential\openai-nonconfidential.json" />
@@ -22,6 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\Thalassa Speech Row, off.ico" />
+    <Resource Include="Assets\Thalassa.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
     <Content Include="Config\Sensitive\thalassa-sensitive.json" />
   </ItemGroup>
 
@@ -94,12 +101,240 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Assets\Thalassa.ico">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Update="settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Config\Nonconfidential\speechReplacements.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\alexa_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\americano_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\blueberry_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\bumblebee_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\computer_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\grapefruit_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\grasshopper_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\hey google_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\hey siri_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\jarvis_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\ok google_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\picovoice_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\porcupine_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\linux\terminator_linux.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\alexa_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\americano_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\blueberry_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\bumblebee_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\computer_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\grapefruit_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\grasshopper_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\hey google_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\hey siri_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\jarvis_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\ok google_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\picovoice_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\porcupine_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\mac\terminator_mac.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\alexa_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\americano_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\blueberry_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\bumblebee_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\computer_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\grapefruit_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\grasshopper_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\hey google_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\hey siri_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\jarvis_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\ok google_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\picovoice_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\porcupine_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\raspberry-pi\terminator_raspberry-pi.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\alexa_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\americano_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\blueberry_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\bumblebee_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\computer_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\grapefruit_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\grasshopper_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\hey google_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\hey siri_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\jarvis_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\ok google_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\picovoice_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\porcupine_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="C:\Users\selen\.nuget\packages\porcupine\3.0.10\buildTransitive\net6.0\resources\keyword_files\windows\terminator_windows.ppn" Link="Assets\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

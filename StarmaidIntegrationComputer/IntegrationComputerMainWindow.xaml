@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StarmaidIntegrationComputer"
         mc:Ignorable="d"
-        Title="Starmaid Integration Computer" Height="450" Width="800" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" >
+        Title="Starmaid Integration Computer" Height="450" Width="800" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" Icon="pack://application:,,,/StarmaidIntegrationComputer;component/Assets/Thalassa.ico"
+        >
     <!--<StackPanel HorizontalAlignment="Left" Margin="2,5,2,2" AutomationProperties.Name="VerticalOuterStackPanel" CanVerticallyScroll="True" ScrollViewer.CanContentScroll="True" ClipToBounds="True">-->
     <Grid>
         <Grid.RowDefinitions>
