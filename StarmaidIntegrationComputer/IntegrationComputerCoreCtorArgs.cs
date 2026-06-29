@@ -5,7 +5,7 @@ using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Api;
 using StarmaidIntegrationComputer.StarmaidSettings;
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.DataStructures.Audience;
 using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
 using StarmaidIntegrationComputer.Common.Settings;

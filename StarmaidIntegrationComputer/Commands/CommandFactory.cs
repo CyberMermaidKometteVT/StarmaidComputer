@@ -5,20 +5,21 @@ using Microsoft.Extensions.Logging;
 
 using StarmaidIntegrationComputer.Commands.Twitch;
 using StarmaidIntegrationComputer.Commands.Twitch.Enums;
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.DataStructures.Audience;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Twitch;
+using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns;
 
 using TwitchLib.Api;
 using TwitchLib.Client;
 
 namespace StarmaidIntegrationComputer.Commands
 {
-    internal class CommandFactory
+    public class CommandFactory
     {
         private readonly ILogger<CommandBase> commandLogger;
         private readonly TwitchSensitiveSettings twitchSensitiveSettings;
@@ -28,6 +29,7 @@ namespace StarmaidIntegrationComputer.Commands
         private readonly TwitchClient chatbot;
         private readonly TwitchAPI twitchApi;
         private readonly AudienceRegistry audienceRegistry;
+        private readonly PronounLookupService pronounLookupService;
         private readonly LiveAuthorizationInfo liveTwitchAuthorizationInfo;
 
         public const string LAST_RAIDER_VERBIAGE = "the last raider";
@@ -35,7 +37,7 @@ namespace StarmaidIntegrationComputer.Commands
 
         private const string TARGET_ARGUMENT_NAME = "target";
 
-        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, ThalassaSettings thalassaSettings, StreamerProfileSettings profileSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, AudienceRegistry audienceRegistry)
+        public CommandFactory(ILogger<CommandBase> logger, TwitchSensitiveSettings twitchSensitiveSettings, ThalassaSettings thalassaSettings, StreamerProfileSettings profileSettings, SpeechComputer speechComputer, TwitchClient chatbot, LiveAuthorizationInfo liveTwitchAuthorizationInfo, TwitchAPI twitchApi, AudienceRegistry audienceRegistry, PronounLookupService pronounLookupService)
         {
             this.commandLogger = logger;
             this.twitchSensitiveSettings = twitchSensitiveSettings;
@@ -45,6 +47,7 @@ namespace StarmaidIntegrationComputer.Commands
             this.chatbot = chatbot;
             this.twitchApi = twitchApi;
             this.audienceRegistry = audienceRegistry;
+            this.pronounLookupService = pronounLookupService;
             this.liveTwitchAuthorizationInfo = liveTwitchAuthorizationInfo;
         }
 
@@ -62,7 +65,7 @@ namespace StarmaidIntegrationComputer.Commands
                     return new FailedCommand(commandLogger, speechComputer, $"Failed to parse required argument for command {command}: {TARGET_ARGUMENT_NAME}. See log for additional details.");
                 }
 
-                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, chatbot, audienceRegistry, target);
+                return new ShoutoutCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, chatbot, audienceRegistry, pronounLookupService, target);
             }
             if (command == CommandNames.TIMEOUT.ToLower())
             {
@@ -99,11 +102,11 @@ namespace StarmaidIntegrationComputer.Commands
 
             if (command == CommandNames.SAY_LAST_RAIDER.ToLower())
             {
-                return new SayLastRaiderCommand(commandLogger, speechComputer, audienceRegistry);
+                return new SayLastRaiderCommand(commandLogger, speechComputer, audienceRegistry, pronounLookupService);
             }
             if (command == CommandNames.SAY_RAIDER_LIST.ToLower())
             {
-                return new SayRaiderListCommand(commandLogger, speechComputer, audienceRegistry);
+                return new SayRaiderListCommand(commandLogger, speechComputer, audienceRegistry, pronounLookupService);
             }
             if (command == CommandNames.SEND_CANNED_MESSAGE_TO_CHAT.ToLower())
             {
@@ -112,7 +115,7 @@ namespace StarmaidIntegrationComputer.Commands
             if (command == CommandNames.SAY_LAST_FOLLWERS.ToLower())
             {
                 int count = ParseArgumentAsInt(arguments, "count") ?? 5;
-                return new SayLastFollwersCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, count);
+                return new SayLastFollwersCommand(commandLogger, speechComputer, twitchSensitiveSettings, liveTwitchAuthorizationInfo, twitchApi, pronounLookupService, count);
             }
 
             return null;

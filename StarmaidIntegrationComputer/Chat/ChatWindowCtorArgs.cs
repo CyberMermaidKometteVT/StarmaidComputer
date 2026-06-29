@@ -4,7 +4,7 @@ using StarmaidIntegrationComputer.Thalassa.Chat;
 using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.DataStructures.Audience;
 using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.Common.Settings;
 

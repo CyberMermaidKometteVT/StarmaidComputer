@@ -15,12 +15,15 @@ using TwitchLib.Api.Core.Enums;
 using Serilog;
 using System.IO;
 using Microsoft.Extensions.Configuration;
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.DataStructures.Audience;
 using System.Linq;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.WakeWordProcessor;
+using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns;
+using StarmaidIntegrationComputer.Commands;
+using TwitchLib.Client;
 
 namespace StarmaidIntegrationComputer
 {
@@ -67,8 +70,8 @@ namespace StarmaidIntegrationComputer
             InjectSetting<UdpCommandSettings>(services, configuration);
 
             //TODO: Pretty sure awake brain knows a better way to load settings than what's in this method.  Sleepy brain does not.
-            services.AddScoped<IntegrationComputerCoreCtorArgs>();
             services.AddScoped<TwitchAuthorizationUserTokenFlowHelperCtorArgs>();
+            services.AddSingleton<PronounsClient>();
 
             var scopes = new List<AuthScopes> { AuthScopes.Helix_Channel_Read_Redemptions,
                 AuthScopes.Chat_Read,
@@ -106,6 +109,9 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<IUiThreadDispatchInvoker, UiThreadDispatchInvoker>();
             services.AddSingleton<IOpenAiTtsDispatcher, OpenAiTtsDispatcher>();
             services.AddSingleton<IWakeWordProcessorFactory, WakeWordProcessorFactory>();
+            services.AddSingleton(new TwitchClient());
+            services.AddScoped<CommandFactory>();
+            services.AddSingleton<PronounLookupService>();
 
             services.AddScoped(_ =>
                 TwitchApiFactory.Build(twitchSensitiveSettings.TwitchClientId, twitchSensitiveSettings.TwitchClientSecret, scopes)

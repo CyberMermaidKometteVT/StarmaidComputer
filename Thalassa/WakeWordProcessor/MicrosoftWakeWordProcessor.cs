@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Thalassa.Settings;
-using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 
 namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor
 {

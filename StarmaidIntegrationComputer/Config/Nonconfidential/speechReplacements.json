@@ -95,7 +95,7 @@
       },
       {
         "Phrase": "Luxichara",
-        "Replacement": "Luck see car uh"
+        "Replacement": "Lucksee car-uh"
       },
       {
         "Phrase": "FlautistaBrea",
@@ -136,8 +136,15 @@
       {
         "Phrase": "AriethNinja",
         "Replacement": "Airy eth Ninja "
+      },
+      {
+        "Phrase": "Pandorianer1",
+        "Replacement": "Pandora"
+      },
+      {
+        "Phrase": "chrispears7",
+        "Replacement": "Chris Spears 7"
       }
-
     ]
   }
 }

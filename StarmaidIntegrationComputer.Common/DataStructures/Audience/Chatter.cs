@@ -1,4 +1,4 @@
-﻿namespace StarmaidIntegrationComputer.Common.DataStructures.StarmaidState
+﻿namespace StarmaidIntegrationComputer.Common.DataStructures.Audience
 {
     public class Chatter
     {
