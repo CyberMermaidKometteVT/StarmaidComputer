@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using StarmaidIntegrationComputer.Common.DataStructures.Pronouns;
-using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns.DataStructures.BusinessObjects;
 
 namespace StarmaidIntegrationComputer.Tests
 {
@@ -19,7 +18,7 @@ namespace StarmaidIntegrationComputer.Tests
             var displayString = userAndPronouns.DisplayString;
             Assert.AreEqual("TestUser", displayString);
         }
-
+         
         [TestMethod]
         public void DisplayString_OnePronoun_ReturnsUserNameAndPronoun()
         {

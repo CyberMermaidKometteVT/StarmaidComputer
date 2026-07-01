@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -27,7 +28,9 @@ namespace StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns
                 {
                     var userAndPronouns = await pronounsClient.GetUserAndPronouns(username);
                     if (userAndPronouns != null)
-                        audienceRegistry.PronounsByUsername[username] = userAndPronouns.FirstPronoun;
+                    {
+                        audienceRegistry.PronounsByUsername[username] = userAndPronouns;
+                    }
                 }
             }
         }
@@ -46,23 +49,27 @@ namespace StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns
             else
             {
                 audienceRegistry.UsersToRecheckPronounsFor.Remove(username);
-                audienceRegistry.PronounsByUsername[username] = userAndPronouns.FirstPronoun;
+                audienceRegistry.PronounsByUsername[username] = userAndPronouns;
             }
         }
 
         public async Task<string> GetPronounLabelOrEmptyString(string username)
         {
             await FetchAndCacheIfNeededAsync(username);
-            if (audienceRegistry.PronounsByUsername.TryGetValue(username, out PronounInformation? pronounInfo) && pronounInfo != null)
-                return $" ({pronounInfo.Shorthand})";
-            return "";
+            if (audienceRegistry.PronounsByUsername.TryGetValue(username, out UserAndPronouns? userAndPronouns) && userAndPronouns != null)
+            {
+                return userAndPronouns.DisplayString;
+            }
+            return username;
         }
 
-        public async Task<PronounInformation?> GetPronounInformation(string username, bool fallbackToTheyThem)
+        public async Task<PronounInformation?> PickPronounInformation(string username, bool fallbackToTheyThem)
         {
             await FetchAndCacheIfNeededAsync(username);
-            if (audienceRegistry.PronounsByUsername.TryGetValue(username, out PronounInformation? pronounInfo) && pronounInfo != null)
-                return pronounInfo;
+            if (audienceRegistry.PronounsByUsername.TryGetValue(username, out UserAndPronouns? userAndPronouns) && userAndPronouns?.FirstPronoun != null)
+            {
+                return RandomlySelectPronoun(userAndPronouns);
+            }
             if (fallbackToTheyThem)
             {
                 if (pronounsClient.PronounTable != null && !pronounsClient.PronounTable.ContainsKey(TheyThemKey))
@@ -76,12 +83,18 @@ namespace StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns
         public async Task<(string subjectPronoun, string wasWere)> GetSubjectPronounWithPastTenseVerbFallbackToThey(string username)
         {
             await FetchAndCacheIfNeededAsync(username);
-            if (audienceRegistry.PronounsByUsername.TryGetValue(username, out PronounInformation? pronounInfo) && pronounInfo != null)
+            if (audienceRegistry.PronounsByUsername.TryGetValue(username, out UserAndPronouns? userAndPronouns) && userAndPronouns?.FirstPronoun != null)
             {
-                string wasWere = pronounInfo.Name == TheyThemKey ? "were" : "was";
-                return (pronounInfo.Subject, wasWere);
+                PronounInformation selectedPronoun = RandomlySelectPronoun(userAndPronouns);
+                string wasWere = selectedPronoun.Name == TheyThemKey ? "were" : "was";
+                return (selectedPronoun.Subject, wasWere);
             }
             return ("they", "were");
         }
+
+        private PronounInformation RandomlySelectPronoun(UserAndPronouns userAndPronouns) =>
+            userAndPronouns.SecondPronoun != null && Random.Shared.Next(2) == 0
+                ? userAndPronouns.SecondPronoun
+                : userAndPronouns.FirstPronoun;
     }
 }

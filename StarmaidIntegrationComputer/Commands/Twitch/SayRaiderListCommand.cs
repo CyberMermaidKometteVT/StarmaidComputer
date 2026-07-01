@@ -32,8 +32,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             List<string> formattedRaiders = new List<string>();
             foreach (RaiderInfo raider in AudienceRegistry.Raiders)
             {
-                string pronounDisplay = await pronounLookupService.GetPronounLabelOrEmptyString(raider.RaiderName);
-                formattedRaiders.Add($"{raider.RaiderName}{pronounDisplay}");
+                formattedRaiders.Add(await pronounLookupService.GetPronounLabelOrEmptyString(raider.RaiderName));
             }
 
             string allRaiders;

@@ -17,6 +17,9 @@
             }
         }
 
+        public override string ToString() =>
+            $"ChatterName: {ChatterName}, RecentMessages: {RecentMessages.Count}, MostRecentChatDate: {MostRecentChatDate?.ToString() ?? "none"}";
+
         public Chatter(string chatterName, ChatterMessageInfo? message = null)
         {
             ChatterName = chatterName;

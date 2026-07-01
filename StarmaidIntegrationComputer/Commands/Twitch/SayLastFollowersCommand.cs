@@ -37,8 +37,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
                 List<string> formattedFollowers = new List<string>();
                 foreach (string followerName in followers)
                 {
-                    string pronounDisplay = await pronounLookupService.GetPronounLabelOrEmptyString(followerName);
-                    formattedFollowers.Add($"{followerName}{pronounDisplay}");
+                    formattedFollowers.Add(await pronounLookupService.GetPronounLabelOrEmptyString(followerName));
                 }
 
                 string followerNames;

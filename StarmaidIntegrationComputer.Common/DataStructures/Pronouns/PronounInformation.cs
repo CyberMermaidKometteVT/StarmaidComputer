@@ -45,5 +45,8 @@ namespace StarmaidIntegrationComputer.Common.DataStructures.Pronouns
         }
 
         public string Shorthand => Singular ? Subject : $"{Subject}/{Object}";
+
+        public override string ToString() =>
+            $"Name: {Name}, Subject: {Subject}, Object: {Object}, Singular: {Singular}";
     }
 }

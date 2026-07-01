@@ -37,8 +37,8 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
                 lastShoutedOutDescription = $"Last shouted out {minutesAgo} minutes ago.";
             }
 
-            string pronounDisplay = await pronounLookupService.GetPronounLabelOrEmptyString(raiderInfo.RaiderName);
-            speechComputer.Speak($"Last raider: {raiderInfo.RaiderName}{pronounDisplay} at {raiderInfo.RaidTime.ToString("hh mm tt")}.  {lastShoutedOutDescription}");
+            string raiderDisplay = await pronounLookupService.GetPronounLabelOrEmptyString(raiderInfo.RaiderName);
+            speechComputer.Speak($"Last raider: {raiderDisplay} at {raiderInfo.RaidTime.ToString("hh mm tt")}.  {lastShoutedOutDescription}");
         }
     }
 }

@@ -104,7 +104,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers
                 string interestingTagTerms = interestingTagCommentary.ToString().Trim();
                 string aOrAn = vowels.Contains(interestingTagTerms[0]) ? "an" : "a";
 
-                PronounInformation pronounInfo = (await pronounLookupService.GetPronounInformation(username, fallbackToTheyThem: true))!;
+                PronounInformation pronounInfo = (await pronounLookupService.PickPronounInformation(username, fallbackToTheyThem: true))!;
                 string toBeContraction = pronounInfo.Name == PronounLookupService.TheyThemKey ? "'re" : "'s";
                 interestingTagCommentary = new StringBuilder($"  {pronounInfo.SubjectCapitalized}{toBeContraction} {aOrAn} {interestingTagTerms}!");
             }

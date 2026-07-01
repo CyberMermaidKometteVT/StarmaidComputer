@@ -6,6 +6,9 @@
         public DateTime? LastShoutedOut { get; set; }
         public DateTime RaidTime { get; set; }
 
+        public override string ToString() =>
+            $"RaiderName: {RaiderName}, RaidTime: {RaidTime}, LastShoutedOut: {LastShoutedOut?.ToString() ?? "never"}";
+
         public int CompareTo(RaiderInfo? other)
         {
             if (RaidTime < other.RaidTime)

@@ -13,7 +13,6 @@ using Polly;
 using Polly.CircuitBreaker;
 
 using StarmaidIntegrationComputer.Common.DataStructures.Pronouns;
-using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns.DataStructures.BusinessObjects;
 using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns.DataStructures.DTOs;
 
 namespace StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns
