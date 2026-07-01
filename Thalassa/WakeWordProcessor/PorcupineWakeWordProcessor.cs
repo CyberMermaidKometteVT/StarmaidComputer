@@ -1,13 +1,8 @@
-﻿using System.DirectoryServices.ActiveDirectory;
-using System.Threading;
-
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 using Pv;
 
 using StarmaidIntegrationComputer.Common.Settings;
-using StarmaidIntegrationComputer.StarmaidSettings;
-using StarmaidIntegrationComputer.Thalassa.VoiceToText;
 
 namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor
 {

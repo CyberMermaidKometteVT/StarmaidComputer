@@ -19,12 +19,11 @@ using StarmaidIntegrationComputer.Commands;
 using StarmaidIntegrationComputer.Helpers;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Client.Events;
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.DataStructures.Audience;
 using StarmaidIntegrationComputer.Common;
-using StarmaidIntegrationComputer.Thalassa.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
-using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
+using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns;
 
 namespace StarmaidIntegrationComputer
 {
@@ -50,14 +49,15 @@ namespace StarmaidIntegrationComputer
 
         private TwitchAPI twitchConnection;
         private TwitchPubSub pubSub;
-        private TwitchClient chatbot = new TwitchClient();
+        private readonly TwitchClient chatbot;
         public readonly ILogger<IntegrationComputerCore> logger;
         private readonly ILogger<TwitchPubSub> pubSubLogger;
         private readonly ILogger<TwitchClient> chatbotLogger;
         private readonly SpeechComputer speechComputer;
         private readonly CommandFactory commandFactory;
 
-        private readonly AudienceRegistry commandAudienceRegistry;
+        private readonly AudienceRegistry audienceRegistry;
+        private readonly PronounLookupService pronounLookupService;
         private ChatComputer activeChatComputerUsePropertyOnly;
         public ChatComputer ActiveChatComputer
         {
@@ -79,10 +79,8 @@ namespace StarmaidIntegrationComputer
         }
 
         private LiveAuthorizationInfo liveTwitchAuthorizationInfo;
-        private ThalassaSettings thalassaSettings;
         private readonly UdpCommandSettings udpSettings;
         private readonly UdpCommandListener udpListener;
-        private readonly StreamerProfileSettings profileSettings;
 
         public Action<string> OutputToMainWindow { get; set; }
 
@@ -91,31 +89,29 @@ namespace StarmaidIntegrationComputer
         public List<CommandBase> ExecutingCommands { get; } = new List<CommandBase> { };
         public Action<string> OutputToStreamer { get; set; }
 
-        public IntegrationComputerCore(IntegrationComputerCoreCtorArgs ctorArgs)
+        public IntegrationComputerCore(ILoggerFactory loggerFactory, TwitchSensitiveSettings twitchSensitiveSettings, TwitchSettings twitchSettings, TwitchAuthorizationUserTokenFlowHelper authorizationHelper, TwitchAPI twitchConnection, SpeechComputer speechComputer, AudienceRegistry audienceRegistry, LiveAuthorizationInfo liveTwitchAuthorizationInfo, UdpCommandSettings udpSettings, UdpCommandListener udpListener, PronounLookupService pronounLookupService, TwitchClient chatbot, CommandFactory commandFactory)
         {
-            this.twitchSensitiveSettings = ctorArgs.TwitchSensitiveSettings;
-            this.twitchSettings = ctorArgs.TwitchSettings;
-            this.logger = ctorArgs.LoggerFactory.CreateLogger<IntegrationComputerCore>();
-            this.pubSubLogger = ctorArgs.LoggerFactory.CreateLogger<TwitchPubSub>();
-            this.AuthorizationHelper = ctorArgs.AuthorizationHelper;
-            this.twitchConnection = ctorArgs.TwitchConnection;
-            this.chatbotLogger = ctorArgs.LoggerFactory.CreateLogger<TwitchClient>();
-            this.speechComputer = ctorArgs.SpeechComputer;
-            this.commandAudienceRegistry = ctorArgs.AudienceRegistry;
-            this.liveTwitchAuthorizationInfo = ctorArgs.LiveTwitchAuthorizationInfo;
-            this.thalassaSettings = ctorArgs.ThalassaSettings;
-            this.udpSettings = ctorArgs.UdpCommandSettings;
-            this.udpListener = ctorArgs.UdpCommandListener;
-            this.profileSettings = ctorArgs.StreamerProfileSettings;
+            this.twitchSensitiveSettings = twitchSensitiveSettings;
+            this.twitchSettings = twitchSettings;
+            this.logger = loggerFactory.CreateLogger<IntegrationComputerCore>();
+            this.pubSubLogger = loggerFactory.CreateLogger<TwitchPubSub>();
+            this.AuthorizationHelper = authorizationHelper;
+            this.twitchConnection = twitchConnection;
+            this.chatbotLogger = loggerFactory.CreateLogger<TwitchClient>();
+            this.speechComputer = speechComputer;
+            this.audienceRegistry = audienceRegistry;
+            this.liveTwitchAuthorizationInfo = liveTwitchAuthorizationInfo;
+            this.udpSettings = udpSettings;
+            this.udpListener = udpListener;
+            this.pronounLookupService = pronounLookupService;
+            this.chatbot = chatbot;
+            this.commandFactory = commandFactory;
 
-            ILogger<CommandBase> commandBaseLogger = ctorArgs.LoggerFactory.CreateLogger<CommandBase>();
-
-            ctorArgs.AuthorizationHelper.OnAuthorizationProcessSuccessful = SetAccessTokenOnGetAccessTokenContinue;
-            ctorArgs.AuthorizationHelper.OnAuthorizationProcessFailed = AuthorizationProcessFailed;
-            ctorArgs.AuthorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
+            AuthorizationHelper.OnAuthorizationProcessSuccessful = SetAccessTokenOnGetAccessTokenContinue;
+            AuthorizationHelper.OnAuthorizationProcessFailed = AuthorizationProcessFailed;
+            AuthorizationHelper.OnAuthorizationProcessUserCanceled = AuthorizationProcessUserCanceled;
 
             IsRunning = twitchSettings.RunOnStartup;
-            commandFactory = new CommandFactory(commandBaseLogger, twitchSensitiveSettings,thalassaSettings, profileSettings, speechComputer, chatbot, liveTwitchAuthorizationInfo, twitchConnection, ctorArgs.AudienceRegistry);
         }
 
         public void OnLoaded()
@@ -265,19 +261,19 @@ namespace StarmaidIntegrationComputer
 
         private void Chatbot_OnExistingUsersDetected(object? sender, OnExistingUsersDetectedArgs e)
         {
-            commandAudienceRegistry.Viewers.AddRange(e.Users);
+            audienceRegistry.Viewers.AddRange(e.Users);
         }
 
         private void Chatbot_OnUserLeft(object? sender, TwitchLib.Client.Events.OnUserLeftArgs e)
         {
-            commandAudienceRegistry.Viewers.Remove(e.Username);
+            audienceRegistry.Viewers.Remove(e.Username);
         }
 
         private void Chatbot_OnUserJoined(object? sender, TwitchLib.Client.Events.OnUserJoinedArgs e)
         {
-            if (!commandAudienceRegistry.Viewers.Contains(e.Username))
+            if (!audienceRegistry.Viewers.Contains(e.Username))
             {
-                commandAudienceRegistry.Viewers.Add(e.Username);
+                audienceRegistry.Viewers.Add(e.Username);
             }
         }
 
@@ -287,7 +283,7 @@ namespace StarmaidIntegrationComputer
 
             DateTime raidTimestamp = TmiSentTsHelpers.ParseOrNow(e.RaidNotification.TmiSentTs);
 
-            RaiderInfo? previousRaider = commandAudienceRegistry.Raiders.SingleOrDefault(previousRaider => previousRaider.RaiderName == e.RaidNotification.DisplayName);
+            RaiderInfo? previousRaider = audienceRegistry.Raiders.SingleOrDefault(previousRaider => previousRaider.RaiderName == e.RaidNotification.DisplayName);
 
 
             if (previousRaider == null)
@@ -299,7 +295,7 @@ namespace StarmaidIntegrationComputer
                     LastShoutedOut = null
                 };
 
-                commandAudienceRegistry.Raiders.Add(raider);
+                audienceRegistry.Raiders.Add(raider);
             }
             else
             {
@@ -312,13 +308,13 @@ namespace StarmaidIntegrationComputer
             chatbotLogger.LogInformation($"Chatbot logs: Chatbot {e.BotUsername} logs {sanitizedlogData}");
         }
 
-        private void Chatbot_OnMessageReceived(object? sender, OnMessageReceivedArgs e)
+        private async void Chatbot_OnMessageReceived(object? sender, OnMessageReceivedArgs e)
         {
             //TODO: Change the log level of this action
             string sanitizedMessageReceived = StringManipulation.SanitizeForRichTextBox(e.ChatMessage.Message);
             chatbotLogger.LogInformation($"Message received - {e.ChatMessage.DisplayName}: {sanitizedMessageReceived}");
 
-            if (!commandAudienceRegistry.Chatters.Any(chatter => chatter.ChatterName == e.ChatMessage.DisplayName))
+            if (!audienceRegistry.Chatters.Any(chatter => chatter.ChatterName == e.ChatMessage.DisplayName))
             {
                 DateTime sentTimestamp = TmiSentTsHelpers.ParseOrNow(e.ChatMessage.TmiSentTs);
 
@@ -328,8 +324,11 @@ namespace StarmaidIntegrationComputer
 
                 Chatter newChatter = new Chatter(e.ChatMessage.DisplayName, messageInfo);
 
-                commandAudienceRegistry.Chatters.Add(newChatter);
+                audienceRegistry.Chatters.Add(newChatter);
             }
+
+            string displayName = e.ChatMessage.DisplayName;
+            await pronounLookupService.FetchAndCacheIfNeededAsync(displayName);
         }
 
         private void Chatbot_OnSelfRaidError(object? sender, EventArgs e)

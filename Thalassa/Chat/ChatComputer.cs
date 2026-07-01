@@ -3,7 +3,8 @@
 using Microsoft.Extensions.Logging;
 
 
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.DataStructures.Audience;
+using StarmaidIntegrationComputer.Common.DataStructures.Pronouns;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
 using StarmaidIntegrationComputer.Thalassa.Settings;
@@ -217,12 +218,33 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             AppendCurrentStarmaidStateToConversation();
         }
 
+        private string DisplayWithPronouns(string username) =>
+            audienceRegistry.PronounsByUsername.TryGetValue(username, out UserAndPronouns? data) && data != null
+                ? data.DisplayString
+                : username;
+
         private void AppendCurrentStarmaidStateToConversation()
         {
-            string raiders = string.Join(", ", audienceRegistry.Raiders.Select(raider => raider.RaiderName));
-            string chatters = string.Join(", ", audienceRegistry.Chatters.Select(chatter => chatter.ChatterName));
-            string viewers = string.Join(", ", audienceRegistry.Viewers);
+            string raiders = string.Join(", ", audienceRegistry.Raiders.Select(raider => DisplayWithPronouns(raider.RaiderName)));
+            string chatters = string.Join(", ", audienceRegistry.Chatters.Select(chatter => DisplayWithPronouns(chatter.ChatterName)));
+            string viewers = string.Join(", ", audienceRegistry.Viewers.Select(DisplayWithPronouns));
+
+            HashSet<string> audienceUsernames = new HashSet<string>(
+                audienceRegistry.Raiders.Select(raider => raider.RaiderName)
+                    .Concat(audienceRegistry.Chatters.Select(chatter => chatter.ChatterName))
+                    .Concat(audienceRegistry.Viewers),
+                StringComparer.OrdinalIgnoreCase);
+
+            string otherKnownUsers = string.Join(", ", audienceRegistry.PronounsByUsername
+                .Where(entry => !audienceUsernames.Contains(entry.Key) && entry.Value?.FirstPronoun != null)
+                .Select(entry => entry.Value.DisplayString));
+
             string starmaidContext = $"Currently, the state of the stream includes:\r\nRecent raiders: {raiders}\r\nRecent chatters: {chatters}\r\nAll viewers: {viewers}";
+            if (!string.IsNullOrEmpty(otherKnownUsers))
+            {
+                starmaidContext += $"\r\nOther known users: {otherKnownUsers}";
+            }
+
             chatMessages.Add(new SystemChatMessage(starmaidContext));
         }
 

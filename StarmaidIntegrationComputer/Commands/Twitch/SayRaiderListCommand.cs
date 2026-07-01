@@ -4,39 +4,50 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.DataStructures.Audience;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
+using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns;
 
 namespace StarmaidIntegrationComputer.Commands.Twitch
 {
     internal class SayRaiderListCommand : CommandBase
     {
         public AudienceRegistry AudienceRegistry { get; }
+        private readonly PronounLookupService pronounLookupService;
 
-        public SayRaiderListCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, AudienceRegistry audienceRegistry) : base(logger, speechComputer)
+        public SayRaiderListCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, AudienceRegistry audienceRegistry, PronounLookupService pronounLookupService) : base(logger, speechComputer)
         {
             AudienceRegistry = audienceRegistry;
+            this.pronounLookupService = pronounLookupService;
         }
 
-        protected override Task PerformCommandAsync()
+        protected override async Task PerformCommandAsync()
         {
             if (!AudienceRegistry.Raiders.Any())
             {
                 speechComputer.Speak($"No raiders found.");
-                return Task.CompletedTask;
+                return;
             }
 
-            IEnumerable<string> allRaidersButTheLastOne = AudienceRegistry.Raiders.Take(AudienceRegistry.Raiders.Count() - 1).Select(raider => raider.RaiderName);
-            string allRaiders = string.Join(", ", allRaidersButTheLastOne);
-            if (AudienceRegistry.Raiders.Count() > 1)
+            List<string> formattedRaiders = new List<string>();
+            foreach (RaiderInfo raider in AudienceRegistry.Raiders)
             {
-                allRaiders += ", and ";
+                formattedRaiders.Add(await pronounLookupService.GetPronounLabelOrEmptyString(raider.RaiderName));
             }
-            allRaiders = allRaiders += AudienceRegistry.Raiders.Last().RaiderName;
-            string sIfPlural = AudienceRegistry.Raiders.Count() != 1 ? "s" : "";
 
-            speechComputer.Speak($"{AudienceRegistry.Raiders.Count()} raider{sIfPlural}: {allRaiders}");
-            return Task.CompletedTask;
+            string allRaiders;
+            if (formattedRaiders.Count > 1)
+            {
+                string allButLast = string.Join(", ", formattedRaiders.Take(formattedRaiders.Count - 1));
+                allRaiders = $"{allButLast}, and {formattedRaiders.Last()}";
+            }
+            else
+            {
+                allRaiders = formattedRaiders.First();
+            }
+
+            string sIfPlural = AudienceRegistry.Raiders.Count != 1 ? "s" : "";
+            speechComputer.Speak($"{AudienceRegistry.Raiders.Count} raider{sIfPlural}: {allRaiders}");
         }
     }
 }

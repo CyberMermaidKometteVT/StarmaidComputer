@@ -1,4 +1,4 @@
-﻿namespace StarmaidIntegrationComputer.Common.DataStructures.StarmaidState
+﻿namespace StarmaidIntegrationComputer.Common.DataStructures.Audience
 {
     public class Chatter
     {
@@ -16,6 +16,9 @@
                 return RecentMessages.ElementAtOrDefault(RecentMessages.Count - 1)?.Timestamp;
             }
         }
+
+        public override string ToString() =>
+            $"ChatterName: {ChatterName}, RecentMessages: {RecentMessages.Count}, MostRecentChatDate: {MostRecentChatDate?.ToString() ?? "none"}";
 
         public Chatter(string chatterName, ChatterMessageInfo? message = null)
         {

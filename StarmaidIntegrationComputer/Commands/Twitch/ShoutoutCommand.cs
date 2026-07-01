@@ -7,10 +7,11 @@ using Microsoft.Extensions.Logging;
 
 using StarmaidIntegrationComputer.Commands.State;
 using StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers;
-using StarmaidIntegrationComputer.Common.DataStructures.StarmaidState;
+using StarmaidIntegrationComputer.Common.DataStructures.Audience;
 using StarmaidIntegrationComputer.StarmaidSettings;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 using StarmaidIntegrationComputer.Twitch;
+using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns;
 
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Exceptions;
@@ -23,10 +24,13 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
     {
         public AudienceRegistry AudienceRegistry { get; }
         public string ShoutoutTarget { get; }
-        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, TwitchClient chatbot, AudienceRegistry audienceRegistry, string target)
+        private readonly PronounLookupService pronounLookupService;
+
+        public ShoutoutCommand(ILogger<CommandBase> logger, SpeechComputer speechComputer, TwitchSensitiveSettings twitchSensitiveSettings, LiveAuthorizationInfo liveAuthorizationInfo, TwitchAPI twitchApi, TwitchClient chatbot, AudienceRegistry audienceRegistry, PronounLookupService pronounLookupService, string target)
             : base(logger, speechComputer, Enums.TwitchStateToValidate.ChatbotAndApi, liveAuthorizationInfo, twitchSensitiveSettings, twitchApi, chatbot)
         {
             this.AudienceRegistry = audienceRegistry;
+            this.pronounLookupService = pronounLookupService;
             this.ShoutoutTarget = target;
         }
 
@@ -60,7 +64,9 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             }
 
 
-            chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where they were last {state.LastCategoryName}. \"{state.LastTitle}\"{state.InterestingTagCommentary} (Currently {(!state.IsLive ? "not " : "")}live.)");
+            (string subjectPronoun, string wasWere) = await pronounLookupService.GetSubjectPronounWithPastTenseVerbFallbackToThey(ShoutoutTarget);
+
+            chatbot.SendMessage(twitchSensitiveSettings.TwitchChatbotChannelName, $"Everyone check it out as the Starmaid flies by @{ShoutoutTarget}, at https://twitch.tv/{ShoutoutTarget} where {subjectPronoun} {wasWere} last {state.LastCategoryName}. \"{state.LastTitle}\"{state.InterestingTagCommentary} (Currently {(!state.IsLive ? "not " : "")}live.)");
 
             var firstRaidInstance = this.AudienceRegistry.Raiders.Where(raider => raider.RaiderName == ShoutoutTarget).FirstOrDefault();
             if (firstRaidInstance == null)
@@ -114,7 +120,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch
             state.IsLive = streams.Any();
             state.LastCategoryName = channelInformationResponse.Data.First().GameName;
             state.LastTitle = channelInformationResponse.Data.First().Title;
-            state.InterestingTagCommentary = TwitchTagDescriber.GetInterestingTagCommentary(channelInformationResponse.Data.First().Tags);
+            state.InterestingTagCommentary = await TwitchTagDescriber.GetInterestingTagCommentary(channelInformationResponse.Data.First().Tags, pronounLookupService, ShoutoutTarget);
             state.IsValidUser = true;
 
             return state;

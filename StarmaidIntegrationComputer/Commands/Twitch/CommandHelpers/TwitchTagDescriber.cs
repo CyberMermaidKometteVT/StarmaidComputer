@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+
+using StarmaidIntegrationComputer.Common.DataStructures.Pronouns;
+using StarmaidIntegrationComputer.Twitch.ExternalApiClients.Pronouns;
 
 namespace StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers
 {
@@ -18,7 +22,7 @@ namespace StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers
         private static IReadOnlyList<char> vowels = new List<char> ("aeiou").AsReadOnly();
 
 
-        public static string GetInterestingTagCommentary(IEnumerable<string> tags)
+        public static async Task<string> GetInterestingTagCommentary(IEnumerable<string> tags, PronounLookupService pronounLookupService, string username)
         {
             tags = tags.Select(tag => tag.ToUpper());
 
@@ -100,7 +104,9 @@ namespace StarmaidIntegrationComputer.Commands.Twitch.CommandHelpers
                 string interestingTagTerms = interestingTagCommentary.ToString().Trim();
                 string aOrAn = vowels.Contains(interestingTagTerms[0]) ? "an" : "a";
 
-                interestingTagCommentary = new StringBuilder($"  They're {aOrAn} {interestingTagTerms}!");
+                PronounInformation pronounInfo = (await pronounLookupService.PickPronounInformation(username, fallbackToTheyThem: true))!;
+                string toBeContraction = pronounInfo.Name == PronounLookupService.TheyThemKey ? "'re" : "'s";
+                interestingTagCommentary = new StringBuilder($"  {pronounInfo.SubjectCapitalized}{toBeContraction} {aOrAn} {interestingTagTerms}!");
             }
 
             return interestingTagCommentary.ToString();
