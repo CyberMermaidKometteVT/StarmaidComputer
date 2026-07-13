@@ -11,6 +11,9 @@
 
   <ItemGroup>
     <None Remove="Assets\Thalassa Speech Row, off.ico" />
+    <None Remove="Assets\Wake Word Models\abort_command.onnx" />
+    <None Remove="Assets\Wake Word Models\cancel_listening.onnx" />
+    <None Remove="Assets\Wake Word Models\thalassa.onnx" />
     <None Remove="Config\Nonconfidential\discord-nonconfidential.json" />
     <None Remove="Config\Nonconfidential\generalSettings.json" />
     <None Remove="Config\Nonconfidential\openai-nonconfidential.json" />
@@ -22,6 +25,9 @@
     <None Remove="Config\Sensitive\openai-sensitive.local.json" />
     <None Remove="Config\Sensitive\twitch-sensitive.json" />
     <None Remove="Config\Sensitive\twitch-sensitive.local.json" />
+    <None Remove="Config\Sensitive\WakeWord\porcupine-sensitive.json" />
+    <None Remove="Config\Nonconfidential\WakeWord\porcupine-nonconfidential.json" />
+    <None Remove="Config\Nonconfidential\WakeWord\violawake-nonconfidential.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,10 +35,18 @@
     <Resource Include="Assets\Thalassa.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
-    <Content Include="Config\Sensitive\thalassa-sensitive.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Assets\Wake Word Models\abort_command.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Wake Word Models\cancel_listening.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Wake Word Models\thalassa.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Config\Nonconfidential\discord-nonconfidential.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -46,6 +60,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Config\Nonconfidential\twitch-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Nonconfidential\WakeWord\porcupine-nonconfidential.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Nonconfidential\WakeWord\violawake-nonconfidential.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Config\Sensitive\discord-sensitive.json">
@@ -64,6 +84,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Config\Sensitive\twitch-sensitive.local.json" Condition="Exists('Config\Sensitive\twitch-sensitive.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\Sensitive\WakeWord\porcupine-sensitive.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

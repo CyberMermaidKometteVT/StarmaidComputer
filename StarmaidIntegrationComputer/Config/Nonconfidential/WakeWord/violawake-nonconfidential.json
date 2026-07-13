@@ -1,0 +1,32 @@
+{
+  //ViolaWake (https://violawake.com) is an alternative to Windows Speech for recognizing "Thalassa"
+  //and a few other commands, using small machine-learning models instead of speech-to-text. It only
+  //applies when ThalassaSettings.WakeWordSelectedInterpreter is set to "ViolaWake" - it does nothing
+  //if you're using WindowsVoice or Porcupine instead.
+  //
+  //It works in two stages:
+  // 1. Two shared, open-source model files (from the openWakeWord project) turn your microphone
+  //    audio into a general-purpose numeric representation of speech. These aren't specific to any
+  //    one phrase, so Thalassa downloads them automatically the first time ViolaWake is used - you
+  //    don't need to find or install them yourself, just an internet connection on first run.
+  // 2. Your own trained model files recognize specific phrases ("Thalassa," "Abort Command," etc.)
+  //    from that representation. These CANNOT be downloaded automatically - they only exist once
+  //    you've recorded yourself saying the phrase 10+ times in the ViolaWake Console
+  //    (https://violawake.com) and trained + downloaded a model from it.
+  "ViolaWakeSettings": {
+
+    //Required. Trained via the ViolaWake Console on recordings of the streamer saying the AI's name - place
+    //the .onnx file it gives you at this path.
+    "WakeWordModelPath": "Assets\\Wake Word Models\\thalassa.onnx",
+    "WakeWordConfidenceThreshold": 0.90,
+
+    //Optional. Trained the same way as WakeWordModelPath, but on a command phrase instead, for
+    //commands that need to be recognized quickly without Windows Speech's grammar. Leave blank (or
+    //point at a file that doesn't exist) to skip recognizing this phrase via ViolaWake.
+    "CancelListeningModelPath": "Assets\\Wake Word Models\\cancel_listening.onnx",
+    "CancelListeningConfidenceThreshold": 0.80,
+
+    "AbortCommandModelPath": "Assets\\Wake Word Models\\abort_command.onnx",
+    "AbortCommandConfidenceThreshold": 0.80
+  }
+}

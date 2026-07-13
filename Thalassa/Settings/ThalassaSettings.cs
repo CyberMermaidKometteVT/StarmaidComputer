@@ -11,5 +11,6 @@
         public string AudioDeviceName { get; set; }
         public string WakeWordSelectedInterpreter { get; set; }
         public bool UseOpenAiTts { get; set; }
+        public string[] PorcupineKeywordFilePaths { get; set; } = { };
     }
 }
