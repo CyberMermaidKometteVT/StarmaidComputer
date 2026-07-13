@@ -17,6 +17,7 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using StarmaidIntegrationComputer.Common.DataStructures.Audience;
 using System.Linq;
+using StarmaidIntegrationComputer.Common.Assets;
 using StarmaidIntegrationComputer.Common.Settings;
 using StarmaidIntegrationComputer.UdpThalassaControl;
 using StarmaidIntegrationComputer.Common.TasksAndExecution;
@@ -61,6 +62,7 @@ namespace StarmaidIntegrationComputer
             ThalassaSensitiveSettings thalassaSensitiveSettings = InjectSetting<ThalassaSensitiveSettings>(services, configuration);
             InjectSetting<TwitchSettings>(services, configuration);
             InjectSetting<ThalassaSettings>(services, configuration);
+            InjectSetting<ViolaWakeSettings>(services, configuration);
             InjectSetting<SoundPathSettings>(services, configuration);
             InjectSetting<OpenAISettings>(services, configuration);
             InjectSetting<SpeechReplacements>(services, configuration);
@@ -109,6 +111,7 @@ namespace StarmaidIntegrationComputer
             services.AddSingleton<IUiThreadDispatchInvoker, UiThreadDispatchInvoker>();
             services.AddSingleton<IOpenAiTtsDispatcher, OpenAiTtsDispatcher>();
             services.AddSingleton<IWakeWordProcessorFactory, WakeWordProcessorFactory>();
+            services.AddSingleton<AssetDownloader>();
             services.AddSingleton(new TwitchClient());
             services.AddScoped<CommandFactory>();
             services.AddSingleton<PronounLookupService>();
@@ -126,22 +129,34 @@ namespace StarmaidIntegrationComputer
             var sensitivePath = Path.Combine(basePath, configSubfolderSensitive);
             var nonconfidentialPath = Path.Combine(basePath, configSubfolderNonconfidential);
 
-            List<string> allJsonFilePaths = new List<string>();
-
-            allJsonFilePaths.AddRange(Directory.GetFiles(sensitivePath).Where(path => !IsEnvironmentFile(path)));
-            allJsonFilePaths.AddRange(Directory.GetFiles(nonconfidentialPath).Where(path => !IsEnvironmentFile(path)));
-
-            allJsonFilePaths.AddRange(Directory.GetFiles(sensitivePath).Where(IsCurrentEnvironment));
-            allJsonFilePaths.AddRange(Directory.GetFiles(nonconfidentialPath).Where(IsCurrentEnvironment));
-
             var configurationBuilder = new ConfigurationBuilder()
                 .SetBasePath(basePath);
 
-            allJsonFilePaths.ForEach(path => configurationBuilder.AddJsonFile(path, false, true));
+            foreach (string path in GetOrderedJsonFilePaths(sensitivePath, nonconfidentialPath))
+            {
+                configurationBuilder.AddJsonFile(path, optional: false, reloadOnChange: true);
+            }
 
-            var configuration = configurationBuilder.Build();
+            return configurationBuilder.Build();
+        }
 
-            return configuration;
+        /// <summary>
+        /// Config files live under Config/Sensitive and Config/Nonconfidential, in any number of
+        /// subfolders (e.g. Config/Nonconfidential/WakeWord) - grouping related settings files
+        /// together without cluttering the top level. Base files load first, then per-environment
+        /// overrides (*.&lt;environment&gt;.json), so an override always wins for keys it defines.
+        /// </summary>
+        private IEnumerable<string> GetOrderedJsonFilePaths(string sensitivePath, string nonconfidentialPath)
+        {
+            IEnumerable<string> AllJsonFilesUnder(string root) => Directory.GetFiles(root, "*.json", SearchOption.AllDirectories);
+
+            IEnumerable<string> baseFiles = AllJsonFilesUnder(sensitivePath).Where(path => !IsEnvironmentFile(path))
+                .Concat(AllJsonFilesUnder(nonconfidentialPath).Where(path => !IsEnvironmentFile(path)));
+
+            IEnumerable<string> environmentOverrideFiles = AllJsonFilesUnder(sensitivePath).Where(IsCurrentEnvironment)
+                .Concat(AllJsonFilesUnder(nonconfidentialPath).Where(IsCurrentEnvironment));
+
+            return baseFiles.Concat(environmentOverrideFiles);
         }
 
         private bool IsEnvironmentFile(string fileName)
@@ -154,6 +169,13 @@ namespace StarmaidIntegrationComputer
             return fileName.EndsWith($".{currentEnvironmentName}.json");
         }
 
+        //NOTE: reloadOnChange: true on AddJsonFile (above) makes the underlying IConfigurationRoot
+        //watch each file and refresh its own in-memory values on change, but InjectSetting below only
+        //calls Bind() once at startup into a plain POCO singleton - nothing re-binds it afterward, so
+        //edits to config files still require an app restart to take effect. Real hot reload would mean
+        //switching these settings classes to the Options pattern (services.Configure<T> + IOptionsMonitor<T>
+        //for consumers that need live updates, or a ChangeToken.OnChange callback that re-binds the
+        //existing singleton). Deliberately left out of scope for now.
         private T InjectSetting<T>(ServiceCollection services, IConfigurationRoot configuration) where T : class, new()
         {
             T setting = new T();

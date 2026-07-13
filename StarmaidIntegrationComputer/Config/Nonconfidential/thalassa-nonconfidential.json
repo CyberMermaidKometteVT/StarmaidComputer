@@ -6,7 +6,8 @@
     "UseOpenAiTts": true,
     "AudioDeviceName": "Voicemeeter VAIO (",
 
-    //WakeWordSelectedInterpreter can be "Porcupine" or "WindowsVoice".
+    //WakeWordSelectedInterpreter can be "Porcupine", "WindowsVoice", or "ViolaWake".
+    //Porcupine and ViolaWake settings live in Config\Nonconfidential\WakeWord.
     "WakeWordSelectedInterpreter": "WindowsVoice",
 
     //The message for her to send in a canned message.
