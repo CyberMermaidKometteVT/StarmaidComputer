@@ -13,6 +13,10 @@ using StarmaidIntegrationComputer.Twitch.Authorization;
 using StarmaidIntegrationComputer.Twitch;
 using TwitchLib.Api.Core.Enums;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Microsoft.Extensions.Logging;
+using StarmaidIntegrationComputer.Logging;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using StarmaidIntegrationComputer.Common.DataStructures.Audience;
@@ -44,18 +48,39 @@ namespace StarmaidIntegrationComputer
         public ServiceProvider ConfigureServices()
         {
             ServiceCollection services = new ServiceCollection();
+
+            //Configuration is loaded before logging is set up, rather than after, because the minimum
+            //log level is itself a setting - LoggingSettings has to be bound before the sinks are built.
+            IConfigurationRoot configuration = this.LoadConfiguration();
+            LoggingSettings loggingSettings = InjectSetting<LoggingSettings>(services, configuration);
+            bool fileLogLevelWasRecognized = MinimumLogLevelResolver.TryResolveMinimumLevel(loggingSettings.MinimumLogLevel, MinimumLogLevelResolver.DefaultMinimumLevel, out LogEventLevel fileMinimumLogLevel);
+
             services.AddLogging(loggingBuilder =>
             {
                 LoggerConfiguration fileLoggerConfiguration = new LoggerConfiguration();
+                fileLoggerConfiguration.MinimumLevel.ControlledBy(new LoggingLevelSwitch(fileMinimumLogLevel));
                 fileLoggerConfiguration.WriteTo.File($"Log\\StarmaidComputer-{DateTime.Now.ToString("yyyy-MM-dd_HH_mm_ss")}.log");
                 Serilog.Core.Logger? fileLogger = fileLoggerConfiguration.CreateLogger();
                 loggingBuilder.AddSerilog(fileLogger);
+
+                //Microsoft.Extensions.Logging filters before any Serilog sink is consulted, and its level
+                //is fixed once the provider is built - so it's opened all the way here and the real
+                //filtering is left to each sink's own level switch. Without this, raising the window's
+                //level to Debug at runtime would silently do nothing, because MEL would already have
+                //dropped the message. The cost is that interpolated log message strings are always built,
+                //which is why the per-buffer wake word diagnostics guard themselves with IsEnabled.
+                loggingBuilder.SetMinimumLevel(LogLevel.Trace);
+
+                if (!fileLogLevelWasRecognized)
+                {
+                    fileLogger.Warning($"LoggingSettings.MinimumLogLevel value '{loggingSettings.MinimumLogLevel}' isn't a recognized log level - falling back to {MinimumLogLevelResolver.DefaultMinimumLevel}. Valid values are Verbose, Debug, Information, Warning, Error and Fatal.");
+                }
 
                 services.AddSingleton(fileLoggerConfiguration);
 
             });
 
-            IConfigurationRoot configuration = this.LoadConfiguration();
+            services.AddSingleton<WindowLogSinkController>();
 
             TwitchSensitiveSettings twitchSensitiveSettings = InjectSetting<TwitchSensitiveSettings>(services, configuration);
             OpenAISensitiveSettings openAiSensitiveSettings = InjectSetting<OpenAISensitiveSettings>(services, configuration);

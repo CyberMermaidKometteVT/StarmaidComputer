@@ -8,10 +8,12 @@ using System.Windows.Controls;
 using Microsoft.Extensions.Logging;
 
 using Serilog;
+using Serilog.Events;
 
 using StarmaidIntegrationComputer.Chat;
 using StarmaidIntegrationComputer.Commands;
 using StarmaidIntegrationComputer.Common.Settings;
+using StarmaidIntegrationComputer.Logging;
 using StarmaidIntegrationComputer.Thalassa;
 using StarmaidIntegrationComputer.Thalassa.SpeechSynthesis;
 
@@ -28,13 +30,16 @@ namespace StarmaidIntegrationComputer
         private readonly ThalassaCore thalassaCore;
         private readonly StreamerProfileSettings streamerProfileSettings;
         private readonly SpeechComputer speechComputer;
+        private readonly WindowLogSinkController windowLogSinkController;
         LoggerConfiguration loggerConfiguration;
+
+        private bool isPopulatingWindowLogLevelComboBox;
         public List<ChatWindow> chatWindows { get; private set; } = new List<ChatWindow>();
 
         ScrollViewer outputScrollViewer;
 
 
-        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore, StreamerProfileSettings streamerProfileSettings, SpeechComputer speechComputer)
+        public IntegrationComputerMainWindow(ILoggerFactory loggerFactory, IntegrationComputerCore core, LoggerConfiguration loggerConfiguration, ChatWindowFactory chatWindowFactory, ThalassaCore thalassaCore, StreamerProfileSettings streamerProfileSettings, SpeechComputer speechComputer, WindowLogSinkController windowLogSinkController)
         {
             this.loggerFactory = loggerFactory;
             this.core = core;
@@ -43,6 +48,7 @@ namespace StarmaidIntegrationComputer
             this.thalassaCore = thalassaCore;
             this.streamerProfileSettings = streamerProfileSettings;
             this.speechComputer = speechComputer;
+            this.windowLogSinkController = windowLogSinkController;
             this.core.OutputToMainWindow = AppendOutput;
             this.core.UpdateIsRunningVisuals = SetToggleButtonContent;
 
@@ -62,15 +68,37 @@ namespace StarmaidIntegrationComputer
 
         private void InitializeLogging()
         {
-            loggerConfiguration.WriteTo.RichTextBox(OutputRichTextBox);
+            windowLogSinkController.AttachTo(OutputRichTextBox);
 
+            PopulateWindowLogLevelComboBox();
+        }
 
-            LoggerConfiguration textBoxLoggerConfiguration = new LoggerConfiguration();
-            textBoxLoggerConfiguration.WriteTo.RichTextBox(OutputRichTextBox);
+        private void PopulateWindowLogLevelComboBox()
+        {
+            //Assigning ItemsSource and SelectedItem both raise SelectionChanged, which would push the
+            //level straight back into the controller it was just read from - harmless, but it would also
+            //fire before the window has finished initializing.
+            isPopulatingWindowLogLevelComboBox = true;
 
-            Serilog.Core.Logger? serilogLogger = textBoxLoggerConfiguration.CreateLogger();
+            WindowLogLevelComboBox.ItemsSource = windowLogSinkController.SelectableLevels;
+            WindowLogLevelComboBox.SelectedItem = windowLogSinkController.CurrentLevel;
 
-            loggerFactory.AddSerilog(serilogLogger, true);
+            isPopulatingWindowLogLevelComboBox = false;
+        }
+
+        private void WindowLogLevelComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (isPopulatingWindowLogLevelComboBox)
+            {
+                return;
+            }
+
+            LogEventLevel selectedLevel = (LogEventLevel)WindowLogLevelComboBox.SelectedItem;
+
+            windowLogSinkController.CurrentLevel = selectedLevel;
+
+            loggerFactory.CreateLogger<IntegrationComputerMainWindow>()
+                .LogInformation($"Log detail for this window is now {selectedLevel}. The log file's level is unchanged.");
         }
 
         private async void IntegrationComputerMainWindow_Loaded(object sender, RoutedEventArgs e)

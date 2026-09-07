@@ -26,12 +26,17 @@ namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor.OnnxWakeWord
         public const string AbortCommandClassifierName = "AbortCommand";
 
         private const int MelspecChunkSamples = 1280; // 80ms @ 16kHz; openWakeWord's streaming step size
+        private const int MelspecChunkMilliseconds = 80; // MelspecChunkSamples expressed as time, for the timing diagnostic
+        private const int MelspecContextSamples = 480; // openWakeWord's 160*3 - preceding audio replayed so boundary frames survive
+        private const int MelFramesPerChunk = 8; // frames MelspecChunkSamples + MelspecContextSamples yields once context is primed
+        private const int ChunksBetweenTimingReports = 100; // ~8 seconds of audio per timing diagnostic line
         private const int MelBins = 32;
         private const int EmbeddingWindowFrames = 76; // mel frames consumed per embedding inference
         private const int EmbeddingHopFrames = 8; // stride between successive embedding windows
         private const int EmbeddingDim = 96;
         private const int MelBufferMaxFrames = 200; // rolling history, comfortably above the 76-frame window
 
+        private readonly ILogger<OnnxWakeWordPipeline> logger;
         private readonly InferenceSession melspectrogramSession;
         private readonly InferenceSession embeddingSession;
         private readonly string melInputName;
@@ -41,13 +46,26 @@ namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor.OnnxWakeWord
         private readonly int embeddingBufferMaxLength;
 
         private readonly List<short> pendingRawSamples = new();
+        private readonly List<short> melspecContext = new();
         private readonly List<float[]> melFrameBuffer = new();
         private readonly List<float[]> embeddingBuffer = new();
 
         private int framesSinceLastEmbedding;
+        private bool hasWarnedAboutShortMelOutput;
+
+        //Diagnostic only. The classifier heads consume a fixed-length run of embeddings as a time
+        //series, and were trained on embeddings produced at one per audio chunk. If the melspectrogram
+        //model emits fewer than EmbeddingHopFrames frames per chunk, embeddings come out slower and at
+        //irregular spacing, which distorts that time series - so the actual rate is worth measuring
+        //rather than assuming.
+        private readonly Dictionary<int, int> melFramesPerChunkCounts = new();
+        private int chunksSinceLastTimingReport;
+        private int embeddingsSinceLastTimingReport;
 
         public OnnxWakeWordPipeline(ILogger<OnnxWakeWordPipeline> logger, AssetDownloader assetDownloader, ViolaWakeSettings violaWakeSettings)
         {
+            this.logger = logger;
+
             assetDownloader.EnsureDownloaded(OpenWakeWordAssets.MelspectrogramLocalPath, OpenWakeWordAssets.Melspectrogram, logger);
             assetDownloader.EnsureDownloaded(OpenWakeWordAssets.EmbeddingModelLocalPath, OpenWakeWordAssets.EmbeddingModel, logger);
 
@@ -177,20 +195,31 @@ namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor.OnnxWakeWord
                 pendingRawSamples.RemoveRange(0, MelspecChunkSamples);
 
                 AppendMelFrames(chunk);
+                chunksSinceLastTimingReport++;
 
                 while (framesSinceLastEmbedding >= EmbeddingHopFrames && melFrameBuffer.Count >= EmbeddingWindowFrames)
                 {
                     ComputeEmbedding();
+                    embeddingsSinceLastTimingReport++;
                     framesSinceLastEmbedding -= EmbeddingHopFrames;
 
                     foreach (KeyValuePair<string, ClassifierSlot> entry in classifiers)
                     {
                         if (embeddingBuffer.Count >= entry.Value.WindowFrames)
                         {
-                            latestConfidences[entry.Key] = RunClassifier(entry.Value);
+                            //One call can drain more than one chunk, and so score more than once. Keeping the
+                            //highest rather than the last matters because a detection peak is only one or two
+                            //frames wide - overwriting would silently discard roughly a fifth of all scores,
+                            //some of them the very frame a wake word was recognized on. Repeat firing is
+                            //already handled by the caller's debounce, so a peak costs nothing to keep.
+                            latestConfidences[entry.Key] = Math.Max(
+                                latestConfidences.GetValueOrDefault(entry.Key),
+                                RunClassifier(entry.Value));
                         }
                     }
                 }
+
+                ReportPipelineTimingIfDue();
             }
 
             return latestConfidences;
@@ -198,8 +227,20 @@ namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor.OnnxWakeWord
 
         private void AppendMelFrames(short[] chunk)
         {
+            //The melspectrogram model's analysis window (400 samples) is wider than its hop (160), so the
+            //frames at the very start of a buffer need audio from before it. Running each 1280-sample chunk
+            //in isolation therefore never produces the frames straddling the chunk boundary - measured at 5
+            //frames per chunk instead of the 8 a continuous stream gives, leaving roughly 30ms of every 80ms
+            //represented by no frame at all, and stretching the embedding time series the classifiers were
+            //trained against. Replaying the trailing MelspecContextSamples restores them: this mirrors
+            //openWakeWord's own streaming path, which feeds the model n_samples + 160*3 and keeps every
+            //frame that comes back. Because MelspecChunkSamples is an exact multiple of the 160-sample hop,
+            //the frame grid lands in the same place on every call, so the frames line up with a continuous
+            //stream rather than merely approximating one.
+            short[] samplesWithContext = melspecContext.Concat(chunk).ToArray();
+
             // openWakeWord casts int16 PCM straight to float32 for the melspectrogram model - no /32768 normalization.
-            float[] floatSamples = Array.ConvertAll(chunk, sample => (float)sample);
+            float[] floatSamples = Array.ConvertAll(samplesWithContext, sample => (float)sample);
 
             DenseTensor<float> inputTensor = new(floatSamples, new[] { 1, floatSamples.Length });
             List<NamedOnnxValue> inputs = new() { NamedOnnxValue.CreateFromTensor(melInputName, inputTensor) };
@@ -211,6 +252,19 @@ namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor.OnnxWakeWord
             // "", "Clipoutput_dim_2", ""). The size-1 axis at index 1 is a leftover dummy dimension
             // from the model's original TF op and carries no data of its own.
             int frameCount = melspecOutput.Dimensions[2];
+
+            //Every frame returned is new - the context only exists to let the model form the frames that
+            //straddle the boundary, and it is short enough that it produces no frame of its own. The very
+            //first call has no context yet and so comes up short by design; after that a short count means
+            //the model's framing differs from what MelspecContextSamples assumes.
+            bool isContextPrimed = melspecContext.Count == MelspecContextSamples;
+
+            if (isContextPrimed && frameCount != MelFramesPerChunk && !hasWarnedAboutShortMelOutput)
+            {
+                hasWarnedAboutShortMelOutput = true;
+                logger.LogWarning($"The melspectrogram model returned {frameCount} frames for {samplesWithContext.Length} samples, where {MelFramesPerChunk} were expected. The embedding time series will not match what the classifiers were trained on - MelspecContextSamples likely needs adjusting to this model's window and hop.");
+            }
+
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
                 float[] frame = new float[MelBins];
@@ -223,13 +277,46 @@ namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor.OnnxWakeWord
                 melFrameBuffer.Add(frame);
             }
 
+            melFramesPerChunkCounts[frameCount] = melFramesPerChunkCounts.GetValueOrDefault(frameCount) + 1;
+
             framesSinceLastEmbedding += frameCount;
+
+            melspecContext.Clear();
+            melspecContext.AddRange(samplesWithContext.Skip(Math.Max(0, samplesWithContext.Length - MelspecContextSamples)));
 
             int excessFrames = melFrameBuffer.Count - MelBufferMaxFrames;
             if (excessFrames > 0)
             {
                 melFrameBuffer.RemoveRange(0, excessFrames);
             }
+        }
+
+        /// <summary>
+        /// Reports how many mel frames the melspectrogram model actually produced per audio chunk, and how
+        /// many embeddings that yielded. One embedding per chunk is the rate the classifier heads expect;
+        /// anything less means the embedding time series is being stretched relative to training.
+        /// </summary>
+        private void ReportPipelineTimingIfDue()
+        {
+            if (chunksSinceLastTimingReport < ChunksBetweenTimingReports)
+            {
+                return;
+            }
+
+            if (logger.IsEnabled(LogLevel.Debug))
+            {
+                string framesPerChunkBreakdown = string.Join(", ", melFramesPerChunkCounts
+                    .OrderBy(entry => entry.Key)
+                    .Select(entry => $"{entry.Key} frames x{entry.Value}"));
+
+                double embeddingsPerChunk = (double)embeddingsSinceLastTimingReport / chunksSinceLastTimingReport;
+
+                logger.LogDebug($"Pipeline timing over {chunksSinceLastTimingReport} chunks of {MelspecChunkSamples} samples ({MelspecChunkMilliseconds}ms) each: mel frames per chunk = [{framesPerChunkBreakdown}]; embeddings produced = {embeddingsSinceLastTimingReport} ({embeddingsPerChunk:0.000} per chunk). Expect {EmbeddingHopFrames} frames per chunk and 1.000 embeddings per chunk - a lower rate means the embedding time series is stretched relative to what the classifiers were trained on.");
+            }
+
+            melFramesPerChunkCounts.Clear();
+            chunksSinceLastTimingReport = 0;
+            embeddingsSinceLastTimingReport = 0;
         }
 
         private void ComputeEmbedding()

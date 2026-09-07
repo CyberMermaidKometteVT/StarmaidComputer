@@ -1,0 +1,15 @@
+{
+  //Levels, most detail to least: Verbose, Debug, Information, Warning, Error, Fatal.
+  //Blank or unrecognized falls back to Information. Takes effect on restart.
+  //Wake word evaluation happens at Debug.
+  "LoggingSettings": {
+
+    //The log file. Debug adds the wake word confidence scores, which are noisy but are what you
+    //want when working out why a phrase is not being recognized.
+    "MinimumLogLevel": "Information",
+
+    //Starting level for the main window's pane - the "Log detail" dropdown changes it while
+    //running, and never affects the file. Blank matches MinimumLogLevel.
+    "WindowMinimumLogLevel": "Information"
+  }
+}

@@ -93,7 +93,9 @@ namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor
         private void RecognitionEngine_SpeechRecognitionRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
         {
             string textToDisplay = $"({e.Result.Confidence}): {e.Result.Text}";
-            logger.LogInformation($"{streamerProfileSettings.AiName} REJECTED Speech: {textToDisplay}");
+            //Windows Speech rejects nearly everything it hears that is not in its grammar, so this is the
+            //Windows-engine equivalent of the ViolaWake per-buffer scores, and logs at Debug for the same reason.
+            logger.LogDebug($"{streamerProfileSettings.AiName} REJECTED Speech: {textToDisplay}");
 
             DisplayIfAble(textToDisplay);
         }

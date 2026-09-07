@@ -255,9 +255,7 @@ namespace StarmaidIntegrationComputer.Thalassa.Chat
             {
                 logger.LogInformation("Starting a new conversation.");
 
-
-
-                request = new ChatClient(model: "gpt-4o-mini",
+                request = new ChatClient(model: openAISettings.Model,
                     credential: new ApiKeyCredential(openAISensitiveSettings.OpenAIBearerToken));
 
                 if (isCommand)
