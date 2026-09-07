@@ -75,21 +75,34 @@ namespace StarmaidIntegrationComputer.Thalassa.WakeWordProcessor
                 return;
             }
 
+            //Every classifier scores roughly every 80ms of audio, so both of the near-miss cases below
+            //log at Debug - far too noisy to leave on, but they are the only way to see what the model
+            //actually thinks when a phrase is not being recognized. The IsEnabled guards are because the
+            //interpolated string is built before the logging call runs, and Microsoft.Extensions.Logging's
+            //own level is deliberately left wide open so the window's level can be changed while running.
             if (confidence <= threshold)
             {
-                logger.LogInformation($"'{classifierName}' wake word REJECTING with a confidence threshold of (confidence={confidence}/{threshold})");
+                if (logger.IsEnabled(LogLevel.Debug))
+                {
+                    logger.LogDebug($"'{classifierName}' rejected - below its confidence threshold (confidence={confidence}/{threshold})");
+                }
+
                 return;
             }
 
             DateTime lastDetection = lastDetectionByClassifier.GetValueOrDefault(classifierName, DateTime.MinValue);
             if (DateTime.Now - lastDetection <= TimeSpan.FromMilliseconds(DebounceMilliseconds))
             {
+                if (logger.IsEnabled(LogLevel.Debug))
+                {
+                    logger.LogDebug($"'{classifierName}' cleared its confidence threshold (confidence={confidence}/{threshold}), but was ignored - it last fired less than {DebounceMilliseconds}ms ago.");
+                }
+
                 return;
             }
 
             lastDetectionByClassifier[classifierName] = DateTime.Now;
-                logger.LogInformation($"'{classifierName}' wake word MATHCED with a confidence threshold of (confidence={confidence}/{threshold})");
-            logger.LogInformation($"'{classifierName}' detected by {GetType().Name}! (confidence={confidence})");
+            logger.LogInformation($"'{classifierName}' MATCHED (confidence={confidence}/{threshold})");
             onDetected();
         }
 

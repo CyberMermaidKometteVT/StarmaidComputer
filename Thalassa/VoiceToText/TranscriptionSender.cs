@@ -97,6 +97,8 @@ namespace StarmaidIntegrationComputer.Thalassa.VoiceToText
 
             //What we got was neither an error in the known error format, nor the expected good response - report what we got.
             throw new TranscriptionSenderException("Error interpreting speech, and unable to parse error as message! See log!", interpretingResponse);
+
+
         }
     }
 }
